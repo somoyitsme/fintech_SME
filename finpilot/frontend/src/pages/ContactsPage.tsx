@@ -27,6 +27,11 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
 }) => {
   const { customers, suppliers, addNewCustomer, addSupplier } = useStore();
   const [activeTab, setActiveTab] = useState<'suppliers' | 'customers' | 'groups' | 'import'>(initialTab);
+
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const [search, setSearch] = useState('');
   
   // Add Modals

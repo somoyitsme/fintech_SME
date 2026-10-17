@@ -25,6 +25,11 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
 }) => {
   const { purchaseOrders, suppliers, products, createPurchaseOrder, receivePurchaseOrder } = useStore();
   const [activeTab, setActiveTab] = useState<'list' | 'add' | 'returns'>(initialTab);
+
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
   const [search, setSearch] = useState('');
 
   // New PO State
@@ -281,14 +286,71 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
       {/* TAB 3: PURCHASE RETURNS */}
       {/* ============================================================== */}
       {activeTab === 'returns' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm text-center max-w-xl mx-auto space-y-3">
-          <ArrowDownLeft className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Purchase Returns & RMA Replacements</h2>
-          <p className="text-xs text-slate-400">
-            Zero RMA backlog. All supplier warranty replacements from ASUS and Intel regional warranty centers are fully reconciled.
-          </p>
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs font-mono text-emerald-400">
-            Total Purchase Return Due: ৳ 0.00
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <ArrowDownLeft className="w-4 h-4 text-rose-500" />
+                Supplier Purchase Returns & RMA Dispatch
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Defective units dispatched back to Singapore / HK distributor authorized service centers
+              </p>
+            </div>
+            <button
+              onClick={() => alert("Recorded new RMA claim RMA-2026-089 for ASUS APAC warranty replacement.")}
+              className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Record RMA Return</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="py-3 px-4">RMA # & Date</th>
+                  <th className="py-3 px-3">Supplier</th>
+                  <th className="py-3 px-3">Item Returned</th>
+                  <th className="py-3 px-3">Defect Reason</th>
+                  <th className="py-3 px-3 text-right">Credit Value (৳)</th>
+                  <th className="py-3 px-4 text-center">RMA Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                <tr className="hover:bg-slate-800/40 transition">
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-white font-mono">RMA-2026-081</div>
+                    <div className="text-[10px] text-slate-400">12/09/2026</div>
+                  </td>
+                  <td className="py-3 px-3 text-slate-300">ASUS Regional Distribution (Singapore)</td>
+                  <td className="py-3 px-3 text-white">2x ASUS ROG Strix GeForce RTX 4080 Super</td>
+                  <td className="py-3 px-3 text-rose-400">Memory Artifacting on Cold Boot</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">৳ 290,000</td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+                      ● Replacement Received
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-slate-800/40 transition">
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-white font-mono">RMA-2026-082</div>
+                    <div className="text-[10px] text-slate-400">28/09/2026</div>
+                  </td>
+                  <td className="py-3 px-3 text-slate-300">Intel Authorized Distributor (BD Hub)</td>
+                  <td className="py-3 px-3 text-white">1x Intel Core i9-14900K Processor</td>
+                  <td className="py-3 px-3 text-rose-400">Vmin Instability / Crash under Prime95</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">৳ 62,000</td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
+                      ● Credit Note Reconciled
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       )}

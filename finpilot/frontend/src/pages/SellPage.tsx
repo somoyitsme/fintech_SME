@@ -21,7 +21,7 @@ import {
 import { useStore, Order, Product } from '../context/StoreContext';
 
 interface SellPageProps {
-  initialTab?: 'all' | 'pos' | 'shipments' | 'quotations' | 'drafts';
+  initialTab?: 'all' | 'pos' | 'pos-list' | 'shipments' | 'quotations' | 'drafts' | 'returns' | 'discounts' | 'import';
   onNavigateTab?: (tab: string) => void;
 }
 
@@ -30,7 +30,11 @@ export const SellPage: React.FC<SellPageProps> = ({
   onNavigateTab 
 }) => {
   const { products, orders, customers, createSaleOrder, updateOrderStatus, dispatchWithCourier } = useStore();
-  const [activeTab, setActiveTab] = useState<'all' | 'pos' | 'shipments' | 'quotations' | 'drafts'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'all' | 'pos' | 'pos-list' | 'shipments' | 'quotations' | 'drafts' | 'returns' | 'discounts' | 'import'>(initialTab);
+
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -169,7 +173,31 @@ export const SellPage: React.FC<SellPageProps> = ({
           onClick={() => setActiveTab('pos')}
           className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'pos' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
         >
-          POS Terminal
+          POS Register
+        </button>
+        <button
+          onClick={() => setActiveTab('pos-list')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'pos-list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          List POS Receipts
+        </button>
+        <button
+          onClick={() => setActiveTab('drafts')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'drafts' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Draft Orders
+        </button>
+        <button
+          onClick={() => setActiveTab('quotations')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'quotations' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Quotations
+        </button>
+        <button
+          onClick={() => setActiveTab('returns')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'returns' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Sales Returns
         </button>
         <button
           onClick={() => setActiveTab('shipments')}
@@ -179,10 +207,16 @@ export const SellPage: React.FC<SellPageProps> = ({
           <span>Shipments ({courierOrders.length})</span>
         </button>
         <button
-          onClick={() => setActiveTab('quotations')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'quotations' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          onClick={() => setActiveTab('discounts')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'discounts' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
         >
-          Quotations
+          Discounts & Promos
+        </button>
+        <button
+          onClick={() => setActiveTab('import')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'import' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Import Sales
         </button>
       </div>
 
@@ -677,6 +711,250 @@ export const SellPage: React.FC<SellPageProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 5: LIST POS RECEIPTS */}
+      {/* ============================================================== */}
+      {activeTab === 'pos-list' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                POS Counter Register Transactions
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Walk-in showroom cash and bKash counter receipts</p>
+            </div>
+            <button
+              onClick={() => setActiveTab('pos')}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+            >
+              <span>+ New POS Sale</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="py-3 px-4">Receipt #</th>
+                  <th className="py-3 px-3">Date & Time</th>
+                  <th className="py-3 px-3">Customer</th>
+                  <th className="py-3 px-3">Items Summary</th>
+                  <th className="py-3 px-3">Payment</th>
+                  <th className="py-3 px-3 text-right">Total (৳)</th>
+                  <th className="py-3 px-4 text-center">Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {orders.filter(o => o.orderType === 'offline').slice(0, 10).map((o) => (
+                  <tr key={o.id} className="hover:bg-slate-800/40 transition">
+                    <td className="py-3 px-4 font-mono font-bold text-blue-400">{o.orderNumber}</td>
+                    <td className="py-3 px-3 text-slate-400">{o.orderDate}</td>
+                    <td className="py-3 px-3 text-white font-medium">{o.customerName}</td>
+                    <td className="py-3 px-3 text-slate-300 truncate max-w-[200px]">{o.itemsSummary}</td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 uppercase">
+                        {o.paymentMethod.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">৳ {o.totalAmount.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() => setSelectedOrder(o)}
+                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10.5px] font-semibold transition"
+                      >
+                        Print Receipt
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 6: DRAFT ORDERS */}
+      {/* ============================================================== */}
+      {activeTab === 'drafts' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-400" />
+                Unconfirmed Sales Drafts
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Orders saved during customer hardware consultations awaiting confirmation</p>
+            </div>
+            <button
+              onClick={() => setActiveTab('pos')}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl"
+            >
+              + Create New Draft
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="font-bold text-sm text-white">DRAFT-2026-OCT-094</div>
+                <div className="text-xs text-slate-400">Client: Star Tech Retail Partner (Banani Showroom)</div>
+                <div className="text-xs text-amber-400 mt-1">2x AMD Ryzen 7 7800X3D, 2x MSI MAG B650 Tomahawk WiFi</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-white text-sm mr-2">৳ 144,000</span>
+                <button
+                  onClick={() => {
+                    alert("Draft loaded into POS terminal for final payment processing.");
+                    setActiveTab('pos');
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition"
+                >
+                  Resume in POS
+                </button>
+                <button
+                  onClick={() => alert("Draft DRAFT-2026-OCT-094 deleted.")}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-rose-900/50 text-slate-400 hover:text-rose-400 text-xs rounded-lg transition"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 7: SALES RETURNS */}
+      {/* ============================================================== */}
+      {activeTab === 'returns' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-500" />
+                Customer Sales Returns & Credit Note Issuance
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Customer component returns returned to showroom stock with credit note</p>
+            </div>
+            <button
+              onClick={() => alert("Return slip CN-2026-033 generated. Stock restored to Banani Vault.")}
+              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+            >
+              <span>+ Record Sales Return</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="py-3 px-4">Return # & Date</th>
+                  <th className="py-3 px-3">Customer</th>
+                  <th className="py-3 px-3">Returned Component</th>
+                  <th className="py-3 px-3">Return Reason</th>
+                  <th className="py-3 px-3 text-right">Refund Value (৳)</th>
+                  <th className="py-3 px-4 text-center">Stock Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tr className="hover:bg-slate-800/40">
+                  <td className="py-3 px-4">
+                    <div className="font-mono font-bold text-white">RET-2026-029</div>
+                    <div className="text-[10px] text-slate-400">04/10/2026</div>
+                  </td>
+                  <td className="py-3 px-3 text-slate-200 font-medium">NextGen Tech Solutions</td>
+                  <td className="py-3 px-3 text-white">1x Corsair RM850x 850W Power Supply</td>
+                  <td className="py-3 px-3 text-slate-300">Client ordered incorrect ATX form factor</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-rose-400">৳ 16,500</td>
+                  <td className="py-3 px-4 text-center">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+                      Restocked to Vault ✓
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 8: DISCOUNTS & COUPONS */}
+      {/* ============================================================== */}
+      {activeTab === 'discounts' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-700 mb-4">
+              <div>
+                <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-amber-400" />
+                  Active Discounts & Wholesale Coupon Campaigns
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">Automated discount codes and bulk tier price rules</p>
+              </div>
+              <button
+                onClick={() => alert("Added coupon 'WINTER-TECH-7' with 7% discount across GPUs.")}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Add Coupon Rule</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-amber-400 text-sm">TECH-CLUB-5</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Active</span>
+                </div>
+                <div className="text-xs text-slate-300">5.0% Discount on Orders above ৳100,000</div>
+                <div className="text-[10px] text-slate-400">Valid: 01 Oct 2026 – 31 Dec 2026</div>
+              </div>
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-blue-400 text-sm">CORP-RIG-10</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Active</span>
+                </div>
+                <div className="text-xs text-slate-300">10.0% Discount for Educational / University Labs</div>
+                <div className="text-[10px] text-slate-400">Min. Quantity: 5 Complete Workstation Bundles</div>
+              </div>
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-mono font-bold text-purple-400 text-sm">MULTIPLAN-B2B</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Active</span>
+                </div>
+                <div className="text-xs text-slate-300">৳2,500 Flat Cash Discount on High-End Motherboards</div>
+                <div className="text-[10px] text-slate-400">Eligible: Verified Elephant Road Dealer Network</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 9: IMPORT SALES CSV */}
+      {/* ============================================================== */}
+      {activeTab === 'import' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-xl mx-auto text-center space-y-4">
+          <ShoppingBag className="w-12 h-12 text-blue-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Import Historical Sales via CSV</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Batch import legacy invoices, customer accounts, and sales ledger entries.
+          </p>
+          <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-blue-500 transition">
+            <span className="text-xs text-slate-400">Drag and drop sales_ledger.csv or orders.xlsx here</span>
+          </div>
+          <button 
+            onClick={() => alert("Downloaded sales_import_template.csv")}
+            className="text-xs text-blue-500 hover:underline font-semibold block mx-auto"
+          >
+            Download Sales Import CSV Template
+          </button>
         </div>
       )}
 

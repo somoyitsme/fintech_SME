@@ -2,9 +2,17 @@ import React, { useState } from 'react';
 import { Sliders, Plus, Search, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
-export const StockAdjustmentsPage: React.FC = () => {
+interface StockAdjustmentsPageProps {
+  initialTab?: 'list' | 'add';
+}
+
+export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ initialTab = 'list' }) => {
   const { products, stockAdjustments, createStockAdjustment } = useStore();
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialTab);
+
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const [prodId, setProdId] = useState(products[0]?.id || 'prod-1');
   const [location, setLocation] = useState('Banani Central Vault');
@@ -27,7 +35,7 @@ export const StockAdjustmentsPage: React.FC = () => {
       adjustmentDate: 'Today',
       reason: reason || 'Physical inventory audit adjustment'
     });
-    setShowAddModal(false);
+    setActiveTab('list');
   };
 
   return (
@@ -42,17 +50,103 @@ export const StockAdjustmentsPage: React.FC = () => {
             Audit inventory variances, write-off damaged transit goods, or record physical audit surplus
           </p>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
-          onClick={() => setShowAddModal(true)}
-          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+          onClick={() => setActiveTab('list')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
         >
-          <Plus className="w-4 h-4" />
-          <span>Record Adjustment</span>
+          List Stock Adjustments ({stockAdjustments.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('add')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Add Stock Adjustment
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      {activeTab === 'add' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
+          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <Plus className="w-5 h-5 text-blue-500" />
+            Record Inventory Adjustment
+          </h2>
+          <form onSubmit={handleAdjSubmit} className="space-y-3.5 text-xs">
+            <div>
+              <label className="block text-slate-400 mb-1 font-semibold">Warehouse / Location</label>
+              <select
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+              >
+                <option value="Banani Central Vault">Banani Central Vault</option>
+                <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
+                <option value="IDB Bhaban Agargaon Branch">IDB Bhaban Agargaon Branch</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1 font-semibold">Hardware Product</label>
+              <select
+                value={prodId}
+                onChange={e => setProdId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+              >
+                {products.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} (Stock: {p.stockCount})</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Adjustment Type</label>
+                <select
+                  value={adjType}
+                  onChange={e => setAdjType(e.target.value as any)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                >
+                  <option value="Damaged">Damaged in Transit (-)</option>
+                  <option value="Audit Shortage">Physical Audit Shortage (-)</option>
+                  <option value="Audit Surplus">Audit Surplus (+)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Units Adjusted</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={qty}
+                  onChange={e => setQty(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1 font-semibold">Reason & Audit Reference</label>
+              <input
+                type="text"
+                placeholder="e.g. Minor carton damage during Chittagong to Dhaka port transit"
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow mt-2"
+            >
+              Commit Stock Adjustment
+            </button>
+          </form>
+        </div>
+      )}
+
+      {activeTab === 'list' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
@@ -102,84 +196,8 @@ export const StockAdjustmentsPage: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-700 mb-3">
-              <span className="font-bold text-sm">Add Stock Adjustment</span>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleAdjSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Select Product</label>
-                <select
-                  value={prodId}
-                  onChange={e => setProdId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                >
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (Current: {p.stockCount})</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-400 mb-1">Location</label>
-                  <select
-                    value={location}
-                    onChange={e => setLocation(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white"
-                  >
-                    <option>Banani Central Vault</option>
-                    <option>Multiplan Branch Shelf #M1</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-400 mb-1">Adjustment Type</label>
-                  <select
-                    value={adjType}
-                    onChange={e => setAdjType(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white"
-                  >
-                    <option>Damaged</option>
-                    <option>Audit Shortage</option>
-                    <option>Audit Surplus</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={qty}
-                  onChange={e => setQty(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Audit Reason</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Scratched heat sink during unpacking"
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition"
-              >
-                Apply Inventory Adjustment
-              </button>
-            </form>
-          </div>
-        </div>
       )}
+
     </div>
   );
 };

@@ -71,6 +71,7 @@ export function App() {
       case 'sales-dashboard':
         return (
           <DashboardPage 
+            key="home-dashboard"
             onNavigateTab={setActiveTab} 
             userRole={currentUser.role}
             userName={currentUser.name}
@@ -79,102 +80,124 @@ export function App() {
 
       // 2. User Management & HRM
       case 'users-list':
+      case 'admin-staff':
+        return <HrmStaffPage key="users-list" initialTab="users" />;
       case 'users-roles':
+        return <HrmStaffPage key="users-roles" initialTab="roles" />;
       case 'users-commission':
       case 'hrm-staff':
-      case 'admin-staff':
-        return <HrmStaffPage />;
+        return <HrmStaffPage key="users-commission" initialTab="commission" />;
 
       // 3. Contacts
       case 'contacts-suppliers':
-        return <ContactsPage initialTab="suppliers" onNavigateTab={setActiveTab} />;
+        return <ContactsPage key="contacts-suppliers" initialTab="suppliers" onNavigateTab={setActiveTab} />;
       case 'contacts-customers':
       case 'sales-crm':
-        return <ContactsPage initialTab="customers" onNavigateTab={setActiveTab} />;
+        return <ContactsPage key="contacts-customers" initialTab="customers" onNavigateTab={setActiveTab} />;
       case 'contacts-groups':
-        return <ContactsPage initialTab="groups" onNavigateTab={setActiveTab} />;
+        return <ContactsPage key="contacts-groups" initialTab="groups" onNavigateTab={setActiveTab} />;
       case 'contacts-import':
-        return <ContactsPage initialTab="import" onNavigateTab={setActiveTab} />;
+        return <ContactsPage key="contacts-import" initialTab="import" onNavigateTab={setActiveTab} />;
 
       // 4. Products
       case 'products-list':
       case 'sales-catalog':
-        return <ProductsPage initialTab="list" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-list" initialTab="list" onNavigateTab={setActiveTab} />;
       case 'products-add':
-        return <ProductsPage initialTab="add" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-add" initialTab="add" onNavigateTab={setActiveTab} />;
       case 'products-prices':
-        return <ProductsPage initialTab="list" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-prices" initialTab="prices" onNavigateTab={setActiveTab} />;
       case 'products-labels':
-        return <ProductsPage initialTab="labels" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-labels" initialTab="labels" onNavigateTab={setActiveTab} />;
+      case 'products-variations':
+        return <ProductsPage key="products-variations" initialTab="variations" onNavigateTab={setActiveTab} />;
+      case 'products-import':
+        return <ProductsPage key="products-import" initialTab="import" onNavigateTab={setActiveTab} />;
+      case 'products-units':
+        return <ProductsPage key="products-units" initialTab="units" onNavigateTab={setActiveTab} />;
       case 'products-categories':
-        return <ProductsPage initialTab="categories" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-categories" initialTab="categories" onNavigateTab={setActiveTab} />;
       case 'products-brands':
-        return <ProductsPage initialTab="brands" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-brands" initialTab="brands" onNavigateTab={setActiveTab} />;
       case 'products-warranties':
-        return <ProductsPage initialTab="warranties" onNavigateTab={setActiveTab} />;
+        return <ProductsPage key="products-warranties" initialTab="warranties" onNavigateTab={setActiveTab} />;
 
       // 5. Purchases
       case 'purchases-list':
       case 'admin-suppliers':
-        return <PurchasesPage initialTab="list" onNavigateTab={setActiveTab} />;
+        return <PurchasesPage key="purchases-list" initialTab="list" onNavigateTab={setActiveTab} />;
       case 'purchases-add':
-        return <PurchasesPage initialTab="add" onNavigateTab={setActiveTab} />;
+        return <PurchasesPage key="purchases-add" initialTab="add" onNavigateTab={setActiveTab} />;
       case 'purchases-returns':
-        return <PurchasesPage initialTab="returns" onNavigateTab={setActiveTab} />;
+        return <PurchasesPage key="purchases-returns" initialTab="returns" onNavigateTab={setActiveTab} />;
 
       // 6. Sell & POS
       case 'sell-all':
       case 'sales-orders':
-        return <SellPage initialTab="all" onNavigateTab={setActiveTab} />;
+        return <SellPage key="sell-all" initialTab="all" onNavigateTab={setActiveTab} />;
       case 'sell-add':
       case 'sell-pos':
-      case 'sell-pos-list':
       case 'sales-pos':
-        return <SellPage initialTab="pos" onNavigateTab={setActiveTab} />;
-      case 'sell-shipments':
-        return <SellPage initialTab="shipments" onNavigateTab={setActiveTab} />;
-      case 'sell-quotations':
-        return <SellPage initialTab="quotations" onNavigateTab={setActiveTab} />;
+        return <SellPage key="sell-pos" initialTab="pos" onNavigateTab={setActiveTab} />;
+      case 'sell-pos-list':
+        return <SellPage key="sell-pos-list" initialTab="pos-list" onNavigateTab={setActiveTab} />;
       case 'sell-drafts':
+        return <SellPage key="sell-drafts" initialTab="drafts" onNavigateTab={setActiveTab} />;
+      case 'sell-quotations':
+        return <SellPage key="sell-quotations" initialTab="quotations" onNavigateTab={setActiveTab} />;
       case 'sell-returns':
+        return <SellPage key="sell-returns" initialTab="returns" onNavigateTab={setActiveTab} />;
+      case 'sell-shipments':
+        return <SellPage key="sell-shipments" initialTab="shipments" onNavigateTab={setActiveTab} />;
       case 'sell-discounts':
+        return <SellPage key="sell-discounts" initialTab="discounts" onNavigateTab={setActiveTab} />;
       case 'sell-import':
-        return <SellPage initialTab="all" onNavigateTab={setActiveTab} />;
+        return <SellPage key="sell-import" initialTab="import" onNavigateTab={setActiveTab} />;
 
       // 7. Stock Transfers
       case 'stock-transfers-list':
+        return <StockTransfersPage key="stock-transfers-list" initialTab="list" />;
       case 'stock-transfers-add':
-        return <StockTransfersPage />;
+        return <StockTransfersPage key="stock-transfers-add" initialTab="add" />;
 
       // 8. Stock Adjustment
       case 'stock-adjustments-list':
+        return <StockAdjustmentsPage key="stock-adjustments-list" initialTab="list" />;
       case 'stock-adjustments-add':
-        return <StockAdjustmentsPage />;
+        return <StockAdjustmentsPage key="stock-adjustments-add" initialTab="add" />;
 
       // 9. Expenses
       case 'expenses-list':
+        return <ExpensesPage key="expenses-list" initialTab="list" />;
       case 'expenses-add':
+        return <ExpensesPage key="expenses-add" initialTab="add" />;
       case 'expenses-categories':
-        return <ExpensesPage />;
+        return <ExpensesPage key="expenses-categories" initialTab="categories" />;
 
       // 10. Payment Accounts
       case 'accounts-list':
-      case 'accounts-balancesheet':
-      case 'accounts-trialbalance':
-      case 'accounts-cashflow':
       case 'admin-financials':
-        return <PaymentAccountsPage />;
+        return <PaymentAccountsPage key="accounts-list" initialTab="list" />;
+      case 'accounts-balancesheet':
+        return <PaymentAccountsPage key="accounts-balancesheet" initialTab="balancesheet" />;
+      case 'accounts-trialbalance':
+        return <PaymentAccountsPage key="accounts-trialbalance" initialTab="trialbalance" />;
+      case 'accounts-cashflow':
+        return <PaymentAccountsPage key="accounts-cashflow" initialTab="cashflow" />;
 
       // 11. Reports
       case 'reports-profit-loss':
+        return <ReportsPage key="reports-profit-loss" initialTab="profit-loss" />;
       case 'reports-purchases-sales':
-        return <ReportsPage initialTab="profit-loss" />;
+        return <ReportsPage key="reports-purchases-sales" initialTab="purchases-sales" />;
       case 'reports-tax':
-        return <ReportsPage initialTab="tax" />;
+        return <ReportsPage key="reports-tax" initialTab="tax" />;
       case 'reports-contacts':
+        return <ReportsPage key="reports-contacts" initialTab="contacts" />;
       case 'reports-stock':
+        return <ReportsPage key="reports-stock" initialTab="stock" />;
       case 'reports-trending':
-        return <ReportsPage initialTab="stock" />;
+        return <ReportsPage key="reports-trending" initialTab="trending" />;
 
       // 12. Settings, User Manual & Audit
       case 'notifications-templates':
@@ -192,6 +215,7 @@ export function App() {
       default:
         return (
           <DashboardPage 
+            key="default-dashboard"
             onNavigateTab={setActiveTab} 
             userRole={currentUser.role}
             userName={currentUser.name}

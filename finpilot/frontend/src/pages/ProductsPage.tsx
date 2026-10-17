@@ -18,7 +18,7 @@ import {
 import { useStore, Product } from '../context/StoreContext';
 
 interface ProductsPageProps {
-  initialTab?: 'list' | 'add' | 'prices' | 'labels' | 'categories' | 'brands' | 'warranties';
+  initialTab?: 'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties';
   onNavigateTab?: (tab: string) => void;
 }
 
@@ -27,7 +27,11 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
   onNavigateTab 
 }) => {
   const { products, addStock, addNewProduct } = useStore();
-  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'prices' | 'labels' | 'categories' | 'brands' | 'warranties'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties'>(initialTab);
+
+  React.useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -140,10 +144,34 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
           Add Product
         </button>
         <button
+          onClick={() => setActiveTab('prices')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'prices' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Update Price
+        </button>
+        <button
           onClick={() => setActiveTab('labels')}
           className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'labels' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
         >
-          Print Barcode Labels
+          Print Labels
+        </button>
+        <button
+          onClick={() => setActiveTab('variations')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'variations' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Variations
+        </button>
+        <button
+          onClick={() => setActiveTab('import')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'import' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Import Products
+        </button>
+        <button
+          onClick={() => setActiveTab('units')}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'units' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+        >
+          Units
         </button>
         <button
           onClick={() => setActiveTab('categories')}
@@ -559,6 +587,191 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
             <p className="text-xs text-slate-400 mt-1">
               Applicable to Corsair Vengeance, G.Skill Trident Z5, and Team T-Force desktop DDR4/DDR5 memory modules.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 7: UPDATE PRICE / BULK PRICE TOOL */}
+      {/* ============================================================== */}
+      {activeTab === 'prices' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-400" />
+                Hardware Selling Price Adjuster & Margin Multiplier
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Adjust retail pricing and gross margin markup across inventory</p>
+            </div>
+            <button
+              onClick={() => alert("Batch pricing updates committed successfully across all SKUs!")}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition"
+            >
+              <span>Commit Price Changes</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px]">
+                  <th className="py-2.5 px-4">Product Name & SKU</th>
+                  <th className="py-2.5 px-3">Brand</th>
+                  <th className="py-2.5 px-3 text-right">Cost Price (৳)</th>
+                  <th className="py-2.5 px-3 text-right">Current Retail Price (৳)</th>
+                  <th className="py-2.5 px-3 text-right">Gross Margin</th>
+                  <th className="py-2.5 px-4 text-right">New Retail Price (৳)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {products.slice(0, 10).map((p) => {
+                  const marginPct = Math.round(((p.retailPrice - p.costPrice) / p.retailPrice) * 100);
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-800/40">
+                      <td className="py-2.5 px-4">
+                        <div className="font-bold text-white truncate max-w-[240px]">{p.name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">{p.sku}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-300">{p.brand}</td>
+                      <td className="py-2.5 px-3 text-right font-mono text-slate-400">৳ {p.costPrice.toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-white">৳ {p.retailPrice.toLocaleString()}</td>
+                      <td className="py-2.5 px-3 text-right font-mono text-emerald-400 font-bold">+{marginPct}%</td>
+                      <td className="py-2.5 px-4 text-right">
+                        <input
+                          type="number"
+                          defaultValue={p.retailPrice}
+                          className="w-28 px-2 py-1 text-right bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 8: PRODUCT VARIATIONS */}
+      {/* ============================================================== */}
+      {activeTab === 'variations' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-700 mb-4">
+              <div>
+                <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+                  Product Variation Templates
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">Attributes used for generating SKU matrices (RAM capacities, colors, form factors)</p>
+              </div>
+              <button
+                onClick={() => alert("Added new variation attribute: GPU Cooling Edition (Air Cooled / Liquid AIO)")}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Variation</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="font-bold text-sm text-purple-400">RAM Capacity & Speed</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">16GB DDR5-6000MHz</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">32GB DDR5-6000MHz</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">64GB DDR5-6400MHz</span>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="font-bold text-sm text-blue-400">Chassis Color Edition</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">Matte Stealth Black</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">Arctic White Edition</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">Titanium Silver</span>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                <div className="font-bold text-sm text-emerald-400">Storage Capacity</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">1TB PCIe Gen4 NVMe</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">2TB PCIe Gen4 NVMe</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-xs">4TB PCIe Gen5 NVMe</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 9: IMPORT PRODUCTS */}
+      {/* ============================================================== */}
+      {activeTab === 'import' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-xl mx-auto text-center space-y-4">
+          <Package className="w-12 h-12 text-blue-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Import Products via CSV Spreadsheet</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Bulk upload new computer hardware catalog items, starting stock, and distributor barcodes.
+          </p>
+          <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-blue-500 transition">
+            <span className="text-xs text-slate-400">Drag and drop StarTech format .csv or .xlsx file here</span>
+          </div>
+          <button 
+            onClick={() => alert("Downloaded products_import_template.csv")}
+            className="text-xs text-blue-500 hover:underline font-semibold block mx-auto"
+          >
+            Download Products CSV Format Template
+          </button>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 10: MEASUREMENT UNITS */}
+      {/* ============================================================== */}
+      {activeTab === 'units' && (
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+            <div>
+              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+                <Layers className="w-4 h-4 text-emerald-400" />
+                Measurement Units (UOM)
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Standard wholesale and retail inventory units</p>
+            </div>
+            <button
+              onClick={() => alert("Unit 'Reel / Spool' added successfully")}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Unit</span>
+            </button>
+          </div>
+
+          <div className="divide-y divide-slate-800 text-xs">
+            <div className="py-2.5 flex justify-between items-center text-slate-300">
+              <div>
+                <span className="font-bold text-white">Pieces (Pcs)</span>
+                <span className="text-slate-500 text-[11px] ml-2">Short code: pc</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold">Base Unit (Default)</span>
+            </div>
+            <div className="py-2.5 flex justify-between items-center text-slate-300">
+              <div>
+                <span className="font-bold text-white">Box / Carton (10 Units)</span>
+                <span className="text-slate-500 text-[11px] ml-2">Short code: bx-10</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">Multiplier: x10</span>
+            </div>
+            <div className="py-2.5 flex justify-between items-center text-slate-300">
+              <div>
+                <span className="font-bold text-white">Master Crate (50 Units)</span>
+                <span className="text-slate-500 text-[11px] ml-2">Short code: crt-50</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px]">Multiplier: x50</span>
+            </div>
           </div>
         </div>
       )}
