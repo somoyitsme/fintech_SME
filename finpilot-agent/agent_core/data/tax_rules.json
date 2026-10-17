@@ -1,0 +1,42 @@
+{
+  "BD": {
+    "country_name": "Bangladesh",
+    "corporate_income_tax": {
+      "standard_rate": 0.275,
+      "sme_preferential_rate": {
+        "description": "Manufacturing & ICT trading SMEs with turnover under ৳ 5 Crore enjoy reduced 20% to 22.5% rate under NBR digital trader schemes",
+        "threshold_bdt": 50000000,
+        "effective_rate": 0.20
+      }
+    },
+    "vat_rates": {
+      "computer_hardware_concession": 0.05,
+      "commercial_services": 0.075,
+      "standard_vat": 0.15
+    },
+    "filing_deadlines": {
+      "monthly_vat_return": "15th of each month (Mushak 9.1)",
+      "annual_tax_return": "Tax Day (November 30 / January 15 for corporate entities)",
+      "advance_income_tax_ait": "Quarterly instalments (September 15, December 15, March 15, June 15)"
+    },
+    "deductible_categories": [
+      "Customs Duty & Port Charges", "Showroom Rent & Warehouse Lease",
+      "Sales Staff Payroll & Commission", "Freight, Transport & Courier",
+      "Hardware Warranty Replacement Provisions", "Digital Marketing & Advertising"
+    ]
+  },
+  "CN": {
+    "country_name": "China",
+    "corporate_income_tax": {
+      "standard_rate": 0.25,
+      "small_low_profit_sme": {
+        "threshold_cny": 3000000,
+        "effective_rate": 0.05
+      }
+    },
+    "vat_rates": {
+      "goods_sales_general": 0.13,
+      "modern_services_financial": 0.06
+    }
+  }
+}

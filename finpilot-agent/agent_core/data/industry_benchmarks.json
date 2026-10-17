@@ -1,0 +1,56 @@
+{
+  "food_service": {
+    "industry_name": "Food Service & Restaurant",
+    "gross_margin": { "avg": 0.55, "good": 0.60, "excellent": 0.65 },
+    "net_margin": { "avg": 0.12, "good": 0.15, "excellent": 0.20 },
+    "staff_cost_ratio": { "avg": 0.15, "warning": 0.20, "critical": 0.25 },
+    "rent_ratio": { "avg": 0.10, "warning": 0.15, "critical": 0.20 },
+    "dso_days": 5,
+    "burn_rate_safety_months": 2.5
+  },
+  "Computer Wholesale & Retail": {
+    "industry_name": "Computer Wholesale & Retail Hardware",
+    "gross_margin": { "avg": 0.22, "good": 0.28, "excellent": 0.35 },
+    "net_margin": { "avg": 0.08, "good": 0.11, "excellent": 0.15 },
+    "staff_cost_ratio": { "avg": 0.08, "warning": 0.12, "critical": 0.16 },
+    "rent_ratio": { "avg": 0.05, "warning": 0.08, "critical": 0.12 },
+    "dso_days": 35,
+    "burn_rate_safety_months": 3.5
+  },
+  "retail": {
+    "industry_name": "General Retail & Merchant",
+    "gross_margin": { "avg": 0.32, "good": 0.40, "excellent": 0.48 },
+    "net_margin": { "avg": 0.09, "good": 0.13, "excellent": 0.18 },
+    "staff_cost_ratio": { "avg": 0.12, "warning": 0.16, "critical": 0.20 },
+    "rent_ratio": { "avg": 0.09, "warning": 0.14, "critical": 0.18 },
+    "dso_days": 20,
+    "burn_rate_safety_months": 3.0
+  },
+  "e_commerce": {
+    "industry_name": "E-Commerce & Online Direct-to-Consumer",
+    "gross_margin": { "avg": 0.42, "good": 0.50, "excellent": 0.60 },
+    "net_margin": { "avg": 0.10, "good": 0.14, "excellent": 0.19 },
+    "staff_cost_ratio": { "avg": 0.14, "warning": 0.18, "critical": 0.22 },
+    "rent_ratio": { "avg": 0.04, "warning": 0.07, "critical": 0.10 },
+    "dso_days": 15,
+    "burn_rate_safety_months": 3.5
+  },
+  "manufacturing": {
+    "industry_name": "Light Manufacturing & RMG Accessories",
+    "gross_margin": { "avg": 0.35, "good": 0.42, "excellent": 0.50 },
+    "net_margin": { "avg": 0.11, "good": 0.15, "excellent": 0.21 },
+    "staff_cost_ratio": { "avg": 0.18, "warning": 0.22, "critical": 0.26 },
+    "rent_ratio": { "avg": 0.06, "warning": 0.09, "critical": 0.13 },
+    "dso_days": 45,
+    "burn_rate_safety_months": 4.0
+  },
+  "professional_services": {
+    "industry_name": "Professional IT Services & Agency",
+    "gross_margin": { "avg": 0.60, "good": 0.70, "excellent": 0.80 },
+    "net_margin": { "avg": 0.20, "good": 0.28, "excellent": 0.35 },
+    "staff_cost_ratio": { "avg": 0.35, "warning": 0.45, "critical": 0.55 },
+    "rent_ratio": { "avg": 0.06, "warning": 0.10, "critical": 0.15 },
+    "dso_days": 45,
+    "burn_rate_safety_months": 4.5
+  }
+}
