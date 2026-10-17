@@ -204,18 +204,18 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">ID: {s.id}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <div className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">{s.email}</div>
-                      <div className="text-[10px] text-slate-500">{s.phone}</div>
+                      <div className="text-slate-900 dark:text-slate-200 font-mono text-[11px] font-semibold">{s.email}</div>
+                      <div className="text-[10.5px] text-slate-600 dark:text-slate-400">{s.phone}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold text-[11px] border border-blue-500/20">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold text-[11px] border border-blue-500/20">
                         {s.role}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{s.dept}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-200">৳ {s.baseSalary.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">{s.dept}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">৳ {s.baseSalary.toLocaleString()}</td>
                     <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
                         ● {s.status}
                       </span>
                     </td>

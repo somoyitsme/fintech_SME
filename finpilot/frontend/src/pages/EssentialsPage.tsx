@@ -45,7 +45,7 @@ export const EssentialsPage: React.FC = () => {
             placeholder="Add new operations task..."
             value={newTodo}
             onChange={e => setNewTodo(e.target.value)}
-            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
           />
           <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
             <Plus className="w-4 h-4" />
@@ -60,10 +60,10 @@ export const EssentialsPage: React.FC = () => {
                 onClick={() => toggleTodo(t.id)} 
                 className="flex items-center gap-3 cursor-pointer flex-1"
               >
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${t.done ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-600'}`}>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${t.done ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-400 dark:border-slate-600'}`}>
                   {t.done && <CheckCircle2 className="w-3.5 h-3.5" />}
                 </div>
-                <span className={`${t.done ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}`}>
+                <span className={`${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-200 font-medium'}`}>
                   {t.text}
                 </span>
               </div>
