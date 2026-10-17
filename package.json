@@ -1,0 +1,11 @@
+{
+  "name": "china-finpilot-workspace",
+  "version": "1.0.0",
+  "description": "FinPilot Root Workspace Scripts",
+  "scripts": {
+    "dev": "npm --prefix finpilot/frontend run dev",
+    "build": "npm --prefix finpilot/frontend run build",
+    "backend": "./run_backend.sh",
+    "test": "cd finpilot/backend && .venv/bin/pytest tests/ -v"
+  }
+}
