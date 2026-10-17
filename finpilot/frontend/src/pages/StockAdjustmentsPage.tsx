@@ -56,13 +56,13 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
       <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
           onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           List Stock Adjustments ({stockAdjustments.length})
         </button>
         <button
           onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Add Stock Adjustment
         </button>
@@ -70,17 +70,17 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
 
       {activeTab === 'add' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5 text-blue-500" />
             Record Inventory Adjustment
           </h2>
           <form onSubmit={handleAdjSubmit} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Warehouse / Location</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Warehouse / Location</label>
               <select
                 value={location}
                 onChange={e => setLocation(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Banani Central Vault">Banani Central Vault</option>
                 <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
@@ -88,11 +88,11 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Hardware Product</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Hardware Product</label>
               <select
                 value={prodId}
                 onChange={e => setProdId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {products.map(p => (
                   <option key={p.id} value={p.id}>{p.name} (Stock: {p.stockCount})</option>
@@ -101,11 +101,11 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Adjustment Type</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Adjustment Type</label>
                 <select
                   value={adjType}
                   onChange={e => setAdjType(e.target.value as any)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 >
                   <option value="Damaged">Damaged in Transit (-)</option>
                   <option value="Audit Shortage">Physical Audit Shortage (-)</option>
@@ -113,25 +113,25 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Units Adjusted</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Units Adjusted</label>
                 <input
                   type="number"
                   min="1"
                   required
                   value={qty}
                   onChange={e => setQty(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Reason & Audit Reference</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Reason & Audit Reference</label>
               <input
                 type="text"
                 placeholder="e.g. Minor carton damage during Chittagong to Dhaka port transit"
                 value={reason}
                 onChange={e => setReason(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <button
@@ -149,7 +149,7 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
           <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-3 px-4">Adjustment # & Date</th>
                 <th className="py-3 px-3">Location</th>
                 <th className="py-3 px-3">Product Name</th>
@@ -164,7 +164,7 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
                 <tr key={adj.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3 px-4">
                     <div className="font-bold text-slate-900 dark:text-white text-xs">{adj.adjustmentNumber}</div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">{adj.adjustmentDate}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">{adj.adjustmentDate}</div>
                   </td>
                   <td className="py-3 px-3 text-slate-600 dark:text-slate-300">
                     {adj.location}
@@ -181,13 +181,13 @@ export const StockAdjustmentsPage: React.FC<StockAdjustmentsPageProps> = ({ init
                       {adj.adjustmentType}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-center font-mono font-bold text-white">
+                  <td className="py-3 px-3 text-center font-mono font-bold text-slate-900 dark:text-white">
                     {adj.adjustmentType === 'Audit Surplus' ? `+${adj.quantity}` : `-${adj.quantity}`} Units
                   </td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-slate-200">
+                  <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-200">
                     ৳ {adj.totalValue.toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 text-slate-400 text-[11px] max-w-xs truncate">
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-[11px] max-w-xs truncate">
                     {adj.reason}
                   </td>
                 </tr>

@@ -74,47 +74,47 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#f0f6fc] tracking-tight">Showroom Expenses & Hardware P&L</h1>
-          <p className="text-xs text-[#8b949e] mt-0.5">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Showroom Expenses & Hardware P&L</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Operational expenditures, port import duties, showroom rent, and sales commissions.
           </p>
         </div>
       </div>
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 pb-2 border-b border-[#30363d] text-xs font-bold">
+      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
           onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           List Expenses ({expenses.length})
         </button>
         <button
           onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Add Expense
         </button>
         <button
           onClick={() => setActiveTab('categories')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'categories' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'categories' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Expense Categories
         </button>
       </div>
 
       {activeTab === 'add' && (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5 text-blue-500" />
             Log Operational Hardware Expenditure
           </h2>
           <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Expense Category</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Expense Category</label>
               <select
                 value={cat}
                 onChange={e => setCat(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Import Customs & Port Clearance Duty">Import Customs & Port Clearance Duty</option>
                 <option value="Showroom & Vault Lease / Rent">Showroom & Vault Lease / Rent</option>
@@ -124,34 +124,34 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Vendor / Authority Paid</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Vendor / Authority Paid</label>
               <input
                 type="text"
                 required
                 value={vendor}
                 onChange={e => setVendor(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Amount (৳)</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Amount (৳)</label>
               <input
                 type="number"
                 required
                 min="1"
                 value={amt}
                 onChange={e => setAmt(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Expense Description & Reference</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Expense Description & Reference</label>
               <input
                 type="text"
                 required
                 value={desc}
                 onChange={e => setDesc(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <button
@@ -166,33 +166,33 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
 
       {/* P&L Executive Card */}
       {pnl && (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider">Computer Hardware Trading P&L (YTD)</h2>
-            <span className="text-xs text-[#3fb950] font-semibold bg-[#238636]/15 border border-[#238636]/30 px-2.5 py-0.5 rounded-full">
+            <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Computer Hardware Trading P&L (YTD)</h2>
+            <span className="text-xs text-emerald-600 dark:text-[#3fb950] font-semibold bg-emerald-500/10 dark:bg-[#238636]/15 border border-emerald-500/30 dark:border-[#238636]/30 px-2.5 py-0.5 rounded-full">
               Gross Trade Margin: {pnl.gross_margin_percentage}%
             </span>
           </div>
           <div className="grid grid-cols-5 gap-3.5 text-xs">
-            <div className="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-              <span className="text-[#8b949e] text-[10.5px]">Hardware Revenue</span>
-              <div className="text-sm font-bold text-[#f0f6fc] mt-1 font-mono">৳ {pnl.revenue?.toLocaleString()}</div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Hardware Revenue</span>
+              <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">৳ {pnl.revenue?.toLocaleString()}</div>
             </div>
-            <div className="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-              <span className="text-[#8b949e] text-[10.5px]">Cost of Inventory (COGS)</span>
-              <div className="text-sm font-bold text-[#8b949e] mt-1 font-mono">৳ {pnl.estimated_cogs?.toLocaleString()}</div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Cost of Inventory (COGS)</span>
+              <div className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1 font-mono">৳ {pnl.estimated_cogs?.toLocaleString()}</div>
             </div>
-            <div className="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-              <span className="text-[#8b949e] text-[10.5px]">Gross Trade Profit</span>
-              <div className="text-sm font-bold text-[#58a6ff] mt-1 font-mono">৳ {pnl.gross_profit?.toLocaleString()}</div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Gross Trade Profit</span>
+              <div className="text-sm font-bold text-blue-600 dark:text-[#58a6ff] mt-1 font-mono">৳ {pnl.gross_profit?.toLocaleString()}</div>
             </div>
-            <div className="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-              <span className="text-[#8b949e] text-[10.5px]">Operating Expenses</span>
-              <div className="text-sm font-bold text-[#ff7b72] mt-1 font-mono">৳ {pnl.operating_expenses?.total?.toLocaleString()}</div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Operating Expenses</span>
+              <div className="text-sm font-bold text-rose-600 dark:text-[#ff7b72] mt-1 font-mono">৳ {pnl.operating_expenses?.total?.toLocaleString()}</div>
             </div>
-            <div className="bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-              <span className="text-[#8b949e] text-[10.5px]">Net Operating Income</span>
-              <div className="text-sm font-bold text-[#3fb950] mt-1 font-mono">৳ {pnl.net_income?.toLocaleString()}</div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Net Operating Income</span>
+              <div className="text-sm font-bold text-emerald-600 dark:text-[#3fb950] mt-1 font-mono">৳ {pnl.net_income?.toLocaleString()}</div>
             </div>
           </div>
         </div>
@@ -200,14 +200,14 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
 
       {/* Category Breakdown Chips */}
       {summary && (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
-          <h2 className="text-xs font-bold text-[#f0f6fc] uppercase tracking-wider mb-2.5">Expenses by Hardware Category</h2>
+        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2.5">Expenses by Hardware Category</h2>
           <div className="grid grid-cols-4 gap-2.5">
             {summary.category_breakdown?.map((catItem: any) => (
-              <div key={catItem.category} className="bg-[#0d1117] border border-[#30363d] p-3 rounded-lg text-xs">
-                <div className="text-[#8b949e] text-[10.5px] truncate">{catItem.category}</div>
-                <div className="text-sm font-bold text-[#f0f6fc] mt-1 font-mono">৳ {catItem.amount.toLocaleString()}</div>
-                <div className="text-[10px] text-[#58a6ff] mt-0.5">{catItem.percentage}% of total</div>
+              <div key={catItem.category} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg text-xs">
+                <div className="text-slate-500 dark:text-slate-400 text-[10.5px] truncate">{catItem.category}</div>
+                <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">৳ {catItem.amount.toLocaleString()}</div>
+                <div className="text-[10px] text-blue-600 dark:text-[#58a6ff] mt-0.5">{catItem.percentage}% of total</div>
               </div>
             ))}
           </div>
@@ -215,9 +215,9 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
       )}
 
       {/* Expenses Table */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs text-[#c9d1d9]">
-          <thead className="bg-[#1c2128] text-[#8b949e] uppercase tracking-wider text-[10px] border-b border-[#30363d]">
+      <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-700 font-bold">
             <tr>
               <th className="py-2.5 px-4">Date</th>
               <th className="py-2.5 px-4">Expense Category</th>
@@ -227,23 +227,23 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
               <th className="py-2.5 px-4 text-right">Amount (BDT)</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#30363d]">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
             {expenses.map((e) => (
-              <tr key={e.id} className="hover:bg-[#1c2128]/50 transition">
-                <td className="py-3 px-4 text-[#8b949e]">{e.date.slice(0, 10)}</td>
-                <td className="py-3 px-4 font-semibold text-[#f0f6fc]">{e.category}</td>
-                <td className="py-3 px-4 text-[#c9d1d9]">{e.vendor}</td>
-                <td className="py-3 px-4 text-[#8b949e] max-w-xs truncate">{e.description}</td>
+              <tr key={e.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+                <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">{e.date.slice(0, 10)}</td>
+                <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">{e.category}</td>
+                <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{e.vendor}</td>
+                <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate">{e.description}</td>
                 <td className="py-3 px-4">
                   {e.tax_deductible ? (
-                    <span className="text-[#3fb950] bg-[#238636]/15 border border-[#238636]/30 px-2 py-0.2 rounded text-[10px] font-semibold">
+                    <span className="text-emerald-600 dark:text-[#3fb950] bg-emerald-500/10 dark:bg-[#238636]/15 border border-emerald-500/30 dark:border-[#238636]/30 px-2 py-0.5 rounded text-[10px] font-semibold">
                       ✓ Deductible
                     </span>
                   ) : (
-                    <span className="text-[#8b949e] text-[10px]">Standard</span>
+                    <span className="text-slate-500 dark:text-slate-400 text-[10px]">Standard</span>
                   )}
                 </td>
-                <td className="py-3 px-4 text-right font-mono font-bold text-[#ff7b72]">
+                <td className="py-3 px-4 text-right font-mono font-bold text-rose-600 dark:text-[#ff7b72]">
                   -৳ {e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </td>
               </tr>
@@ -254,21 +254,21 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
 
       {/* Add Expense Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreate} className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-md p-5 space-y-3.5 text-xs shadow-xl">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-[#f0f6fc] text-sm">Log Hardware Trade Expense</h3>
-              <button type="button" onClick={() => setShowAddModal(false)} className="text-[#8b949e] hover:text-[#f0f6fc] text-base">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleCreate} className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-3.5 text-xs shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Log Hardware Trade Expense</h3>
+              <button type="button" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-base">
                 &times;
               </button>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[#c9d1d9] font-medium">Category</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold">Category</label>
               <select
                 value={cat}
                 onChange={(e) => setCat(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-[#f0f6fc]"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {[
                   'Import Customs & Port Clearance Duty',
@@ -285,46 +285,46 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
             </div>
 
             <div className="space-y-1">
-              <label className="text-[#c9d1d9] font-medium">Vendor / Authority</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold">Vendor / Authority</label>
               <input
                 type="text"
                 value={vendor}
                 onChange={(e) => setVendor(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-[#f0f6fc]"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[#c9d1d9] font-medium">Description</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold">Description</label>
               <input
                 type="text"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-[#f0f6fc]"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[#c9d1d9] font-medium">Amount (BDT)</label>
+              <label className="text-slate-700 dark:text-slate-300 font-semibold">Amount (BDT)</label>
               <input
                 type="number"
                 value={amt}
                 onChange={(e) => setAmt(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-[#f0f6fc] font-mono"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white font-mono focus:outline-none"
               />
             </div>
 
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="pt-2 flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="px-3.5 py-1.5 rounded-lg bg-[#21262d] text-[#8b949e] hover:text-[#f0f6fc]"
+                className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-3.5 py-1.5 rounded-lg bg-[#238636] hover:bg-[#2ea043] text-white font-semibold shadow"
+                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow"
               >
                 Save Expense Entry
               </button>

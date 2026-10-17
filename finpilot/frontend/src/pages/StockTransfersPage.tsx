@@ -55,13 +55,13 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
       <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
           onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           List Stock Transfers ({stockTransfers.length})
         </button>
         <button
           onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Add Stock Transfer
         </button>
@@ -69,17 +69,17 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
 
       {activeTab === 'add' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5 text-blue-500" />
             Create Inter-Branch Stock Transfer
           </h2>
           <form onSubmit={handleTransferSubmit} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Source Warehouse</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Source Warehouse</label>
               <select
                 value={fromLoc}
                 onChange={e => setFromLoc(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Banani Central Vault #B4">Banani Central Vault #B4</option>
                 <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
@@ -87,11 +87,11 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Destination Showroom</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Destination Showroom</label>
               <select
                 value={toLoc}
                 onChange={e => setToLoc(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
                 <option value="Banani Central Vault #B4">Banani Central Vault #B4</option>
@@ -99,11 +99,11 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Product to Transfer</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product to Transfer</label>
               <select
                 value={prodId}
                 onChange={e => setProdId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {products.map(p => (
                   <option key={p.id} value={p.id}>{p.name} (Available: {p.stockCount})</option>
@@ -111,24 +111,24 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Units to Transfer</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Units to Transfer</label>
               <input
                 type="number"
                 min="1"
                 required
                 value={qty}
                 onChange={e => setQty(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Transit Challan Notes</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Transit Challan Notes</label>
               <input
                 type="text"
                 placeholder="e.g. Replenish weekend showroom display counter"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <button
@@ -146,7 +146,7 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
           <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                 <th className="py-3 px-4">Transfer # & Date</th>
                 <th className="py-3 px-3">Hardware Product</th>
                 <th className="py-3 px-3">From Location</th>

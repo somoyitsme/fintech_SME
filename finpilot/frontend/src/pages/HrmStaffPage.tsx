@@ -153,26 +153,26 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
       <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'users' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'users' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           All Users ({usersList.length})
         </button>
         <button
           onClick={() => setActiveTab('roles')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'roles' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'roles' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Roles & Permissions Matrix
         </button>
         <button
           onClick={() => setActiveTab('commission')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'commission' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'commission' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Sales Commission Agents (2.0%)
         </button>
       </div>
 
       {payoutNotification && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs flex items-center gap-2 animate-fadeIn">
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 animate-fadeIn font-semibold">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{payoutNotification}</span>
         </div>
@@ -186,7 +186,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">User Name</th>
                   <th className="py-3 px-3">Email & Contact</th>
                   <th className="py-3 px-3">Role & Title</th>
@@ -200,29 +200,29 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                 {usersList.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4">
-                      <div className="font-bold text-white text-xs">{s.name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">ID: {s.id}</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">{s.name}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">ID: {s.id}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <div className="text-slate-300 font-mono text-[11px]">{s.email}</div>
+                      <div className="text-slate-700 dark:text-slate-300 font-mono text-[11px]">{s.email}</div>
                       <div className="text-[10px] text-slate-500">{s.phone}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 font-semibold text-[11px] border border-blue-500/20">
+                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold text-[11px] border border-blue-500/20">
                         {s.role}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-slate-400">{s.dept}</td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-300">৳ {s.baseSalary.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{s.dept}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-200">৳ {s.baseSalary.toLocaleString()}</td>
                     <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                         ● {s.status}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button 
                         onClick={() => alert(`User permissions and login details for ${s.name} are active.`)}
-                        className="p-1 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition"
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
                         title="Edit User"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -242,13 +242,13 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
       {activeTab === 'roles' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
               <div>
-                <h2 className="font-bold text-white text-sm flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
                   Role-Based Access Control (RBAC) Permissions Matrix
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">Toggle fine-grained permissions for each user role</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Toggle fine-grained permissions for each user role</p>
               </div>
               <button
                 onClick={() => {
@@ -263,7 +263,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
             </div>
 
             {roleSaveSuccess && (
-              <div className="mb-4 p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs flex items-center gap-2">
+              <div className="mb-4 p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 font-semibold">
                 <Check className="w-4 h-4" />
                 <span>Role permission changes saved to system security configuration!</span>
               </div>
@@ -272,7 +272,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                     <th className="py-3 px-4">Role Title</th>
                     <th className="py-3 px-3 text-center">View Sales</th>
                     <th className="py-3 px-3 text-center">Create Invoice</th>
@@ -285,10 +285,10 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {roles.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-800/40 transition">
+                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                       <td className="py-3 px-4">
-                        <div className="font-bold text-white text-xs">{r.name}</div>
-                        <div className="text-[10px] text-slate-400">{r.description}</div>
+                        <div className="font-bold text-slate-900 dark:text-white text-xs">{r.name}</div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400">{r.description}</div>
                       </td>
                       {['viewSales', 'createSales', 'viewCostPrice', 'approvePO', 'adjustStock', 'manageUsers', 'viewFinancials'].map((perm) => (
                         <td key={perm} className="py-3 px-3 text-center">
@@ -296,7 +296,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                             type="checkbox"
                             checked={(r.permissions as any)[perm]}
                             onChange={() => handleTogglePermission(r.id, perm)}
-                            className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
+                            className="w-4 h-4 rounded text-blue-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus:ring-0 cursor-pointer"
                           />
                         </td>
                       ))}
@@ -315,17 +315,17 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
       {activeTab === 'commission' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
               <div>
-                <h2 className="font-bold text-white text-sm flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-400" />
+                <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-500" />
                   Monthly Sales Commission Ledger (2.0% Incentive Policy)
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">Calculated automatically on confirmed wholesale hardware shipments</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Calculated automatically on confirmed wholesale hardware shipments</p>
               </div>
               <div className="text-right">
-                <div className="text-[10px] text-slate-400 uppercase font-bold">Total Commission Accrued</div>
-                <div className="text-base font-extrabold text-emerald-400 font-mono">
+                <div className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Total Commission Accrued</div>
+                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
                   ৳ {(metrics.salesmanCommission + 14700).toLocaleString()}
                 </div>
               </div>
@@ -334,7 +334,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                     <th className="py-3 px-4">Sales Agent</th>
                     <th className="py-3 px-3">Target / Branch</th>
                     <th className="py-3 px-3 text-right">Closed Sales (৳)</th>
@@ -343,16 +343,16 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                     <th className="py-3 px-4 text-center">Settlement Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  <tr className="hover:bg-slate-800/40 transition">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4">
-                      <div className="font-bold text-white">Tanvir Ahmed</div>
-                      <div className="text-[10px] text-slate-400">Senior Wholesale Lead</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">Tanvir Ahmed</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">Senior Wholesale Lead</div>
                     </td>
-                    <td className="py-3 px-3 text-slate-300">Multiplan & Corporate Accounts</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-white">৳ {Math.round(metrics.totalSales * 0.65).toLocaleString()}</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-400">৳ {metrics.salesmanCommission.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Multiplan & Corporate Accounts</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ {Math.round(metrics.totalSales * 0.65).toLocaleString()}</td>
+                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
+                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ {metrics.salesmanCommission.toLocaleString()}</td>
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handlePayCommission('Tanvir Ahmed', metrics.salesmanCommission)}
@@ -363,15 +363,15 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                       </button>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-800/40 transition">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4">
-                      <div className="font-bold text-white">Sabbir Hossain</div>
-                      <div className="text-[10px] text-slate-400">RMA & Custom Rig Specialist</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">Sabbir Hossain</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">RMA & Custom Rig Specialist</div>
                     </td>
-                    <td className="py-3 px-3 text-slate-300">Banani Tech Lab & Walk-in High End</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-white">৳ 425,000</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-400">৳ 8,500</td>
+                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Banani Tech Lab & Walk-in High End</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ 425,000</td>
+                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
+                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ 8,500</td>
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handlePayCommission('Sabbir Hossain', 8500)}
@@ -382,15 +382,15 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                       </button>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-800/40 transition">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4">
-                      <div className="font-bold text-white">Fahim Chowdhury</div>
-                      <div className="text-[10px] text-slate-400">Logistics & E-Commerce Fulfillment</div>
+                      <div className="font-bold text-slate-900 dark:text-white text-xs">Fahim Chowdhury</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">Logistics & E-Commerce Fulfillment</div>
                     </td>
-                    <td className="py-3 px-3 text-slate-300">Pathao / Steadfast Dispatch Desk</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-white">৳ 310,000</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-400">৳ 6,200</td>
+                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Pathao / Steadfast Dispatch Desk</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ 310,000</td>
+                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
+                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ 6,200</td>
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handlePayCommission('Fahim Chowdhury', 6200)}
@@ -410,57 +410,57 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
 
       {/* Add User Modal */}
       {showAddUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
             <button
               onClick={() => setShowAddUserModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-500" />
               Register New System User
             </h2>
             <form onSubmit={handleAddUser} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Full Name</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Arifur Rahman"
                   value={newUserName}
                   onChange={e => setNewUserName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Corporate Email</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Corporate Email</label>
                 <input
                   type="email"
                   placeholder="e.g. arif@dhakasilicon.com"
                   value={newUserEmail}
                   onChange={e => setNewUserEmail(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Mobile Number</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Mobile Number</label>
                 <input
                   type="text"
                   placeholder="e.g. +880 1711-123456"
                   value={newUserPhone}
                   onChange={e => setNewUserPhone(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Assigned Role</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Assigned Role</label>
                   <select
                     value={newUserRole}
                     onChange={e => setNewUserRole(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                   >
                     <option value="Showroom Manager">Showroom Manager</option>
                     <option value="Sales Executive">Sales Executive</option>
@@ -470,12 +470,12 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Base Salary (৳)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Base Salary (৳)</label>
                   <input
                     type="number"
                     value={newUserSalary}
                     onChange={e => setNewUserSalary(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>

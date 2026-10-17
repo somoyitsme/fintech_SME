@@ -72,25 +72,25 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
         <button
           onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           List Accounts ({accounts.length})
         </button>
         <button
           onClick={() => setActiveTab('balancesheet')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'balancesheet' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'balancesheet' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Balance Sheet
         </button>
         <button
           onClick={() => setActiveTab('trialbalance')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'trialbalance' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'trialbalance' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Trial Balance
         </button>
         <button
           onClick={() => setActiveTab('cashflow')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'cashflow' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'cashflow' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
         >
           Cash Flow Statement
         </button>
@@ -141,18 +141,18 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
             })}
           </div>
 
-          <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-800/40 rounded-2xl p-4 flex items-center justify-between">
+          <div className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
                 <CreditCard className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-xs font-bold text-blue-300">Total Liquid Treasury Balance</div>
-                <div className="text-[11px] text-slate-400">Combined balance across active cash drawers, bank accounts, and merchant wallets</div>
+                <div className="text-xs font-bold text-slate-800 dark:text-blue-300">Total Liquid Treasury Balance</div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-400">Combined balance across active cash drawers, bank accounts, and merchant wallets</div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xl font-black font-mono text-white">৳ {totalLiquidity.toLocaleString()}</div>
+              <div className="text-xl font-black font-mono text-slate-900 dark:text-white">৳ {totalLiquidity.toLocaleString()}</div>
             </div>
           </div>
         </div>
@@ -163,40 +163,40 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'balancesheet' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-3xl mx-auto space-y-6">
-          <div className="text-center pb-4 border-b border-slate-700">
-            <h2 className="text-base font-extrabold text-white tracking-wide">DHAKA SILICON & HARDWARE LTD.</h2>
-            <div className="text-xs font-bold text-blue-400 uppercase tracking-widest mt-0.5">BALANCE SHEET STATEMENT</div>
-            <div className="text-xs text-slate-400 mt-1">As of October 17, 2026 (Currency: BDT ৳)</div>
+          <div className="text-center pb-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white tracking-wide">DHAKA SILICON & HARDWARE LTD.</h2>
+            <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mt-0.5">BALANCE SHEET STATEMENT</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">As of October 17, 2026 (Currency: BDT ৳)</div>
           </div>
 
           {/* ASSETS */}
           <div className="space-y-2 text-xs">
-            <div className="font-extrabold text-emerald-400 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-1">
+            <div className="font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800 pb-1">
               CURRENT ASSETS
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cash in Hand (Counter Drawers):</span>
-              <span className="font-mono text-white">৳ {accounts.find(a => a.accountType === 'Cash Drawer')?.balance.toLocaleString() || '142,500'}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {accounts.find(a => a.accountType === 'Cash Drawer')?.balance.toLocaleString() || '142,500'}</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cash at Banks (City Bank & BRAC Bank Corporate):</span>
-              <span className="font-mono text-white">৳ 2,127,500</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ 2,127,500</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>bKash Merchant Gateway Settlement Account:</span>
-              <span className="font-mono text-white">৳ 385,000</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ 385,000</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Accounts Receivable (Wholesale Corporate Due):</span>
-              <span className="font-mono text-white">৳ {metrics.accountReceivable.toLocaleString()}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {metrics.accountReceivable.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Hardware Stock Merchandise Inventory (At Cost):</span>
-              <span className="font-mono text-white">৳ {metrics.stockPurchasePrice.toLocaleString()}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {metrics.stockPurchasePrice.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-2 border-t border-slate-700 font-bold text-white text-sm">
+            <div className="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-sm">
               <span>TOTAL CURRENT ASSETS:</span>
-              <span className="font-mono text-emerald-400">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">
                 ৳ {(totalLiquidity + metrics.accountReceivable + metrics.stockPurchasePrice).toLocaleString()}
               </span>
             </div>
@@ -204,37 +204,37 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
 
           {/* LIABILITIES & EQUITY */}
           <div className="space-y-2 text-xs pt-2">
-            <div className="font-extrabold text-rose-400 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-1">
+            <div className="font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800 pb-1">
               CURRENT LIABILITIES
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Accounts Payable (Distributor POs Due):</span>
-              <span className="font-mono text-white">৳ {metrics.accountPayable.toLocaleString()}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {metrics.accountPayable.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Accrued Port Customs Duty & Freight Charges:</span>
-              <span className="font-mono text-white">৳ 125,000</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ 125,000</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>NBR 5% Sales VAT Payable:</span>
-              <span className="font-mono text-white">৳ {Math.round(metrics.totalSales * 0.05).toLocaleString()}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {Math.round(metrics.totalSales * 0.05).toLocaleString()}</span>
             </div>
 
-            <div className="font-extrabold text-purple-400 uppercase tracking-wider text-[11px] border-b border-slate-800 pb-1 pt-3">
+            <div className="font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800 pb-1 pt-3">
               EQUITY & RETAINED EARNINGS
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Paid-in Owner Capital:</span>
-              <span className="font-mono text-white">৳ 5,000,000</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ 5,000,000</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cumulative Retained Earnings (5-Month Net Profit):</span>
-              <span className="font-mono text-white">৳ {metrics.netProfit.toLocaleString()}</span>
+              <span className="font-mono font-bold text-slate-900 dark:text-white">৳ {metrics.netProfit.toLocaleString()}</span>
             </div>
 
-            <div className="flex justify-between py-2 border-t border-slate-700 font-bold text-white text-sm pt-3">
+            <div className="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white text-sm pt-3">
               <span>TOTAL LIABILITIES & EQUITY:</span>
-              <span className="font-mono text-blue-400">
+              <span className="font-mono text-blue-600 dark:text-blue-400 font-black">
                 ৳ {(totalLiquidity + metrics.accountReceivable + metrics.stockPurchasePrice).toLocaleString()}
               </span>
             </div>
@@ -247,12 +247,12 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'trialbalance' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-700">
+          <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700">
             <div>
-              <h2 className="font-bold text-white text-sm">Trial Balance Summary (NBR Compliance)</h2>
-              <p className="text-xs text-slate-400">Double-entry audit verification ensuring debits equal credits</p>
+              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Trial Balance Summary (NBR Compliance)</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Double-entry audit verification ensuring debits equal credits</p>
             </div>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono text-xs font-bold">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold border border-emerald-500/20">
               Status: In Balance ✓
             </span>
           </div>
@@ -260,7 +260,7 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px]">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px]">
                   <th className="py-2.5 px-4">Account Code & Title</th>
                   <th className="py-2.5 px-3">Category</th>
                   <th className="py-2.5 px-4 text-right">Debit Balance (৳)</th>
@@ -268,35 +268,35 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                <tr className="hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 font-bold text-white">1010 - Cash & Bank Liquidity</td>
-                  <td className="py-2.5 px-3 text-slate-400">Current Asset</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400">৳ {totalLiquidity.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-slate-500">―</td>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">1010 - Cash & Bank Liquidity</td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Current Asset</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">৳ {totalLiquidity.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-slate-400">―</td>
                 </tr>
-                <tr className="hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 font-bold text-white">1020 - Accounts Receivable (Trade Debtors)</td>
-                  <td className="py-2.5 px-3 text-slate-400">Current Asset</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400">৳ {metrics.accountReceivable.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-slate-500">―</td>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">1020 - Accounts Receivable (Trade Debtors)</td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Current Asset</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">৳ {metrics.accountReceivable.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-slate-400">―</td>
                 </tr>
-                <tr className="hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 font-bold text-white">1030 - Merchandise Inventory (At Cost)</td>
-                  <td className="py-2.5 px-3 text-slate-400">Inventory Asset</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400">৳ {metrics.stockPurchasePrice.toLocaleString()}</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-slate-500">―</td>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">1030 - Merchandise Inventory (At Cost)</td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Inventory Asset</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">৳ {metrics.stockPurchasePrice.toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-slate-400">―</td>
                 </tr>
-                <tr className="hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 font-bold text-white">2010 - Accounts Payable (Trade Creditors)</td>
-                  <td className="py-2.5 px-3 text-slate-400">Current Liability</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-slate-500">―</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-rose-400">৳ {metrics.accountPayable.toLocaleString()}</td>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">2010 - Accounts Payable (Trade Creditors)</td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Current Liability</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-slate-400">―</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-rose-600 dark:text-rose-400 font-bold">৳ {metrics.accountPayable.toLocaleString()}</td>
                 </tr>
-                <tr className="hover:bg-slate-800/40">
-                  <td className="py-2.5 px-4 font-bold text-white">3010 - Share Capital & Retained Reserves</td>
-                  <td className="py-2.5 px-3 text-slate-400">Owner Equity</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-slate-500">―</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-rose-400">৳ {(totalLiquidity + metrics.accountReceivable + metrics.stockPurchasePrice - metrics.accountPayable).toLocaleString()}</td>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-2.5 px-4 font-bold text-slate-900 dark:text-white">3010 - Share Capital & Retained Reserves</td>
+                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">Owner Equity</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-slate-400">―</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-rose-600 dark:text-rose-400 font-bold">৳ {(totalLiquidity + metrics.accountReceivable + metrics.stockPurchasePrice - metrics.accountPayable).toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
@@ -309,47 +309,47 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'cashflow' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-2xl mx-auto space-y-4">
-          <div className="text-center pb-3 border-b border-slate-700">
-            <h2 className="text-base font-extrabold text-white">STATEMENT OF CASH FLOWS</h2>
-            <div className="text-xs text-slate-400">5-Month Cash Receipts & Disbursements (May – Oct 2026)</div>
+          <div className="text-center pb-3 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white">STATEMENT OF CASH FLOWS</h2>
+            <div className="text-xs text-slate-500 dark:text-slate-400">5-Month Cash Receipts & Disbursements (May – Oct 2026)</div>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="font-bold text-emerald-400 uppercase text-[11px] border-b border-slate-800 pb-1">
+            <div className="font-bold text-emerald-600 dark:text-emerald-400 uppercase text-[11px] border-b border-slate-200 dark:border-slate-800 pb-1">
               1. CASH FLOWS FROM OPERATING ACTIVITIES
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cash Receipts from Hardware Customers:</span>
-              <span className="font-mono text-emerald-400">+ ৳ {(metrics.totalSales - metrics.accountReceivable).toLocaleString()}</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">+ ৳ {(metrics.totalSales - metrics.accountReceivable).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cash Paid to Global Suppliers (ASUS, Intel, Zotac):</span>
-              <span className="font-mono text-rose-400">- ৳ {(metrics.totalPurchase - metrics.accountPayable).toLocaleString()}</span>
+              <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">- ৳ {(metrics.totalPurchase - metrics.accountPayable).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Cash Paid for Customs Duty, Port Clearance & Logistics:</span>
-              <span className="font-mono text-rose-400">- ৳ {metrics.totalExpense.toLocaleString()}</span>
+              <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">- ৳ {metrics.totalExpense.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between py-1.5 border-t border-slate-700 font-bold text-white">
+            <div className="flex justify-between py-1.5 border-t border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
               <span>Net Cash from Operating Activities:</span>
-              <span className="font-mono text-emerald-400">+ ৳ 1,248,500</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">+ ৳ 1,248,500</span>
             </div>
 
-            <div className="font-bold text-blue-400 uppercase text-[11px] border-b border-slate-800 pb-1 pt-2">
+            <div className="font-bold text-blue-600 dark:text-blue-400 uppercase text-[11px] border-b border-slate-200 dark:border-slate-800 pb-1 pt-2">
               2. CASH FLOWS FROM INVESTING & FINANCING
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Capital Expenditure (Showroom Vault Security Setup):</span>
-              <span className="font-mono text-rose-400">- ৳ 150,000</span>
+              <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">- ৳ 150,000</span>
             </div>
-            <div className="flex justify-between py-1 text-slate-300">
+            <div className="flex justify-between py-1 text-slate-700 dark:text-slate-300">
               <span>Partner Capital Contribution:</span>
-              <span className="font-mono text-emerald-400">+ ৳ 1,556,500</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">+ ৳ 1,556,500</span>
             </div>
 
-            <div className="flex justify-between py-2 border-t-2 border-slate-600 font-extrabold text-sm text-white pt-3">
+            <div className="flex justify-between py-2 border-t-2 border-slate-300 dark:border-slate-600 font-extrabold text-sm text-slate-900 dark:text-white pt-3">
               <span>NET CASH POSITION AT END OF PERIOD:</span>
-              <span className="font-mono text-emerald-400">৳ {totalLiquidity.toLocaleString()}</span>
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black">৳ {totalLiquidity.toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -358,37 +358,37 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       {/* Transfer Funds Modal */}
       {showTransferModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-6 text-slate-100 shadow-2xl relative">
-            <button onClick={() => setShowTransferModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 text-slate-900 dark:text-slate-100 shadow-2xl relative">
+            <button onClick={() => setShowTransferModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <ArrowUpRight className="w-5 h-5 text-blue-500" />
               Transfer Liquidity Between Accounts
             </h2>
             <form onSubmit={handleTransfer} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">From Account (Source)</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">From Account (Source)</label>
                 <select
                   value={fromAcc}
                   onChange={e => setFromAcc(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.accountName} (৳{a.balance.toLocaleString()})</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">To Account (Destination)</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">To Account (Destination)</label>
                 <select
                   value={toAcc}
                   onChange={e => setToAcc(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.accountName} (৳{a.balance.toLocaleString()})</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Transfer Amount (৳)</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Transfer Amount (৳)</label>
                 <input
                   type="number"
                   required
@@ -396,7 +396,7 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
                   placeholder="e.g. 50000"
                   value={transferAmt}
                   onChange={e => setTransferAmt(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <button

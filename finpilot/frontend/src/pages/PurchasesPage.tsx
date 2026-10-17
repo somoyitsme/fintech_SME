@@ -94,7 +94,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               activeTab === 'list' 
                 ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
             }`}
           >
             <span>All Purchase Orders ({purchaseOrders.length})</span>
@@ -104,7 +104,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               activeTab === 'add' 
                 ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
             }`}
           >
             <span>Add Purchase</span>
@@ -114,7 +114,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
               activeTab === 'returns' 
                 ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'
             }`}
           >
             <span>Purchase Returns (RMA)</span>
@@ -141,7 +141,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">PO Number & Date</th>
                   <th className="py-3 px-3">Supplier Name</th>
                   <th className="py-3 px-3">Hardware Items Summary</th>
@@ -156,7 +156,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                   <tr key={po.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-900 dark:text-white text-xs">{po.poNumber}</div>
-                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{po.orderDate}</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">{po.orderDate}</div>
                     </td>
                     <td className="py-3 px-3 font-semibold text-slate-700 dark:text-slate-300">
                       {po.supplierName}
@@ -173,16 +173,16 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                     <td className="py-3 px-3 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1 ${
                         po.status === 'Received' 
-                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' 
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
                           : po.status === 'Port Customs'
-                          ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse'
-                          : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse'
+                          : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                       }`}>
                         {po.status === 'Received' && <CheckCircle2 className="w-3 h-3" />}
                         {po.status === 'In Transit' && <Truck className="w-3 h-3" />}
                         <span>{po.status}</span>
                       </span>
-                      <div className="text-[9.5px] text-slate-400 mt-0.5 truncate max-w-[120px]">{po.expectedDelivery}</div>
+                      <div className="text-[9.5px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-[120px]">{po.expectedDelivery}</div>
                     </td>
                     <td className="py-3 px-4 text-center">
                       {po.status !== 'Received' ? (
@@ -194,7 +194,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                           <span>Receive Stock</span>
                         </button>
                       ) : (
-                        <span className="text-[11px] text-emerald-400 font-mono">Stock Added ✓</span>
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">Stock Added ✓</span>
                       )}
                     </td>
                   </tr>
@@ -216,17 +216,17 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
           </h2>
           <form onSubmit={handleCreatePOSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Select Supplier</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Select Supplier</label>
               <select
                 value={poSupplier}
                 onChange={e => setPoSupplier(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {suppliers.map(s => <option key={s.id} value={s.name}>{s.name} ({s.country})</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Product to Restock</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product to Restock</label>
               <select
                 value={poProduct}
                 onChange={e => {
@@ -234,42 +234,42 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                   const p = products.find(prod => prod.id === e.target.value);
                   if (p) setPoCost(p.costPrice.toString());
                 }}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {products.map(p => <option key={p.id} value={p.id}>{p.name} (Current Stock: {p.stockCount})</option>)}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Quantity to Order</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Quantity to Order</label>
                 <input
                   type="number"
                   min="1"
                   required
                   value={poQty}
                   onChange={e => setPoQty(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Agreed Unit Cost Price (৳)</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Agreed Unit Cost Price (৳)</label>
                 <input
                   type="number"
                   placeholder="Leave empty for standard cost"
                   value={poCost}
                   onChange={e => setPoCost(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Import Notes & C&F Instructions</label>
+              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Import Notes & C&F Instructions</label>
               <input
                 type="text"
                 placeholder="e.g. Air freight transit via DHL Express to Banani Vault"
                 value={poNotes}
                 onChange={e => setPoNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               />
             </div>
             <button
@@ -287,13 +287,13 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'returns' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
             <div>
-              <h2 className="font-bold text-white text-sm flex items-center gap-2">
+              <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                 <ArrowDownLeft className="w-4 h-4 text-rose-500" />
                 Supplier Purchase Returns & RMA Dispatch
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                 Defective units dispatched back to Singapore / HK distributor authorized service centers
               </p>
             </div>
@@ -309,7 +309,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">RMA # & Date</th>
                   <th className="py-3 px-3">Supplier</th>
                   <th className="py-3 px-3">Item Returned</th>
@@ -319,32 +319,32 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                <tr className="hover:bg-slate-800/40 transition">
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3 px-4">
-                    <div className="font-bold text-white font-mono">RMA-2026-081</div>
-                    <div className="text-[10px] text-slate-400">12/09/2026</div>
+                    <div className="font-bold text-slate-900 dark:text-white font-mono">RMA-2026-081</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">12/09/2026</div>
                   </td>
-                  <td className="py-3 px-3 text-slate-300">ASUS Regional Distribution (Singapore)</td>
-                  <td className="py-3 px-3 text-white">2x ASUS ROG Strix GeForce RTX 4080 Super</td>
-                  <td className="py-3 px-3 text-rose-400">Memory Artifacting on Cold Boot</td>
-                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">৳ 290,000</td>
+                  <td className="py-3 px-3 text-slate-700 dark:text-slate-300">ASUS Regional Distribution (Singapore)</td>
+                  <td className="py-3 px-3 text-slate-900 dark:text-white">2x ASUS ROG Strix GeForce RTX 4080 Super</td>
+                  <td className="py-3 px-3 text-rose-500 dark:text-rose-400">Memory Artifacting on Cold Boot</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">৳ 290,000</td>
                   <td className="py-3 px-4 text-center">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                       ● Replacement Received
                     </span>
                   </td>
                 </tr>
-                <tr className="hover:bg-slate-800/40 transition">
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
                   <td className="py-3 px-4">
-                    <div className="font-bold text-white font-mono">RMA-2026-082</div>
-                    <div className="text-[10px] text-slate-400">28/09/2026</div>
+                    <div className="font-bold text-slate-900 dark:text-white font-mono">RMA-2026-082</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">28/09/2026</div>
                   </td>
-                  <td className="py-3 px-3 text-slate-300">Intel Authorized Distributor (BD Hub)</td>
-                  <td className="py-3 px-3 text-white">1x Intel Core i9-14900K Processor</td>
-                  <td className="py-3 px-3 text-rose-400">Vmin Instability / Crash under Prime95</td>
-                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-400">৳ 62,000</td>
+                  <td className="py-3 px-3 text-slate-700 dark:text-slate-300">Intel Authorized Distributor (BD Hub)</td>
+                  <td className="py-3 px-3 text-slate-900 dark:text-white">1x Intel Core i9-14900K Processor</td>
+                  <td className="py-3 px-3 text-rose-500 dark:text-rose-400">Vmin Instability / Crash under Prime95</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">৳ 62,000</td>
                   <td className="py-3 px-4 text-center">
-                    <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
                       ● Credit Note Reconciled
                     </span>
                   </td>

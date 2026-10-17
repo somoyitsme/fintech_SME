@@ -332,7 +332,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
               Multiplan Center & IDB Bhaban retail partner shops purchasing in bulk cartons with 30-day payment terms.
             </p>
-            <div className="text-xs font-bold text-slate-300">8 Partner Stores Assigned</div>
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">8 Partner Stores Assigned</div>
           </div>
 
           <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
@@ -343,7 +343,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
               Universities, software firms, eSports gaming lounges with corporate purchase requisitions and GST/BIN invoices.
             </p>
-            <div className="text-xs font-bold text-slate-300">4 Accounts Assigned</div>
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">4 Accounts Assigned</div>
           </div>
 
           <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
@@ -354,7 +354,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
               Walk-in PC builders purchasing individual components across Banani Vault showroom counter.
             </p>
-            <div className="text-xs font-bold text-slate-300">3 Showroom Walk-ins</div>
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">3 Showroom Walk-ins</div>
           </div>
         </div>
       )}
@@ -370,7 +370,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
             Bulk upload supplier records, client contacts, and addresses using standard ERP template.
           </p>
           <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-blue-500 transition">
-            <span className="text-xs text-slate-400">Drag and drop .csv file here, or click to browse</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">Drag and drop .csv file here, or click to browse</span>
           </div>
           <button 
             onClick={() => alert("CSV Contacts Template downloaded: contacts_template.csv")}
@@ -384,42 +384,42 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* MODAL: ADD CUSTOMER */}
       {showAddCustomer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-700 mb-3">
-              <span className="font-bold text-sm">Add New Customer</span>
-              <button onClick={() => setShowAddCustomer(false)} className="text-slate-400 hover:text-white">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-900 dark:text-slate-100 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-3">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">Add New Customer</span>
+              <button onClick={() => setShowAddCustomer(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleAddCustSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Company / Customer Name</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Company / Customer Name</label>
                 <input
                   type="text"
                   required
                   value={custName}
                   onChange={e => setCustName(e.target.value)}
                   placeholder="e.g. Computer Source BD"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Phone Number</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Phone Number</label>
                 <input
                   type="text"
                   required
                   value={custPhone}
                   onChange={e => setCustPhone(e.target.value)}
                   placeholder="+880 1711-000000"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Customer Group</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Customer Group</label>
                 <select
                   value={custType}
                   onChange={e => setCustType(e.target.value as any)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 >
                   <option>Wholesale</option>
                   <option>Corporate</option>
@@ -427,18 +427,18 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Delivery Address</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Delivery Address</label>
                 <input
                   type="text"
                   value={custAddress}
                   onChange={e => setCustAddress(e.target.value)}
                   placeholder="e.g. Shop 21, Multiplan Center, Dhaka"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition"
+                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
               >
                 Save Customer
               </button>
@@ -450,70 +450,70 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* MODAL: ADD SUPPLIER */}
       {showAddSupplier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-700 mb-3">
-              <span className="font-bold text-sm">Add New Hardware Supplier</span>
-              <button onClick={() => setShowAddSupplier(false)} className="text-slate-400 hover:text-white">
+          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-900 dark:text-slate-100 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-3">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">Add New Hardware Supplier</span>
+              <button onClick={() => setShowAddSupplier(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <form onSubmit={handleAddSupSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1">Supplier Company Name</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Supplier Company Name</label>
                 <input
                   type="text"
                   required
                   value={supName}
                   onChange={e => setSupName(e.target.value)}
                   placeholder="e.g. Sapphire Technology HK"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-400 mb-1">Contact Person</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Contact Person</label>
                   <input
                     type="text"
                     value={supContact}
                     onChange={e => setSupContact(e.target.value)}
                     placeholder="e.g. David Liu"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Phone</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Phone</label>
                   <input
                     type="text"
                     value={supPhone}
                     onChange={e => setSupPhone(e.target.value)}
                     placeholder="+880 1819-000000"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Product Category</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product Category</label>
                 <input
                   type="text"
                   value={supCategory}
                   onChange={e => setSupCategory(e.target.value)}
                   placeholder="e.g. Graphics Cards & Motherboards"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 mb-1">Address / Hub</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Address / Hub</label>
                 <input
                   type="text"
                   value={supAddress}
                   onChange={e => setSupAddress(e.target.value)}
                   placeholder="e.g. Kowloon, Hong Kong"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition"
+                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
               >
                 Save Supplier
               </button>
