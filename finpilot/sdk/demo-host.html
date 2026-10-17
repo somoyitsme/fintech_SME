@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Third-Party SME Accounting & ERP Host (SDK Demonstration)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0d1117; color: #c9d1d9; }
+    .navbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 16px; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 8px; }
+    .badge { background: rgba(56, 189, 248, 0.15); color: #58a6ff; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid rgba(88, 166, 255, 0.3); }
+    .container { max-width: 1000px; margin: 36px auto; padding: 0 20px; }
+    .card { background: #161b22; border-radius: 12px; border: 1px solid #30363d; padding: 24px; margin-bottom: 24px; }
+    h1 { font-size: 20px; color: #ffffff; margin-bottom: 8px; font-weight: 600; }
+    p { color: #8b949e; font-size: 13px; line-height: 1.6; }
+    .code-box { background: #0d1117; color: #58a6ff; padding: 14px; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin: 16px 0; border: 1px solid #30363d; overflow-x: auto; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+    .kpi { background: #21262d; padding: 16px; border-radius: 8px; border: 1px solid #30363d; }
+    .kpi-title { font-size: 11px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+    .kpi-value { font-size: 18px; font-weight: 700; color: #f0f6fc; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">
+      <span>🏢 External SME Accounting & ERP Portal</span>
+      <span class="badge">FinPilot Decoupled SDK Demo</span>
+    </div>
+    <div style="font-size: 12px; color: #8b949e;">Host Tenant ID: SME-98421</div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h1>Embeddable AI Virtual CFO Demonstration</h1>
+      <p>This simulated portal represents any third-party SME billing software, warehouse management system, or accounting site. Notice how simply embedding our 1-line script tag mounts the full FinPilot Virtual CFO in the bottom right corner without altering any host backend logic!</p>
+      
+      <div class="code-box">
+        &lt;!-- 1-Line FinPilot Standalone Embed Code --&gt;<br/>
+        &lt;script src="/sdk/loader.js" data-api-key="fp_live_testdemo123456789abcdef"&gt;&lt;/script&gt;
+      </div>
+
+      <div class="grid">
+        <div class="kpi">
+          <div class="kpi-title">Host System Open Invoices</div>
+          <div class="kpi-value">5 Corporate Retailers</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-title">Host System Liquid Ledger</div>
+          <div class="kpi-value">৳ 1,850,000 BDT</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-title">FinPilot Autonomous Agent</div>
+          <div class="kpi-value" style="color: #3fb950;">● Connected (Port 8090)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embed FinPilot SDK -->
+  <script src="/sdk/loader.js" data-api-key="fp_live_testdemo123456789abcdef"></script>
+</body>
+</html>
