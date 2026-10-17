@@ -1,0 +1,32 @@
+{
+  "Computer Hardware & Components": {
+    "gross_margin": 0.22,
+    "operating_margin": 0.09,
+    "net_margin": 0.065,
+    "current_ratio": 1.7,
+    "quick_ratio": 1.2,
+    "dso_days": 35,
+    "burn_rate_safety_months": 3.5,
+    "debt_to_equity": 0.8
+  },
+  "Technology": {
+    "gross_margin": 0.58,
+    "operating_margin": 0.18,
+    "net_margin": 0.14,
+    "current_ratio": 2.1,
+    "quick_ratio": 1.8,
+    "dso_days": 45,
+    "burn_rate_safety_months": 4.0,
+    "debt_to_equity": 0.4
+  },
+  "Retail": {
+    "gross_margin": 0.28,
+    "operating_margin": 0.08,
+    "net_margin": 0.05,
+    "current_ratio": 1.4,
+    "quick_ratio": 0.8,
+    "dso_days": 25,
+    "burn_rate_safety_months": 3.0,
+    "debt_to_equity": 1.0
+  }
+}

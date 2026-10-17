@@ -1,0 +1,62 @@
+[
+  {
+    "id": "webank-weiyedai",
+    "name": "WeBank Weiyedai Global SME Credit (微业贷)",
+    "provider": "WeBank (微众银行) FinTech Global Partner",
+    "type": "Unsecured Digital SME Revolving Credit",
+    "max_amount": 5000000,
+    "currency": "BDT",
+    "interest_rate_range": "4.2% - 9.8% APR",
+    "min_annual_revenue": 1000000,
+    "min_operating_months": 12,
+    "collateral_required": false,
+    "approval_speed": "Instant (under 5 minutes)",
+    "description": "Pioneering 100% digital unsecured working capital line. Automatically appraised from your verified computer parts sales invoices and bank ledger cash flows. Zero collateral required.",
+    "ideal_for": "Computer parts distributors and retailers needing immediate revolving liquidity for bulk container hardware imports."
+  },
+  {
+    "id": "hardware-supply-chain-factoring",
+    "name": "IT Hardware Supply Chain Invoice Factoring",
+    "provider": "Commercial Trade Finance Consortium",
+    "type": "Invoice Discounting / AR Liquidity",
+    "max_amount": 8000000,
+    "currency": "BDT",
+    "interest_rate_range": "5.0% - 7.5% APR",
+    "min_annual_revenue": 2000000,
+    "min_operating_months": 6,
+    "collateral_required": false,
+    "approval_speed": "24 - 48 Hours",
+    "description": "Unlock up to 85% immediate cash on pending corporate invoices from major retailers like StarTech, Ryans, and IT solution centers without taking on balance sheet debt.",
+    "ideal_for": "Hardware wholesalers with creditworthy institutional buyers on 30-60 day credit terms."
+  },
+  {
+    "id": "bangladesh-bank-sme-refinance",
+    "name": "SME Digital Innovation & Tech Trader Scheme",
+    "provider": "Partner Commercial Banks (City Bank / BRAC Bank)",
+    "type": "Subsidized SME Working Capital",
+    "max_amount": 10000000,
+    "currency": "BDT",
+    "interest_rate_range": "4.0% - 6.5% APR (Refinance Scheme)",
+    "min_annual_revenue": 3000000,
+    "min_operating_months": 18,
+    "collateral_required": false,
+    "approval_speed": "3 - 5 business days",
+    "description": "Concessional refinancing support for ICT hardware distributors and tech service centers registered with legitimate Trade License and BIN.",
+    "ideal_for": "Established computer hardware import and distribution companies."
+  },
+  {
+    "id": "ecommerce-merchant-cash-flow-line",
+    "name": "PC Builder & E-Commerce Merchant Credit Line",
+    "provider": "Digital Microfinance Consortium",
+    "type": "Revenue-Based Working Capital",
+    "max_amount": 2500000,
+    "currency": "BDT",
+    "interest_rate_range": "6.5% - 10.5% APR",
+    "min_annual_revenue": 500000,
+    "min_operating_months": 6,
+    "collateral_required": false,
+    "approval_speed": "Same Day (Online)",
+    "description": "Flexible daily revolving credit based on online PC component sales velocity through e-commerce and retail counter sales.",
+    "ideal_for": "Retail computer shops preparing for seasonal gaming and university admission PC build demand."
+  }
+]
