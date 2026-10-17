@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinPilot AI Financial Copilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0f172a;
+      color: #f1f5f9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-bottom: 1px solid #334155;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bot-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .bot-meta h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bot-meta p {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      font-weight: 600;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .close-btn:hover {
+      background: #334155;
+      color: #f8fafc;
+    }
+
+    /* Chat Messages Stream */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scroll-behavior: smooth;
+    }
+    .chat-messages::-webkit-scrollbar {
+      width: 5px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    .msg-group {
+      display: flex;
+      flex-direction: column;
+      max-width: 90%;
+    }
+    .msg-group.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .msg-group.agent {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .bubble {
+      padding: 12px 15px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .bubble.user {
+      background: #059669;
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .bubble.agent {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .bubble.agent h3 {
+      font-size: 14px;
+      color: #38bdf8;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .bubble.agent ul {
+      margin-left: 18px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .bubble.agent li {
+      margin-bottom: 4px;
+    }
+    .bubble.agent strong {
+      color: #f8fafc;
+    }
+    .bubble.agent p {
+      margin-bottom: 8px;
+    }
+    .bubble.agent p:last-child {
+      margin-bottom: 0;
+    }
+
+    .msg-tools-chip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .tool-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Prompt Suggestions */
+    .suggestions {
+      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      border-top: 1px solid #1e293b;
+      background: #0b1120;
+      flex-shrink: 0;
+    }
+    .suggestions::-webkit-scrollbar {
+      display: none;
+    }
+    .chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover {
+      background: #334155;
+      color: #f1f5f9;
+      border-color: #059669;
+    }
+
+    /* Input Footer */
+    .footer {
+      padding: 12px 16px;
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .input-box {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #f8fafc;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-box:focus {
+      border-color: #059669;
+    }
+    .send-btn {
+      background: #059669;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .send-btn:hover {
+      background: #10b981;
+    }
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+    .send-btn:disabled {
+      background: #334155;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    /* Typing Dots */
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: #1e293b;
+      border-radius: 12px;
+      width: fit-content;
+      margin-top: 4px;
+      border: 1px solid #334155;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #94a3b8;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="bot-avatar">FP</div>
+      <div class="bot-meta">
+        <h3 id="bot-title">FinPilot Copilot <span class="status-dot"></span></h3>
+        <p id="bot-subtitle">Autonomous Financial Intelligence</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="pill-badge" id="live-runway-badge">Active</span>
+      <button class="close-btn" id="close-widget-btn" title="Close Copilot">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages Stream -->
+  <div class="chat-messages" id="messages-stream"></div>
+
+  <!-- Quick Prompts Chips -->
+  <div class="suggestions">
+    <div class="chip" onclick="sendPrompt('What is our liquid cash balance and runway forecast?')">📊 Cash Runway</div>
+    <div class="chip" onclick="sendPrompt('Show past-due customer invoices that need collection')">📑 Overdue Invoices</div>
+    <div class="chip" onclick="sendPrompt('Check pre-qualification for WeBank Weiyedai credit')">💼 WeBank Credit</div>
+    <div class="chip" onclick="sendPrompt('Can we afford ordering 30 units of new inventory?')">📦 Purchase Affordability</div>
+    <div class="chip" onclick="sendPrompt('Explain Mushak 9.1 VAT deductions and tax shields')">🏛️ Tax Optimization</div>
+  </div>
+
+  <!-- Input Footer -->
+  <div class="footer">
+    <input type="text" id="user-input" class="input-box" placeholder="Ask your AI Financial Copilot..." autocomplete="off">
+    <button id="send-btn" class="send-btn" title="Send query">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    // Extract query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const apiKey = urlParams.get('api_key') || '';
+    const serverUrl = urlParams.get('server') || window.location.origin;
+
+    let conversationId = null;
+    const messagesStream = document.getElementById('messages-stream');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const closeBtn = document.getElementById('close-widget-btn');
+
+    // Notify parent to close
+    closeBtn.addEventListener('click', () => {
+      window.parent.postMessage({ type: 'FINPILOT_CLOSE_WIDGET' }, '*');
+    });
+
+    // Fetch initial configuration & welcome message
+    async function loadWidgetConfig() {
+      try {
+        const res = await fetch(`${serverUrl}/api/v1/widget/config`, {
+          headers: { 'X-API-Key': apiKey }
+        });
+        if (res.ok) {
+          const cfg = await res.json();
+          document.getElementById('bot-title').innerHTML = `${cfg.company_name} AI Copilot <span class="status-dot"></span>`;
+          document.getElementById('bot-subtitle').textContent = `${cfg.industry} • Fractional CFO`;
+          if (cfg.live_summary && cfg.live_summary.runway_months) {
+            document.getElementById('live-runway-badge').textContent = `Runway: ${cfg.live_summary.runway_months} Mo`;
+          }
+          appendAgentMessage(cfg.theme.welcome_message, []);
+        } else {
+          appendAgentMessage("Hello! I am FinPilot, your autonomous AI Financial Copilot. How may I assist your business today?", []);
+        }
+      } catch (err) {
+        appendAgentMessage("Hello! FinPilot AI Copilot is online and ready. How may I assist with your liquidity, collections, or credit lines today?", []);
+      }
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return "";
+      let html = text
+        .replace(/### (.*?)\n/g, '<h3>$1</h3>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code style="background:#0f172a;padding:2px 5px;border-radius:4px;color:#38bdf8;">$1</code>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n- (.*?)/g, '<li>$1</li>');
+
+      html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+      return `<p>${html}</p>`;
+    }
+
+    function appendUserMessage(text) {
+      const group = document.createElement('div');
+      group.className = 'msg-group user';
+      group.innerHTML = `<div class="bubble user">${text}</div>`;
+      messagesStream.appendChild(group);
+      messagesStream.scrollTop = messagesStream.scrollHeight;
+    }
+
+    function appendAgentMessage(text, toolCalls) {
+      const group = document.createElement('div');
+      group.className = 'msg-group agent';
+
+      let toolChips = '';
+      if (toolCalls && toolCalls.length > 0) {
+        const chipsHtml = toolCalls.map(t => `<span class="tool-badge">⚡ ${t.tool}</span>`).join('');
+        toolChips = `<div class="msg-tools-chip">${chipsHtml}</div>`;
+      }
+
+      group.innerHTML = `
+        <div class="bubble agent">
+          ${formatMarkdown(text)}
+          ${toolChips}
+        </div>
+      `;
+      messagesStream.appendChild(group);
+      messagesStream.scrollTop = messagesStream.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const typing = document.createElement('div');
+      typing.id = 'active-typing-indicator';
+      typing.className = 'typing-indicator';
+      typing.innerHTML = `
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      `;
+      messagesStream.appendChild(typing);
+      messagesStream.scrollTop = messagesStream.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('active-typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    async function sendPrompt(text) {
+      if (!text || text.trim() === '') return;
+      appendUserMessage(text);
+      userInput.value = '';
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+      showTypingIndicator();
+
+      try {
+        const response = await fetch(`${serverUrl}/api/v1/widget/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({
+            message: text,
+            conversation_id: conversationId
+          })
+        });
+
+        removeTypingIndicator();
+
+        if (response.ok) {
+          const data = await response.json();
+          conversationId = data.conversation_id;
+          appendAgentMessage(data.content, data.tool_calls || []);
+        } else {
+          appendAgentMessage("⚠️ I encountered a temporary connection issue. Please verify the host server is running and retry.", []);
+        }
+      } catch (err) {
+        removeTypingIndicator();
+        appendAgentMessage("⚠️ Network error while connecting to FinPilot agent core.", []);
+      } finally {
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', () => sendPrompt(userInput.value));
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendPrompt(userInput.value);
+      }
+    });
+
+    // Initialize
+    loadWidgetConfig();
+  </script>
+</body>
+</html>

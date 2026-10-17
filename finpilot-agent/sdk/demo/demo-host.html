@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dhaka Silicon Wholesale Portal — FinPilot SDK Embedded Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b1329;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar {
+      background: #111e38;
+      border-bottom: 1px solid #1e293b;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #162447 0%, #111e38 100%);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    .hero h1 {
+      font-size: 26px;
+      color: #f8fafc;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 800px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #111e38;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .card-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .code-box {
+      background: #070d19;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: monospace;
+      color: #34d399;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="logo">
+      🖥️ Dhaka Silicon & Hardware Ltd. <span class="badge">Third-Party SME ERP</span>
+    </div>
+    <div style="font-size: 13px; color: #94a3b8;">
+      External Host Integration Demo
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="hero">
+      <h1>Universal FinPilot AI Copilot Embedded Demo</h1>
+      <p>
+        This external portal represents a live hardware distributor management system. 
+        Notice that this page has <strong>ZERO AI code</strong> bundled inside it. It embeds the FinPilot Autonomous AI Copilot by loading a single <code>&lt;script&gt;</code> tag from the standalone agent microservice (<code>:8100</code>).
+      </p>
+      <div style="margin-top: 16px;">
+        <div class="code-box">
+&lt;!-- 1-Line Universal FinPilot Integration --&gt;
+&lt;script src="http://localhost:8100/sdk/finpilot-sdk.js" data-api-key="fpk_live_dhaka_silicon"&gt;&lt;/script&gt;
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Bank Balance</div>
+        <div class="card-value">৳ 1,850,000</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Open Receivables (AR)</div>
+        <div class="card-value" style="color: #f59e0b;">৳ 1,240,000</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Liquid Cash Runway</div>
+        <div class="card-value" style="color: #10b981;">2.8 Months</div>
+      </div>
+    </div>
+
+    <div class="hero" style="background:#0f172a;">
+      <h3 style="color:#f8fafc;margin-bottom:8px;">💡 Look at the bottom-right corner!</h3>
+      <p>
+        Click the green floating FinPilot bubble to chat with the Fractional CFO agent. 
+        The agent will dynamically evaluate cash flows, overdue retailer invoices, and pre-approved WeBank digital credit.
+      </p>
+    </div>
+  </div>
+
+  <!-- FinPilot Universal SDK Script Tag -->
+  <script src="/sdk/finpilot-sdk.js" data-api-key="fpk_live_dhaka_silicon"></script>
+</body>
+</html>
