@@ -15,7 +15,10 @@ export interface Supplier {
   updatedAt: string;
 }
 
-export type CreateSupplierInput = Omit<Supplier, 'id' | 'createdAt' | 'updatedAt' | 'totalPurchase' | 'totalDue'>;
+export type CreateSupplierInput = Omit<Supplier, 'id' | 'createdAt' | 'updatedAt' | 'totalPurchase' | 'totalDue'> & {
+  totalPurchase?: number;
+  totalDue?: number;
+};
 export type UpdateSupplierInput = Partial<CreateSupplierInput>;
 
 export const suppliersApi = {

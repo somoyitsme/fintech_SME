@@ -17,7 +17,7 @@ const orderItemSchema = z.object({
 });
 
 const orderSchema = z.object({
-  orderNumber: z.string(),
+  orderNumber: z.string().default(() => `ORD-DS-${Date.now()}`),
   orderType: z.enum(['online', 'offline']).default('offline'),
   customerName: z.string().min(1),
   contactNumber: z.string().default(''),
@@ -41,7 +41,7 @@ const orderSchema = z.object({
     recipientCity: z.string(),
     dispatchedAt: z.string(),
   }).nullable().optional(),
-  orderDate: z.string(),
+  orderDate: z.string().default(() => new Date().toISOString().split('T')[0]),
   salesman: z.string().default(''),
   items: z.array(orderItemSchema).min(1),
 });

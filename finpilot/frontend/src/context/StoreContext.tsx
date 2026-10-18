@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { productsApi, ordersApi, customersApi, expensesApi, suppliersApi, stockApi, accountsApi, analyticsApi } from '../api';
 
 export interface Product {
   id: string;
@@ -3685,6 +3686,98 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('dhaka_silicon_register', JSON.stringify(cashRegister));
   }, [cashRegister]);
 
+  // Synchronize state with db-server if online
+  useEffect(() => {
+    let isMounted = true;
+    const syncWithDbServer = async () => {
+      try {
+        const [dbProducts, dbCustomers, dbOrders, dbExpenses, dbSuppliers] = await Promise.allSettled([
+          productsApi.getAll(),
+          customersApi.getAll(),
+          ordersApi.getAll(),
+          expensesApi.getAll(),
+          suppliersApi.getAll()
+        ]);
+
+        if (!isMounted) return;
+
+        if (dbProducts.status === 'fulfilled' && Array.isArray(dbProducts.value) && dbProducts.value.length > 0) {
+          setProducts(dbProducts.value);
+        }
+        if (dbCustomers.status === 'fulfilled' && Array.isArray(dbCustomers.value) && dbCustomers.value.length > 0) {
+          setCustomers(dbCustomers.value.map(c => ({
+            id: c.id,
+            name: c.name,
+            contactNumber: c.contactNumber,
+            deliveryAddress: c.deliveryAddress,
+            customerType: (c.customerType as any) || 'Retail',
+            binNumber: c.binNumber || undefined,
+            totalPurchases: c.totalPurchases || 0
+          })));
+        }
+        if (dbOrders.status === 'fulfilled' && Array.isArray(dbOrders.value) && dbOrders.value.length > 0) {
+          setOrders(dbOrders.value.map(o => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            orderType: (o.orderType as any) || 'offline',
+            customerName: o.customerName,
+            contactNumber: o.contactNumber,
+            deliveryAddress: o.deliveryAddress,
+            items: (o.items || []).map((i: any) => ({
+              productId: i.productId,
+              name: i.name,
+              sku: i.sku,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+              total: i.total
+            })),
+            itemsSummary: o.itemsSummary,
+            subtotal: o.subtotal,
+            discountAmount: o.discountAmount,
+            discountPercent: o.discountPercent,
+            vatAmount: o.vatAmount,
+            totalAmount: o.totalAmount,
+            paymentMethod: (o.paymentMethod as any) || 'cash',
+            paymentStatus: (o.paymentStatus as any) || 'Paid',
+            status: (o.status as any) || 'Delivered',
+            courier: o.courierProvider ? {
+              provider: (o.courierProvider as any) || 'Pathao',
+              consignmentId: o.courierConsignmentId || '',
+              trackingUrl: o.courierTrackingUrl || '',
+              status: (o.courierStatus as any) || 'Awaiting Rider Pickup',
+              codAmount: o.courierCodAmount || 0,
+              deliveryFee: o.courierDeliveryFee || 0,
+              recipientCity: o.courierRecipientCity || 'Dhaka Metro',
+              dispatchedAt: o.courierDispatchedAt || 'Today'
+            } : null,
+            orderDate: o.orderDate,
+            salesman: o.salesman
+          })));
+        }
+        if (dbExpenses.status === 'fulfilled' && Array.isArray(dbExpenses.value) && dbExpenses.value.length > 0) {
+          setExpenses(dbExpenses.value.map(e => ({
+            id: e.id,
+            category: e.category,
+            amount: e.amount,
+            vendor: e.vendor,
+            description: e.description,
+            date: e.date,
+            paymentMethod: e.paymentMethod,
+            status: (e.status as any) || 'Approved'
+          })));
+        }
+        if (dbSuppliers.status === 'fulfilled' && Array.isArray(dbSuppliers.value) && dbSuppliers.value.length > 0) {
+          setSuppliers(dbSuppliers.value);
+        }
+      } catch (err) {
+        console.warn('FinPilot DB server unreachable, continuing with local store.', err);
+      }
+    };
+
+    syncWithDbServer();
+    return () => { isMounted = false; };
+  }, []);
+
   const openCashRegister = (openingAmount: number) => {
     setCashRegister({
       isOpen: true,
@@ -3706,6 +3799,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (p.id === productId) {
           const newStock = p.stockCount + quantity;
           const updatedCost = unitCost ? unitCost : p.costPrice;
+          productsApi.update(productId, { stockCount: newStock, costPrice: updatedCost }).catch((err: any) => {
+            console.warn('Could not update product stock on db-server:', err);
+          });
           return { ...p, stockCount: newStock, costPrice: updatedCost };
         }
         return p;
@@ -3715,41 +3811,95 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Add a brand new hardware product
   const addNewProduct = (newProdData: Omit<Product, 'id'>) => {
+    const tempId = `prod-${Date.now()}`;
     const newProduct: Product = {
       ...newProdData,
-      id: `prod-${Date.now()}`
+      id: tempId
     };
     setProducts((prev) => [newProduct, ...prev]);
+
+    productsApi.create(newProdData).then((saved: any) => {
+      setProducts((prev) => prev.map(p => p.id === tempId ? { ...p, id: saved.id } : p));
+    }).catch((err: any) => {
+      console.warn('Could not persist product to db-server:', err);
+    });
   };
 
   // Add a new customer to the database
   const addNewCustomer = (newCust: Omit<Customer, 'id'>) => {
+    const tempId = `cust-${Date.now()}`;
     const created: Customer = {
       ...newCust,
-      id: `cust-${Date.now()}`,
+      id: tempId,
       totalPurchases: 0
     };
     setCustomers((prev) => [created, ...prev]);
+
+    customersApi.create({
+      name: newCust.name,
+      contactNumber: newCust.contactNumber,
+      deliveryAddress: newCust.deliveryAddress,
+      customerType: newCust.customerType,
+      binNumber: newCust.binNumber || null,
+    }).then((saved: any) => {
+      setCustomers((prev) => prev.map(c => c.id === tempId ? { ...c, id: saved.id } : c));
+    }).catch((err: any) => {
+      console.warn('Could not persist customer to db-server:', err);
+    });
+
     return created;
   };
 
   // Add a new supplier
   const addSupplier = (newSup: Omit<Supplier, 'id'>) => {
+    const tempId = `sup-${Date.now()}`;
     const created: Supplier = {
       ...newSup,
-      id: `sup-${Date.now()}`
+      id: tempId
     };
     setSuppliers((prev) => [created, ...prev]);
+
+    suppliersApi.create({
+      name: newSup.name,
+      contactPerson: newSup.contactPerson,
+      phone: newSup.phone,
+      email: newSup.email,
+      address: newSup.address,
+      country: newSup.country,
+      category: newSup.category,
+      totalDue: newSup.totalDue,
+    }).then((saved: any) => {
+      setSuppliers((prev) => prev.map(s => s.id === tempId ? { ...s, id: saved.id } : s));
+    }).catch((err: any) => {
+      console.warn('Could not persist supplier to db-server:', err);
+    });
+
     return created;
   };
 
   // Add an expense
   const addExpense = (newExp: Omit<ExpenseRecord, 'id'>) => {
+    const tempId = `exp-${Date.now()}`;
     const created: ExpenseRecord = {
       ...newExp,
-      id: `exp-${Date.now()}`
+      id: tempId
     };
     setExpenses((prev) => [created, ...prev]);
+
+    expensesApi.create({
+      category: newExp.category,
+      amount: newExp.amount,
+      vendor: newExp.vendor,
+      description: newExp.description,
+      date: newExp.date,
+      paymentMethod: newExp.paymentMethod,
+      status: newExp.status,
+    }).then((saved: any) => {
+      setExpenses((prev) => prev.map(e => e.id === tempId ? { ...e, id: saved.id } : e));
+    }).catch((err: any) => {
+      console.warn('Could not persist expense to db-server:', err);
+    });
+
     return created;
   };
 
@@ -3903,6 +4053,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setOrders((prev) => [newOrder, ...prev]);
 
+    ordersApi.create({
+      orderNumber: newOrder.orderNumber,
+      orderType: newOrder.orderType,
+      customerName: newOrder.customerName,
+      contactNumber: newOrder.contactNumber,
+      deliveryAddress: newOrder.deliveryAddress,
+      itemsSummary: newOrder.itemsSummary,
+      subtotal: newOrder.subtotal,
+      discountAmount: newOrder.discountAmount,
+      discountPercent: newOrder.discountPercent,
+      vatAmount: newOrder.vatAmount,
+      totalAmount: newOrder.totalAmount,
+      paymentMethod: newOrder.paymentMethod,
+      paymentStatus: newOrder.paymentStatus,
+      status: newOrder.status,
+      orderDate: new Date().toISOString().split('T')[0],
+      salesman: newOrder.salesman,
+      items: orderItems.map(i => ({
+        productId: i.productId,
+        name: i.name,
+        sku: i.sku,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        total: i.total
+      }))
+    }).then((saved: any) => {
+      setOrders(prev => prev.map(o => o.id === newOrder.id ? { ...o, id: saved.id } : o));
+    }).catch((err: any) => {
+      console.warn('Could not persist order to db-server:', err);
+    });
+
     // If cash payment, update cash register
     if (orderData.paymentMethod === 'cash') {
       setCashRegister(prev => ({
@@ -3919,6 +4100,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
+    ordersApi.update(orderId, { status }).catch((err: any) => {
+      console.warn('Could not update order status on db-server:', err);
+    });
   };
 
   const createPurchaseOrder = (poData: {
@@ -4059,3 +4243,6 @@ export const useStore = () => {
   }
   return context;
 };
+
+export { productsApi, ordersApi, customersApi, expensesApi, suppliersApi, stockApi, accountsApi, analyticsApi };
+

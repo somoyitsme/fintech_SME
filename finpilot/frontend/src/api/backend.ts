@@ -27,7 +27,7 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   return res.json();
 }
 
-export const api = {
+export const backendApi = {
   // Auth
   login: (email: string, password: string) =>
     fetchApi("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),

@@ -43,10 +43,12 @@ export interface Order {
 }
 
 export interface CreateOrderInput {
+  orderNumber?: string;
   orderType?: string;
   customerName: string;
   contactNumber?: string;
   deliveryAddress?: string;
+  itemsSummary?: string;
   subtotal: number;
   discountAmount?: number;
   discountPercent?: number;
@@ -55,12 +57,25 @@ export interface CreateOrderInput {
   paymentMethod?: string;
   paymentStatus?: string;
   status?: string;
-  orderDate: string;
+  courier?: {
+    provider: 'Pathao' | 'Steadfast' | 'RedX' | string;
+    consignmentId: string;
+    trackingUrl: string;
+    status: string;
+    codAmount: number;
+    deliveryFee: number;
+    recipientCity: string;
+    dispatchedAt: string;
+  } | null;
+  orderDate?: string;
   salesman?: string;
   items: Array<{
     productId: string;
+    name: string;
+    sku: string;
     quantity: number;
     unitPrice: number;
+    total: number;
   }>;
 }
 

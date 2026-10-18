@@ -10,7 +10,7 @@ import {
   ArrowRight,
   RefreshCw
 } from 'lucide-react';
-import { api } from '../api';
+import { backendApi as api } from '../api';
 
 interface CopilotChatProps {
   isOpen: boolean;
