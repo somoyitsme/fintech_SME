@@ -168,8 +168,9 @@ export const InvoicesPage: React.FC = () => {
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs text-[#c9d1d9]">
+      <div className="bg-surface border border-boundary-subtle rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+        <table className="enterprise-table w-full text-left text-xs">
           <thead className="bg-[#1c2128] text-[#8b949e] uppercase tracking-wider text-[10px] border-b border-[#30363d]">
             <tr>
               <th className="py-2.5 px-4">Invoice #</th>
@@ -186,33 +187,33 @@ export const InvoicesPage: React.FC = () => {
               const isOverdue = inv.status === 'overdue';
               return (
                 <tr key={inv.id} className="hover:bg-[#1c2128]/50 transition">
-                  <td className="py-3 px-4 font-mono font-semibold text-[#f0f6fc]">
+                  <td className="py-3 px-4 font-mono font-semibold text-content-primary">
                     {inv.invoice_number}
                   </td>
-                  <td className="py-3 px-4 font-medium text-[#f0f6fc]">
+                  <td className="py-3 px-4 font-medium text-content-primary">
                     {inv.client_name}
                   </td>
-                  <td className="py-3 px-4 text-[#8b949e]">
+                  <td className="py-3 px-4 text-content-muted">
                     {inv.issue_date.slice(0, 10)}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={isOverdue ? 'text-[#ff7b72] font-semibold' : 'text-[#c9d1d9]'}>
+                    <span className={isOverdue ? 'text-status-danger font-semibold' : 'text-content-secondary'}>
                       {inv.due_date.slice(0, 10)}
                     </span>
                     {isOverdue && (
-                      <span className="block text-[10px] text-[#ff7b72] font-mono">
+                      <span className="block text-[10px] text-status-danger font-mono">
                         {inv.days_overdue} days past due
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-right font-mono font-semibold text-[#f0f6fc]">
+                  <td className="py-3 px-4 text-right font-mono font-semibold text-content-primary">
                     ৳ {inv.total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] capitalize font-semibold ${
-                      inv.status === 'paid' ? 'bg-[#238636]/15 text-[#3fb950] border border-[#238636]/30' :
-                      inv.status === 'overdue' ? 'bg-[#f85149]/15 text-[#ff7b72] border border-[#f85149]/30' :
-                      'bg-[#388bfd]/15 text-[#58a6ff] border border-[#388bfd]/30'
+                      inv.status === 'paid' ? 'bg-status-successBg text-status-success border border-status-successBorder' :
+                      inv.status === 'overdue' ? 'bg-status-dangerBg text-status-danger border border-status-dangerBorder' :
+                      'bg-status-infoBg text-status-info border border-status-infoBorder'
                     }`}>
                       {inv.status}
                     </span>
@@ -252,6 +253,7 @@ export const InvoicesPage: React.FC = () => {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* AI Payment Reminder Modal */}

@@ -2,18 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { 
   Plus, 
   TrendingDown, 
-  ShieldCheck, 
-  Cpu, 
-  CheckCircle2
+  Receipt,
+  FileText,
+  DollarSign,
+  TrendingUp,
+  Tag
 } from 'lucide-react';
 import { api } from '../api';
+import { Card } from '../components/common/Card';
+import { MetricCard } from '../components/common/MetricCard';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { TabGroup } from '../components/common/TabGroup';
+import { Modal } from '../components/common/Modal';
+import { Input } from '../components/common/Input';
+import { Select } from '../components/common/Select';
+import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
+import { PageHeader } from '../components/common/PageHeader';
 
 interface ExpensesPageProps {
   initialTab?: 'list' | 'add' | 'categories';
 }
 
 export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' }) => {
-  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'categories'>(initialTab);
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [pnl, setPnl] = useState<any>(null);
@@ -63,274 +75,293 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
         tax_deductible: true
       });
       setShowAddModal(false);
+      setActiveTab('list');
       loadData();
     } catch (err: any) {
       alert(`Error creating expense: ${err.message}`);
     }
   };
 
+  const tabs = [
+    { id: 'list', label: `Expenses Log (${expenses.length})` },
+    { id: 'add', label: 'Post Expense' },
+    { id: 'categories', label: 'Category Analysis' }
+  ];
+
+  const totalExpenseVal = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Showroom Expenses & Hardware P&L</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Operational expenditures, port import duties, showroom rent, and sales commissions.
-          </p>
-        </div>
-      </div>
-      {/* Tabs */}
-      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Finance"
+        title="Expenses"
+        description="Record operating expenditure and review its effect on the current profit-and-loss position."
+        actions={<Button
+          variant="brand"
+          size="sm"
+          onClick={() => setShowAddModal(true)}
         >
-          List Expenses ({expenses.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Add Expense
-        </button>
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'categories' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Expense Categories
-        </button>
+          <Plus className="w-4 h-4 mr-1.5" />
+          Log New Expense
+        </Button>}
+      />
+
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-content-secondary">
+        <span><strong className="font-semibold text-content-primary">৳ {totalExpenseVal.toLocaleString()}</strong> recorded expenses</span>
+        <span><strong className="font-semibold text-content-primary">{expenses.length}</strong> entries</span>
+        {pnl && <span><strong className="font-semibold text-content-primary">{pnl.gross_margin_percentage}%</strong> gross margin</span>}
       </div>
 
+      {/* P&L Executive Summary Card */}
+      {pnl && (
+        <Card className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-content-primary uppercase tracking-wider">
+              Computer Hardware Trading P&L (YTD)
+            </h3>
+            <Badge variant="success" size="sm">
+              Gross Margin: {pnl.gross_margin_percentage}%
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <div className="bg-surface-secondary p-3 rounded-xl border border-boundary-subtle">
+              <span className="text-content-muted text-[11px] block">Gross Revenue</span>
+              <div className="text-sm font-bold text-content-primary mt-1 font-tabular">
+                ৳ {pnl.revenue?.toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-surface-secondary p-3 rounded-xl border border-boundary-subtle">
+              <span className="text-content-muted text-[11px] block">Cost of Goods (COGS)</span>
+              <div className="text-sm font-bold text-content-secondary mt-1 font-tabular">
+                ৳ {pnl.estimated_cogs?.toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-surface-secondary p-3 rounded-xl border border-boundary-subtle">
+              <span className="text-content-muted text-[11px] block">Gross Trade Profit</span>
+              <div className="text-sm font-bold text-content-primary mt-1 font-tabular">
+                ৳ {pnl.gross_profit?.toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-surface-secondary p-3 rounded-xl border border-boundary-subtle">
+              <span className="text-content-muted text-[11px] block">Operating Expenses</span>
+              <div className="text-sm font-bold text-status-danger mt-1 font-tabular">
+                ৳ {pnl.operating_expenses?.total?.toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-surface-secondary p-3 rounded-xl border border-boundary-subtle col-span-2 sm:col-span-1">
+              <span className="text-content-muted text-[11px] block">Net Income</span>
+              <div className="text-sm font-bold text-status-success mt-1 font-tabular">
+                ৳ {pnl.net_income?.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Tabs */}
+      <TabGroup
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
+
+      {/* ============================================================== */}
+      {/* TAB 1: EXPENSES TABLE */}
+      {/* ============================================================== */}
+      {activeTab === 'list' && (
+        <DataTable isEmpty={expenses.length === 0} emptyMessage="No expenses recorded yet.">
+          <TableHeader>
+            <tr>
+              <TableHeadCell>Date</TableHeadCell>
+              <TableHeadCell>Category</TableHeadCell>
+              <TableHeadCell>Vendor / Authority</TableHeadCell>
+              <TableHeadCell>Description & Reference</TableHeadCell>
+              <TableHeadCell align="center">Tax Status</TableHeadCell>
+              <TableHeadCell align="right">Amount (৳)</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {expenses.map((e) => (
+              <TableRow key={e.id}>
+                <TableCell className="font-mono text-xs text-content-muted">
+                  {e.date?.slice(0, 10)}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="neutral" size="sm">
+                    {e.category}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium text-content-primary">
+                  {e.vendor}
+                </TableCell>
+                <TableCell className="text-content-secondary max-w-xs truncate text-xs">
+                  {e.description}
+                </TableCell>
+                <TableCell align="center">
+                  {e.tax_deductible ? (
+                    <Badge variant="success" size="sm">
+                      Tax Deductible ✓
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-content-muted">Standard</span>
+                  )}
+                </TableCell>
+                <TableCell align="right" tabular className="font-bold text-status-danger">
+                  - ৳ {e.amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 2: ADD EXPENSE FORM */}
+      {/* ============================================================== */}
       {activeTab === 'add' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-blue-500" />
-            Log Operational Hardware Expenditure
-          </h2>
+        <Card className="p-6 max-w-xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-boundary-subtle">
+            <div className="p-1.5 rounded-lg bg-brand-olive/20 text-brand-dark dark:text-brand-cream">
+              <Plus className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-content-primary">Log Operational Hardware Expenditure</h3>
+              <p className="text-xs text-content-muted">Record rent, utility, port tariff, or sales commission payouts</p>
+            </div>
+          </div>
+
           <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Expense Category</label>
-              <select
+              <label className="block text-xs font-semibold text-content-primary mb-1">Expense Category</label>
+              <Select
                 value={cat}
                 onChange={e => setCat(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Import Customs & Port Clearance Duty">Import Customs & Port Clearance Duty</option>
                 <option value="Showroom & Vault Lease / Rent">Showroom & Vault Lease / Rent</option>
                 <option value="Logistics & Courier Delivery">Logistics & Courier Delivery (Steadfast / Pathao)</option>
                 <option value="Electricity & High-Load Lab Utilities">Electricity & High-Load Lab Utilities</option>
                 <option value="Staff Payroll & Sales Commission">Staff Payroll & Sales Commission</option>
-              </select>
+              </Select>
             </div>
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Vendor / Authority Paid</label>
-              <input
-                type="text"
-                required
-                value={vendor}
-                onChange={e => setVendor(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-              />
+
+            <Input
+              label="Vendor / Authority Paid"
+              required
+              value={vendor}
+              onChange={e => setVendor(e.target.value)}
+            />
+
+            <Input
+              label="Amount (BDT ৳)"
+              type="number"
+              required
+              min="1"
+              value={amt}
+              onChange={e => setAmt(e.target.value)}
+            />
+
+            <Input
+              label="Expense Description & Reference"
+              required
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+            />
+
+            <div className="pt-2 flex justify-end gap-2.5">
+              <Button variant="outline" size="sm" type="button" onClick={() => setActiveTab('list')}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="md" type="submit">
+                Post Expense Entry
+              </Button>
             </div>
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Amount (৳)</label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={amt}
-                onChange={e => setAmt(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Expense Description & Reference</label>
-              <input
-                type="text"
-                required
-                value={desc}
-                onChange={e => setDesc(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow mt-2"
-            >
-              Post Expense Entry
-            </button>
           </form>
-        </div>
+        </Card>
       )}
 
-      {/* P&L Executive Card */}
-      {pnl && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Computer Hardware Trading P&L (YTD)</h2>
-            <span className="text-xs text-emerald-600 dark:text-[#3fb950] font-semibold bg-emerald-500/10 dark:bg-[#238636]/15 border border-emerald-500/30 dark:border-[#238636]/30 px-2.5 py-0.5 rounded-full">
-              Gross Trade Margin: {pnl.gross_margin_percentage}%
-            </span>
+      {/* ============================================================== */}
+      {/* TAB 3: CATEGORY ANALYSIS */}
+      {/* ============================================================== */}
+      {activeTab === 'categories' && summary && (
+        <Card className="p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-content-primary">Hardware Expenditures by Category</h3>
+            <p className="text-xs text-content-muted">Proportional breakdown of operating burn across showroom departments</p>
           </div>
-          <div className="grid grid-cols-5 gap-3.5 text-xs">
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Hardware Revenue</span>
-              <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">৳ {pnl.revenue?.toLocaleString()}</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Cost of Inventory (COGS)</span>
-              <div className="text-sm font-bold text-slate-700 dark:text-slate-300 mt-1 font-mono">৳ {pnl.estimated_cogs?.toLocaleString()}</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Gross Trade Profit</span>
-              <div className="text-sm font-bold text-blue-600 dark:text-[#58a6ff] mt-1 font-mono">৳ {pnl.gross_profit?.toLocaleString()}</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Operating Expenses</span>
-              <div className="text-sm font-bold text-rose-600 dark:text-[#ff7b72] mt-1 font-mono">৳ {pnl.operating_expenses?.total?.toLocaleString()}</div>
-            </div>
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 dark:text-slate-400 text-[10.5px]">Net Operating Income</span>
-              <div className="text-sm font-bold text-emerald-600 dark:text-[#3fb950] mt-1 font-mono">৳ {pnl.net_income?.toLocaleString()}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Category Breakdown Chips */}
-      {summary && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
-          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2.5">Expenses by Hardware Category</h2>
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {summary.category_breakdown?.map((catItem: any) => (
-              <div key={catItem.category} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-lg text-xs">
-                <div className="text-slate-500 dark:text-slate-400 text-[10.5px] truncate">{catItem.category}</div>
-                <div className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono">৳ {catItem.amount.toLocaleString()}</div>
-                <div className="text-[10px] text-blue-600 dark:text-[#58a6ff] mt-0.5">{catItem.percentage}% of total</div>
+              <div key={catItem.category} className="bg-surface-secondary border border-boundary-subtle p-3.5 rounded-xl text-xs space-y-1">
+                <div className="text-content-muted text-[11px] truncate font-medium">{catItem.category}</div>
+                <div className="text-base font-bold text-content-primary font-tabular">
+                  ৳ {catItem.amount.toLocaleString()}
+                </div>
+                <div className="text-[11px] text-brand-ochre font-medium font-mono">
+                  {catItem.percentage}% of total operating burn
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
-
-      {/* Expenses Table */}
-      <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] border-b border-slate-200 dark:border-slate-700 font-bold">
-            <tr>
-              <th className="py-2.5 px-4">Date</th>
-              <th className="py-2.5 px-4">Expense Category</th>
-              <th className="py-2.5 px-4">Vendor / Authority</th>
-              <th className="py-2.5 px-4">Description</th>
-              <th className="py-2.5 px-4">Tax Deductible</th>
-              <th className="py-2.5 px-4 text-right">Amount (BDT)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-            {expenses.map((e) => (
-              <tr key={e.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">{e.date.slice(0, 10)}</td>
-                <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">{e.category}</td>
-                <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{e.vendor}</td>
-                <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate">{e.description}</td>
-                <td className="py-3 px-4">
-                  {e.tax_deductible ? (
-                    <span className="text-emerald-600 dark:text-[#3fb950] bg-emerald-500/10 dark:bg-[#238636]/15 border border-emerald-500/30 dark:border-[#238636]/30 px-2 py-0.5 rounded text-[10px] font-semibold">
-                      ✓ Deductible
-                    </span>
-                  ) : (
-                    <span className="text-slate-500 dark:text-slate-400 text-[10px]">Standard</span>
-                  )}
-                </td>
-                <td className="py-3 px-4 text-right font-mono font-bold text-rose-600 dark:text-[#ff7b72]">
-                  -৳ {e.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
 
       {/* Add Expense Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreate} className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 space-y-3.5 text-xs shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">Log Hardware Trade Expense</h3>
-              <button type="button" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-base">
-                &times;
-              </button>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-slate-700 dark:text-slate-300 font-semibold">Category</label>
-              <select
+        <Modal
+          isOpen={true}
+          onClose={() => setShowAddModal(false)}
+          title="Log Operational Hardware Expenditure"
+          size="md"
+        >
+          <form onSubmit={handleCreate} className="space-y-3.5 text-xs">
+            <div>
+              <label className="block text-xs font-semibold text-content-primary mb-1">Expense Category</label>
+              <Select
                 value={cat}
-                onChange={(e) => setCat(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
+                onChange={e => setCat(e.target.value)}
               >
-                {[
-                  'Import Customs & Port Clearance Duty',
-                  'Sales Team Commission & Salaries',
-                  'Elephant Road Multiplan Showroom Lease',
-                  'Air Freight & Logistics Express',
-                  'Digital Marketing & Facebook Ads',
-                  'Showroom Utilities & High-Speed Fiber',
-                  'Packaging & Anti-Static Bubble Film'
-                ].map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                <option value="Import Customs & Port Clearance Duty">Import Customs & Port Clearance Duty</option>
+                <option value="Showroom & Vault Lease / Rent">Showroom & Vault Lease / Rent</option>
+                <option value="Logistics & Courier Delivery">Logistics & Courier Delivery (Steadfast / Pathao)</option>
+                <option value="Electricity & High-Load Lab Utilities">Electricity & High-Load Lab Utilities</option>
+                <option value="Staff Payroll & Sales Commission">Staff Payroll & Sales Commission</option>
+              </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-slate-700 dark:text-slate-300 font-semibold">Vendor / Authority</label>
-              <input
-                type="text"
-                value={vendor}
-                onChange={(e) => setVendor(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
+            <Input
+              label="Vendor / Authority Paid"
+              required
+              value={vendor}
+              onChange={e => setVendor(e.target.value)}
+            />
 
-            <div className="space-y-1">
-              <label className="text-slate-700 dark:text-slate-300 font-semibold">Description</label>
-              <input
-                type="text"
-                value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
+            <Input
+              label="Amount (BDT ৳)"
+              type="number"
+              required
+              min="1"
+              value={amt}
+              onChange={e => setAmt(e.target.value)}
+            />
 
-            <div className="space-y-1">
-              <label className="text-slate-700 dark:text-slate-300 font-semibold">Amount (BDT)</label>
-              <input
-                type="number"
-                value={amt}
-                onChange={(e) => setAmt(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white font-mono focus:outline-none"
-              />
-            </div>
+            <Input
+              label="Expense Description & Reference"
+              required
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+            />
 
-            <div className="pt-2 flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={() => setShowAddModal(false)}
-                className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
+            <div className="pt-2 flex justify-end gap-2.5">
+              <Button variant="outline" size="sm" type="button" onClick={() => setShowAddModal(false)}>
                 Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow"
-              >
-                Save Expense Entry
-              </button>
+              </Button>
+              <Button variant="primary" size="md" type="submit">
+                Post Expense Entry
+              </Button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

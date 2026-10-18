@@ -162,7 +162,7 @@ export const StaffManagementPage: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="enterprise-table w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-400 font-semibold border-b border-slate-200 dark:border-[#30363d]">
               <tr>
                 <th className="py-3 px-4">Employee Name</th>

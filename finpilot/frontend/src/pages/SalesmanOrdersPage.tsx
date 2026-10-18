@@ -170,7 +170,7 @@ export const SalesmanOrdersPage: React.FC = () => {
       {/* Orders Table */}
       <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="enterprise-table w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-500 dark:text-[#8b949e] font-semibold border-b border-slate-200 dark:border-[#30363d]">
               <tr>
                 <th className="py-3 px-4">Order # & Type</th>

@@ -27,27 +27,26 @@ export const EssentialsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 text-slate-800 dark:text-slate-100 select-none max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <CheckSquare className="w-6 h-6 text-blue-500" />
-          Essentials: To-Do & Store Operations
+    <div className="space-y-5 text-content-primary max-w-2xl">
+      <div className="pb-4 border-b border-boundary-subtle">
+        <p className="text-[11px] uppercase tracking-[0.08em] font-bold text-content-muted mb-1">Administration</p>
+        <h1 className="text-2xl font-bold tracking-tight text-content-primary flex items-center gap-2">
+          <CheckSquare className="w-5 h-5 text-brand-ochreDeep dark:text-brand-ochre" />
+          Operations checklist
         </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Internal operations checklist for showroom management and logistics fulfillment
-        </p>
+        <p className="text-xs text-content-secondary mt-1">A focused checklist for showroom management and logistics follow-up.</p>
       </div>
 
-      <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
+      <div className="bg-surface border border-boundary-subtle rounded-lg p-5 space-y-4">
         <form onSubmit={addTodo} className="flex gap-2">
           <input
             type="text"
             placeholder="Add new operations task..."
             value={newTodo}
             onChange={e => setNewTodo(e.target.value)}
-            className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-surface-secondary border border-boundary-strong rounded-lg px-3 py-2 text-xs text-content-primary focus:outline-none focus:border-brand-ochre"
           />
-          <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-1 shadow">
+          <button type="submit" className="px-4 py-2 bg-brand-ochre hover:bg-brand-ochreDark text-stone-950 font-semibold text-xs rounded-lg transition flex items-center gap-1">
             <Plus className="w-4 h-4" />
             <span>Add</span>
           </button>
@@ -55,19 +54,20 @@ export const EssentialsPage: React.FC = () => {
 
         <div className="space-y-2">
           {todos.map(t => (
-            <div key={t.id} className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs transition">
-              <div 
+            <div key={t.id} className="p-3 bg-surface-secondary/60 border border-boundary-subtle rounded-lg flex items-center justify-between text-xs transition">
+              <button
+                type="button"
                 onClick={() => toggleTodo(t.id)} 
-                className="flex items-center gap-3 cursor-pointer flex-1"
+                className="flex items-center gap-3 text-left flex-1"
               >
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${t.done ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-400 dark:border-slate-600'}`}>
+                <span className={`w-4 h-4 rounded border flex items-center justify-center transition ${t.done ? 'bg-status-success border-status-success text-white' : 'border-boundary-strong'}`}>
                   {t.done && <CheckCircle2 className="w-3.5 h-3.5" />}
-                </div>
-                <span className={`${t.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-200 font-medium'}`}>
+                </span>
+                <span className={`${t.done ? 'line-through text-content-muted' : 'text-content-primary font-medium'}`}>
                   {t.text}
                 </span>
-              </div>
-              <button onClick={() => deleteTodo(t.id)} className="text-slate-500 hover:text-rose-400 p-1">
+              </button>
+              <button type="button" onClick={() => deleteTodo(t.id)} className="text-content-muted hover:text-status-danger p-1" aria-label={`Delete task: ${t.text}`}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>

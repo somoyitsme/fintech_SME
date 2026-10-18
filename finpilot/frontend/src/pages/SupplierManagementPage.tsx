@@ -190,7 +190,7 @@ export const SupplierManagementPage: React.FC = () => {
       {activeTab === 'orders' && (
         <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="enterprise-table w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-400 font-semibold border-b border-slate-200 dark:border-[#30363d]">
                 <tr>
                   <th className="py-3 px-4">PO # & Date</th>
@@ -270,7 +270,7 @@ export const SupplierManagementPage: React.FC = () => {
                 All hardware inventory is well above minimum stock safety thresholds.
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
+              <table className="enterprise-table w-full text-left text-xs">
                 <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-400 font-semibold border-b border-slate-200 dark:border-[#30363d]">
                   <tr>
                     <th className="py-3 px-4">Hardware Component</th>

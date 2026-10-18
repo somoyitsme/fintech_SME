@@ -1,20 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Users, 
-  Building2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Plus, 
-  Search, 
-  ExternalLink, 
-  DollarSign, 
-  CheckCircle2, 
-  X,
-  CreditCard,
-  FileSpreadsheet
-} from 'lucide-react';
-import { useStore, Customer, Supplier } from '../context/StoreContext';
+import { Plus, Search, FileSpreadsheet, ArrowUpRight } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
+import { Card } from '../components/common/Card';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { TabGroup } from '../components/common/TabGroup';
+import { Modal } from '../components/common/Modal';
+import { Input } from '../components/common/Input';
+import { Select } from '../components/common/Select';
+import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
+import { PageHeader } from '../components/common/PageHeader';
 
 interface ContactsPageProps {
   initialTab?: 'suppliers' | 'customers' | 'groups' | 'import';
@@ -26,7 +21,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
   onNavigateTab 
 }) => {
   const { customers, suppliers, addNewCustomer, addSupplier } = useStore();
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'customers' | 'groups' | 'import'>(initialTab);
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   React.useEffect(() => {
     setActiveTab(initialTab);
@@ -88,7 +83,7 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       name: supName,
       contactPerson: supContact || 'Channel Manager',
       phone: supPhone || '+880 1700-000000',
-      email: supEmail || `${supName.toLowerCase().replace(/\\s+/g, '')}@supplier.bd`,
+      email: supEmail || `${supName.toLowerCase().replace(/\s+/g, '')}@supplier.bd`,
       address: supAddress || 'Dhaka, Bangladesh',
       country: 'Bangladesh',
       category: supCategory,
@@ -103,98 +98,66 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
     setShowAddSupplier(false);
   };
 
-  return (
-    <div className="space-y-5 text-slate-800 dark:text-slate-100 select-none">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-blue-500" />
-            Contacts Directory
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Manage wholesale clients, corporate accounts, retail walk-ins & global hardware vendors
-          </p>
-        </div>
+  // Metrics
+  const wholesaleCount = customers.filter(c => c.customerType === 'Wholesale').length;
 
-        <div className="flex items-center gap-2">
+  const tabs = [
+    { id: 'customers', label: `Customers (${customers.length})` },
+    { id: 'suppliers', label: `Suppliers (${suppliers.length})` },
+    { id: 'groups', label: 'Customer Groups' },
+    { id: 'import', label: 'Import Contacts' }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Relationships"
+        title="Contacts"
+        description="Manage customer and supplier records, commercial details, and contact imports."
+        actions={<>
           {activeTab === 'customers' && (
-            <button
+            <Button
+              variant="brand"
+              size="sm"
               onClick={() => setShowAddCustomer(true)}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Customer</span>
-            </button>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add Customer
+            </Button>
           )}
           {activeTab === 'suppliers' && (
-            <button
+            <Button
+              variant="brand"
+              size="sm"
               onClick={() => setShowAddSupplier(true)}
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Supplier</span>
-            </button>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add Supplier
+            </Button>
           )}
-        </div>
+        </>}
+      />
+
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-content-secondary">
+        <span><strong className="font-semibold text-content-primary">{customers.length}</strong> customers</span>
+        <span><strong className="font-semibold text-content-primary">{suppliers.length}</strong> suppliers</span>
+        <span><strong className="font-semibold text-content-primary">{wholesaleCount}</strong> wholesale accounts</span>
       </div>
 
       {/* Tabs & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('customers')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-              activeTab === 'customers' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Customers ({customers.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('suppliers')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-              activeTab === 'suppliers' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Suppliers ({suppliers.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('groups')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-              activeTab === 'groups' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Customer Groups
-          </button>
-          <button
-            onClick={() => setActiveTab('import')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-              activeTab === 'import' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Import</span>
-          </button>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <TabGroup
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
 
-        <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by name, phone, address..."
+        <div className="w-full sm:w-72">
+          <Input
+            placeholder="Search contacts..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => setSearch(e.target.value)}
+            leftIcon={<Search className="w-4 h-4 text-content-muted" />}
           />
         </div>
       </div>
@@ -203,120 +166,114 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* TAB 1: CUSTOMERS TABLE */}
       {/* ============================================================== */}
       {activeTab === 'customers' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Customer Name</th>
-                  <th className="py-3 px-3">Contact Mobile</th>
-                  <th className="py-3 px-3">Type</th>
-                  <th className="py-3 px-3">BIN / Tax ID</th>
-                  <th className="py-3 px-3">Delivery Address</th>
-                  <th className="py-3 px-4 text-right">Total Purchases</th>
-                  <th className="py-3 px-3 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {filteredCustomers.map((cust) => (
-                  <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-[13px]">{cust.name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">ID: {cust.id}</div>
-                    </td>
-                    <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-300">
-                      {cust.contactNumber}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        cust.customerType === 'Wholesale' ? 'bg-blue-500/15 text-blue-500 border border-blue-500/30' :
-                        cust.customerType === 'Corporate' ? 'bg-purple-500/15 text-purple-500 border border-purple-500/30' :
-                        'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-                      }`}>
-                        {cust.customerType}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-slate-500">
-                      {cust.binNumber || 'BIN-00829103-01'}
-                    </td>
-                    <td className="py-3 px-3 text-slate-500 dark:text-slate-400 max-w-xs truncate text-[11.5px]">
-                      {cust.deliveryAddress}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                      ৳ {(cust.totalPurchases || 450000).toLocaleString()}
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <button 
-                        onClick={() => {
-                          if (onNavigateTab) onNavigateTab('sell-pos');
-                        }}
-                        className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-700 dark:text-slate-300 rounded-lg text-[11px] font-semibold transition"
-                      >
-                        New Sale
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable isEmpty={filteredCustomers.length === 0} emptyMessage="No customers match your search query.">
+          <TableHeader>
+            <tr>
+              <TableHeadCell>Customer Name</TableHeadCell>
+              <TableHeadCell>Contact Mobile</TableHeadCell>
+              <TableHeadCell>Customer Type</TableHeadCell>
+              <TableHeadCell>BIN / Tax ID</TableHeadCell>
+              <TableHeadCell>Delivery Address</TableHeadCell>
+              <TableHeadCell align="right">Total Purchases</TableHeadCell>
+              <TableHeadCell align="center">Action</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {filteredCustomers.map((cust) => {
+              const typeVariant = cust.customerType === 'Wholesale' ? 'info' : cust.customerType === 'Corporate' ? 'neutral' : 'success';
+
+              return (
+                <TableRow key={cust.id}>
+                  <TableCell>
+                    <div className="font-semibold text-content-primary">{cust.name}</div>
+                    <div className="text-[11px] text-content-muted font-mono">ID: {cust.id}</div>
+                  </TableCell>
+                  <TableCell className="font-mono text-content-secondary">
+                    {cust.contactNumber}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={typeVariant} size="sm">
+                      {cust.customerType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-content-muted">
+                    {cust.binNumber || 'BIN-00829103-01'}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-content-secondary text-xs">
+                    {cust.deliveryAddress}
+                  </TableCell>
+                  <TableCell align="right" tabular className="font-bold text-content-primary">
+                    ৳ {(cust.totalPurchases || 450000).toLocaleString()}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (onNavigateTab) onNavigateTab('sell-pos');
+                      }}
+                    >
+                      New Sale
+                      <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </DataTable>
       )}
 
       {/* ============================================================== */}
       {/* TAB 2: SUPPLIERS TABLE */}
       {/* ============================================================== */}
       {activeTab === 'suppliers' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">Supplier / Vendor</th>
-                  <th className="py-3 px-3">Contact Person</th>
-                  <th className="py-3 px-3">Phone & Email</th>
-                  <th className="py-3 px-3">Hardware Category</th>
-                  <th className="py-3 px-3">Country / Hub</th>
-                  <th className="py-3 px-4 text-right">Total Purchase (৳)</th>
-                  <th className="py-3 px-3 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {filteredSuppliers.map((sup) => (
-                  <tr key={sup.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-[13px]">{sup.name}</div>
-                      <div className="text-[10px] text-slate-400">{sup.address}</div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">
-                      {sup.contactPerson}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-slate-500">
-                      <div>{sup.phone}</div>
-                      <div className="text-blue-500">{sup.email}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-blue-400 border border-slate-700 text-[10px] font-bold">
-                        {sup.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-slate-400">
-                      {sup.country}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">
-                      ৳ {sup.totalPurchase.toLocaleString()}
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
-                        ● Active Partner
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable isEmpty={filteredSuppliers.length === 0} emptyMessage="No suppliers found.">
+          <TableHeader>
+            <tr>
+              <TableHeadCell>Supplier / Vendor</TableHeadCell>
+              <TableHeadCell>Contact Person</TableHeadCell>
+              <TableHeadCell>Phone & Email</TableHeadCell>
+              <TableHeadCell>Hardware Category</TableHeadCell>
+              <TableHeadCell>Country / Hub</TableHeadCell>
+              <TableHeadCell align="right">Total Sourcing (৳)</TableHeadCell>
+              <TableHeadCell align="center">Status</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {filteredSuppliers.map((sup) => (
+              <TableRow key={sup.id}>
+                <TableCell>
+                  <div className="font-semibold text-content-primary">{sup.name}</div>
+                  <div className="text-[11px] text-content-muted">{sup.address}</div>
+                </TableCell>
+                <TableCell className="font-medium text-content-primary">
+                  {sup.contactPerson}
+                </TableCell>
+                <TableCell className="font-mono text-xs text-content-secondary">
+                  <div>{sup.phone}</div>
+                  <div className="text-brand-ochre">{sup.email}</div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="neutral" size="sm">
+                    {sup.category}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs text-content-muted">
+                  {sup.country}
+                </TableCell>
+                <TableCell align="right" tabular className="font-bold text-content-primary">
+                  ৳ {sup.totalPurchase.toLocaleString()}
+                </TableCell>
+                <TableCell align="center">
+                  <Badge variant="success" size="sm">
+                    Active Partner
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
       )}
 
       {/* ============================================================== */}
@@ -324,38 +281,47 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'groups' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <span className="font-bold text-sm text-blue-500">Wholesale Tier A</span>
-              <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 text-xs font-bold">5% Discount</span>
+          <Card className="p-5 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-sm text-content-primary">Wholesale Tier A</span>
+              <Badge variant="info" size="sm">5% Margin Rule</Badge>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-              Multiplan Center & IDB Bhaban retail partner shops purchasing in bulk cartons with 30-day payment terms.
+            <p className="text-xs text-content-secondary leading-relaxed">
+              Multiplan Center & IDB Bhaban retail partner shops purchasing in bulk cartons with 30-day payment credit terms.
             </p>
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">8 Partner Stores Assigned</div>
-          </div>
+            <div className="pt-2 border-t border-boundary-subtle text-xs font-semibold text-content-primary flex items-center justify-between">
+              <span>Assigned Stores</span>
+              <span className="font-mono text-brand-ochre">8 Partner Accounts</span>
+            </div>
+          </Card>
 
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <span className="font-bold text-sm text-purple-500">Corporate & Institutional</span>
-              <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 text-xs font-bold">Priority Delivery</span>
+          <Card className="p-5 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-sm text-content-primary">Corporate & Institutional</span>
+              <Badge variant="neutral" size="sm">Priority Supply</Badge>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-              Universities, software firms, eSports gaming lounges with corporate purchase requisitions and GST/BIN invoices.
+            <p className="text-xs text-content-secondary leading-relaxed">
+              Universities, software firms, and eSports lounges with official corporate procurement requisitions and NBR Mushak-6.3 VAT invoices.
             </p>
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">4 Accounts Assigned</div>
-          </div>
+            <div className="pt-2 border-t border-boundary-subtle text-xs font-semibold text-content-primary flex items-center justify-between">
+              <span>Assigned Clients</span>
+              <span className="font-mono text-brand-ochre">4 Institutional Accounts</span>
+            </div>
+          </Card>
 
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <span className="font-bold text-sm text-emerald-500">Direct Retail & Walk-in</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-bold">Official Warranty</span>
+          <Card className="p-5 space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="font-bold text-sm text-content-primary">Direct Retail & Walk-in</span>
+              <Badge variant="success" size="sm">Official Warranty</Badge>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-              Walk-in PC builders purchasing individual components across Banani Vault showroom counter.
+            <p className="text-xs text-content-secondary leading-relaxed">
+              Walk-in PC builders purchasing individual components across Banani Vault showroom counter with instant cash/bKash receipts.
             </p>
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">3 Showroom Walk-ins</div>
-          </div>
+            <div className="pt-2 border-t border-boundary-subtle text-xs font-semibold text-content-primary flex items-center justify-between">
+              <span>Showroom Log</span>
+              <span className="font-mono text-brand-ochre">3 Walk-in Accounts</span>
+            </div>
+          </Card>
         </div>
       )}
 
@@ -363,163 +329,133 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* TAB 4: IMPORT CONTACTS */}
       {/* ============================================================== */}
       {activeTab === 'import' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-xl mx-auto text-center space-y-4">
-          <FileSpreadsheet className="w-12 h-12 text-blue-500 mx-auto" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Import Contacts via CSV / Excel</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Bulk upload supplier records, client contacts, and addresses using standard ERP template.
-          </p>
-          <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-blue-500 transition">
-            <span className="text-xs text-slate-500 dark:text-slate-400">Drag and drop .csv file here, or click to browse</span>
+        <Card className="p-8 max-w-xl mx-auto text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-brand-olive/20 text-brand-ochre mx-auto flex items-center justify-center">
+            <FileSpreadsheet className="w-6 h-6" />
           </div>
-          <button 
+          <h3 className="font-bold text-base text-content-primary">Import Directory Contacts via CSV / Excel</h3>
+          <p className="text-xs text-content-muted">
+            Batch upload supplier records, client contacts, and addresses using standard ERP template.
+          </p>
+          <div className="p-6 border-2 border-dashed border-boundary-strong rounded-2xl bg-surface-secondary cursor-pointer hover:border-brand-ochre transition">
+            <span className="text-xs text-content-muted">Drag and drop contacts_template.csv or excel sheet here</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
             onClick={() => alert("CSV Contacts Template downloaded: contacts_template.csv")}
-            className="text-xs text-blue-500 hover:underline font-semibold"
           >
             Download CSV Format Template
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* MODAL: ADD CUSTOMER */}
       {showAddCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-900 dark:text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-3">
-              <span className="font-bold text-sm text-slate-900 dark:text-white">Add New Customer</span>
-              <button onClick={() => setShowAddCustomer(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleAddCustSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Company / Customer Name</label>
-                <input
-                  type="text"
-                  required
-                  value={custName}
-                  onChange={e => setCustName(e.target.value)}
-                  placeholder="e.g. Computer Source BD"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Phone Number</label>
-                <input
-                  type="text"
-                  required
-                  value={custPhone}
-                  onChange={e => setCustPhone(e.target.value)}
-                  placeholder="+880 1711-000000"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Customer Group</label>
-                <select
-                  value={custType}
-                  onChange={e => setCustType(e.target.value as any)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                >
-                  <option>Wholesale</option>
-                  <option>Corporate</option>
-                  <option>Retail</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Delivery Address</label>
-                <input
-                  type="text"
-                  value={custAddress}
-                  onChange={e => setCustAddress(e.target.value)}
-                  placeholder="e.g. Shop 21, Multiplan Center, Dhaka"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
+        <Modal
+          isOpen={true}
+          onClose={() => setShowAddCustomer(false)}
+          title="Add New Customer Account"
+          size="md"
+        >
+          <form onSubmit={handleAddCustSubmit} className="space-y-3.5 text-xs">
+            <Input
+              label="Company / Customer Name"
+              required
+              value={custName}
+              onChange={e => setCustName(e.target.value)}
+              placeholder="e.g. Computer Source BD"
+            />
+            <Input
+              label="Contact Phone"
+              required
+              value={custPhone}
+              onChange={e => setCustPhone(e.target.value)}
+              placeholder="+880 1711-000000"
+            />
+            <div>
+              <label className="block text-xs font-semibold text-content-primary mb-1">
+                Customer Group
+              </label>
+              <Select
+                value={custType}
+                onChange={e => setCustType(e.target.value as any)}
               >
+                <option value="Wholesale">Wholesale Partner</option>
+                <option value="Corporate">Corporate & Institutional</option>
+                <option value="Retail">Retail Walk-in</option>
+              </Select>
+            </div>
+            <Input
+              label="Delivery Address"
+              value={custAddress}
+              onChange={e => setCustAddress(e.target.value)}
+              placeholder="e.g. Shop 21, Multiplan Center, Dhaka"
+            />
+            <div className="pt-2 flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowAddCustomer(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" type="submit">
                 Save Customer
-              </button>
-            </form>
-          </div>
-        </div>
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* MODAL: ADD SUPPLIER */}
       {showAddSupplier && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-900 dark:text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700 mb-3">
-              <span className="font-bold text-sm text-slate-900 dark:text-white">Add New Hardware Supplier</span>
-              <button onClick={() => setShowAddSupplier(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
+        <Modal
+          isOpen={true}
+          onClose={() => setShowAddSupplier(false)}
+          title="Add New Hardware Vendor"
+          size="md"
+        >
+          <form onSubmit={handleAddSupSubmit} className="space-y-3.5 text-xs">
+            <Input
+              label="Supplier Company Name"
+              required
+              value={supName}
+              onChange={e => setSupName(e.target.value)}
+              placeholder="e.g. Sapphire Technology HK"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Contact Person"
+                value={supContact}
+                onChange={e => setSupContact(e.target.value)}
+                placeholder="e.g. David Liu"
+              />
+              <Input
+                label="Phone Number"
+                value={supPhone}
+                onChange={e => setSupPhone(e.target.value)}
+                placeholder="+880 1819-000000"
+              />
             </div>
-            <form onSubmit={handleAddSupSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Supplier Company Name</label>
-                <input
-                  type="text"
-                  required
-                  value={supName}
-                  onChange={e => setSupName(e.target.value)}
-                  placeholder="e.g. Sapphire Technology HK"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Contact Person</label>
-                  <input
-                    type="text"
-                    value={supContact}
-                    onChange={e => setSupContact(e.target.value)}
-                    placeholder="e.g. David Liu"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Phone</label>
-                  <input
-                    type="text"
-                    value={supPhone}
-                    onChange={e => setSupPhone(e.target.value)}
-                    placeholder="+880 1819-000000"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product Category</label>
-                <input
-                  type="text"
-                  value={supCategory}
-                  onChange={e => setSupCategory(e.target.value)}
-                  placeholder="e.g. Graphics Cards & Motherboards"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Address / Hub</label>
-                <input
-                  type="text"
-                  value={supAddress}
-                  onChange={e => setSupAddress(e.target.value)}
-                  placeholder="e.g. Kowloon, Hong Kong"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-              >
-                Save Supplier
-              </button>
-            </form>
-          </div>
-        </div>
+            <Input
+              label="Product Category"
+              value={supCategory}
+              onChange={e => setSupCategory(e.target.value)}
+              placeholder="e.g. Graphics Cards & Motherboards"
+            />
+            <Input
+              label="Address / Logistics Hub"
+              value={supAddress}
+              onChange={e => setSupAddress(e.target.value)}
+              placeholder="e.g. Kowloon, Hong Kong"
+            />
+            <div className="pt-2 flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowAddSupplier(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" type="submit">
+                Save Vendor
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );
