@@ -3,47 +3,190 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FinPilot Widget</title>
-  <link rel="stylesheet" href="/sdk/widget.css">
+  <title>FinPilot</title>
+  <style>
+    /* Default styles - JS will override with host-matched theme */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Theme variables (set dynamically by JS) */
+    :root {
+      --fp-bg: #ffffff;
+      --fp-surface: #f8fafc;
+      --fp-text: #1a1a1a;
+      --fp-text-muted: #64748b;
+      --fp-primary: #2563eb;
+      --fp-border: #e2e8f0;
+      --fp-radius: 8px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--fp-primary);
+      color: white;
+      flex-shrink: 0;
+    }
+    .header-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+    .header-actions { display: flex; gap: 8px; }
+
+    button {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    button:hover { background: rgba(255,255,255,0.15); }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: var(--fp-bg);
+    }
+
+    .message {
+      max-width: 88%;
+      padding: 12px 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+    .message.user {
+      align-self: flex-end;
+      background: var(--fp-primary);
+      color: white;
+    }
+    .message.assistant {
+      align-self: flex-start;
+      background: var(--fp-surface);
+      color: var(--fp-text);
+      border: 1px solid var(--fp-border);
+    }
+
+    /* Markdown table styles */
+    .message table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+    .message th, .message td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--fp-border);
+    }
+    .message th {
+      font-weight: 600;
+      background: var(--fp-bg);
+      color: var(--fp-text-muted);
+    }
+    .message strong { font-weight: 700; }
+
+    /* Streaming cursor */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 16px;
+      background: var(--fp-primary);
+      animation: blink 1s infinite;
+      vertical-align: text-bottom;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* Input area */
+    .input-area {
+      display: flex;
+      gap: 10px;
+      padding: 14px 18px;
+      background: var(--fp-bg);
+      border-top: 1px solid var(--fp-border);
+      flex-shrink: 0;
+    }
+    textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid var(--fp-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      background: var(--fp-bg);
+      color: var(--fp-text);
+      outline: none;
+      max-height: 100px;
+    }
+    textarea:focus { border-color: var(--fp-primary); }
+    .send-btn {
+      background: var(--fp-primary);
+      color: white;
+      border-radius: 8px;
+      padding: 0 14px;
+      flex-shrink: 0;
+      align-self: flex-end;
+      height: 40px;
+    }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Scrollbar */
+    .messages::-webkit-scrollbar { width: 6px; }
+    .messages::-webkit-scrollbar-thumb {
+      background: var(--fp-border);
+      border-radius: 3px;
+    }
+  </style>
 </head>
 <body>
-  <div id="finpilot-widget">
-    <div class="widget-header">
-      <div class="header-title">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-          <path d="M2 17l10 5 10-5"/>
-          <path d="M2 12l10 5 10-5"/>
+  <div class="header">
+    <div class="header-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3v18h18"></path>
+        <path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"></path>
+      </svg>
+      FinPilot AI Analyst
+    </div>
+    <div class="header-actions">
+      <button id="clear-btn" title="Clear">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
-        <h2>FinPilot</h2>
-      </div>
-      <button id="minimize-btn" class="icon-btn" title="Minimize">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="5" y1="12" x2="19" y2="12"/>
+      </button>
+      <button id="close-btn" title="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
       </button>
     </div>
+  </div>
 
-    <div id="messages" class="messages"></div>
+  <div id="messages" class="messages"></div>
 
-    <div id="status-bar" class="status-bar" style="display: none;">
-      <div class="status-spinner"></div>
-      <span id="status-text"></span>
-    </div>
-
-    <div class="widget-input">
-      <textarea
-        id="user-input"
-        placeholder="Ask about cash flow, financing, invoices..."
-        rows="2"
-      ></textarea>
-      <button id="send-btn" class="send-btn">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      </button>
-    </div>
+  <div class="input-area">
+    <textarea id="user-input" placeholder="Ask about cash flow, margins, tax, receivables..." rows="1"></textarea>
+    <button id="send-btn" class="send-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
   </div>
 
   <script src="/sdk/widget.js"></script>

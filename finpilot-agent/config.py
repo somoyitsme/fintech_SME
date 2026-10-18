@@ -1,48 +1,96 @@
+"""Application configuration. Fails fast on missing required settings."""
+import json
+from functools import lru_cache
+from typing import List
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", extra="ignore", case_sensitive=False
     )
 
-    # App
-    APP_NAME: str = "FinPilot"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
-    PORT: int = 8100
-    HOST: str = "0.0.0.0"
+    # ── Database ──
+    DATABASE_URL: str = Field(..., description="Real DB connection string")
+    DB_READONLY_PASSWORD: str = Field("", description="Read-only role password")
+    # Comma-separated in .env (List typing triggers premature JSON decode)
+    ALLOWED_TABLES: str = Field(
+        default="invoices,expenses,bank_accounts,customers,sales,inventory,payments,vendors"
+    )
 
-    # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./finpilot_agent.db"
-    DB_ECHO: bool = False
-
-    # Security
-    API_KEY_SALT: str = "finpilot-secure-salt-change-in-production"
-    AUDIT_HMAC_SECRET: str = "audit-hmac-secret-change-in-production"
-    RATE_LIMIT_PER_MINUTE: int = 60
-
-    # LLM
-    ANTHROPIC_API_KEY: Optional[str] = None
+    # ── LLM (required in production) ──
+    ANTHROPIC_API_KEY: str = Field(..., description="Anthropic API key")
     LLM_MODEL: str = "claude-3-5-sonnet-20241022"
     LLM_MAX_TOKENS: int = 4096
-    LLM_TEMPERATURE: float = 0.0
 
-    # CORS
-    CORS_ORIGINS: list[str] = ["*"]
+    # ── Security ──
+    API_KEY_SALT: str = Field(..., min_length=16)
+    AUDIT_HMAC_SECRET: str = Field(..., min_length=16)
+    # Shared key required in the X-API-Key header. Empty = unauthenticated.
+    AGENT_API_KEY: str = Field("", description="Shared API key for /chat endpoints")
 
-    # Tenant defaults
+    # ── Server ──
+    HOST: str = "0.0.0.0"
+    PORT: int = 8100
+    DEBUG: bool = False
+    # Comma-separated in .env
+    CORS_ORIGINS: str = Field(default="*")
+
     DEFAULT_CURRENCY: str = "CNY"
     DEFAULT_COUNTRY: str = "CN"
 
-    # WeBank (competition-specific)
-    WEBANK_MAX_LOAN_AMOUNT: int = 3_000_000  # ¥3M
-    WEBANK_MIN_APR: float = 3.6
-    WEBANK_MAX_APR: float = 10.8
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _validate_db_url(cls, v: str) -> str:
+        """Validate scheme and normalize to SYNC drivers (engine is sync).
+
+        The agent uses a synchronous SQLAlchemy engine executed in a threadpool,
+        so async driver prefixes (asyncpg/aiomysql/aiosqlite) are normalized.
+        """
+        supported = ("postgresql", "postgres", "mysql", "sqlite")
+        if not v.startswith(supported):
+            raise ValueError(
+                f"Unsupported DATABASE_URL scheme. Must start with one of {supported}"
+            )
+        # Strip async driver suffixes -> use synchronous drivers
+        for async_drv, sync_drv in (
+            ("postgresql+asyncpg", "postgresql+psycopg2"),
+            ("postgresql+psycopg", "postgresql+psycopg2"),
+            ("mysql+aiomysql", "mysql+pymysql"),
+            ("sqlite+aiosqlite", "sqlite"),
+        ):
+            if v.startswith(async_drv):
+                return v.replace(async_drv, sync_drv, 1)
+        return v
+
+    @property
+    def allowed_tables_list(self) -> List[str]:
+        """Parse ALLOWED_TABLES to list."""
+        return [t.strip() for t in self.ALLOWED_TABLES.split(",") if t.strip()]
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse CORS_ORIGINS to list."""
+        s = self.CORS_ORIGINS.strip()
+        if s.startswith("["):
+            import json
+            return json.loads(s)
+        return [o.strip() for o in s.split(",") if o.strip()]
+
+    @property
+    def dialect(self) -> str:
+        if self.DATABASE_URL.startswith("postgresql"):
+            return "postgresql"
+        if self.DATABASE_URL.startswith("mysql"):
+            return "mysql"
+        return "sqlite"
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

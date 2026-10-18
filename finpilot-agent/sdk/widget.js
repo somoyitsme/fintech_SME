@@ -1,72 +1,54 @@
 /**
- * FinPilot Widget Client
- *
- * Handles chat UI, SSE streaming, and markdown rendering.
+ * FinPilot Widget - Auto-themed chat UI with streaming
  */
-
-(function() {
+(function () {
   'use strict';
 
-  const HOST = 'http://localhost:8100';
+  let config = null;
+  let isStreaming = false;
 
-  // Extract API key from URL
-  const params = new URLSearchParams(window.location.search);
-  const apiKey = params.get('apiKey');
+  // ── Apply host-matched theme ──
+  function applyTheme(theme) {
+    const root = document.documentElement;
+    root.style.setProperty('--fp-bg', theme.dark ? '#0f172a' : '#ffffff');
+    root.style.setProperty('--fp-surface', theme.dark ? '#1e293b' : '#f8fafc');
+    root.style.setProperty('--fp-text', theme.dark ? '#e2e8f0' : '#1a1a1a');
+    root.style.setProperty('--fp-text-muted', theme.dark ? '#94a3b8' : '#64748b');
+    root.style.setProperty('--fp-primary', theme.primary || '#2563eb');
+    root.style.setProperty('--fp-border', theme.dark ? '#334155' : '#e2e8f0');
+    root.style.setProperty('--fp-radius', theme.radius || '8px');
+    document.body.style.fontFamily = theme.font || 'inherit';
 
-  if (!apiKey) {
-    console.error('[FinPilot Widget] Missing apiKey');
-    return;
+    // Apply dark class if needed
+    if (theme.dark) document.body.classList.add('fp-dark');
   }
 
-  let conversationId = null;
-  let isProcessing = false;
-
-  // DOM elements
-  const messagesEl = document.getElementById('messages');
-  const statusBar = document.getElementById('status-bar');
-  const statusText = document.getElementById('status-text');
-  const inputEl = document.getElementById('user-input');
-  const sendBtn = document.getElementById('send-btn');
-  const minimizeBtn = document.getElementById('minimize-btn');
-
-  // Simple markdown to HTML converter
-  function renderMarkdown(text) {
-    let html = text;
+  // ── Markdown to HTML ──
+  function mdToHtml(md) {
+    let html = md;
 
     // Tables
-    html = html.replace(/\|([^\n]+)\|\n\|([\s\|:-]+)\|\n((?:\|[^\n]+\|\n?)+)/g, (match, header, sep, body) => {
+    html = html.replace(/\|([^\n]+)\|(\n\|[\s:|-]+\|)+\n((\|[^\n]+\|\n?)+)/g, (match, header, _sep, body) => {
       const headers = header.split('|').map(h => h.trim()).filter(h => h);
-      const rows = body.trim().split('\n').map(row =>
-        row.split('|').map(c => c.trim()).filter(c => c)
-      );
+      const rows = body.trim().split('\n').map(r => r.split('|').map(c => c.trim()).filter(c => c));
 
-      let table = '<table><thead><tr>';
-      headers.forEach(h => table += `<th>${h}</th>`);
-      table += '</tr></thead><tbody>';
+      let t = '<table><thead><tr>';
+      headers.forEach(h => t += `<th>${h}</th>`);
+      t += '</tr></thead><tbody>';
       rows.forEach(row => {
-        table += '<tr>';
-        row.forEach(cell => table += `<td>${cell}</td>`);
-        table += '</tr>';
+        t += '<tr>';
+        row.forEach(cell => t += `<td>${cell}</td>`);
+        t += '</tr>';
       });
-      table += '</tbody></table>';
-      return table;
+      return t + '</tbody></table>';
     });
 
-    // Blockquotes (metric pills)
-    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-
     // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    // Headings (process ### before ##, correct capture groups)
-    html = html.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 6px;font-size:14px">$1</h4>');
-    html = html.replace(/^## (.+)$/gm, '<h3 style="margin:16px 0 8px;font-size:16px">$1</h3>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
     // Lists
-    html = html.replace(/^\d+\. (.+)$/gm, '<div style="margin:4px 0">• $1</div>');
+    html = html.replace(/^[•\-*]\s+(.+)$/gm, '<div style="margin:4px 0">• $1</div>');
+    html = html.replace(/^\d+\.\s+(.+)$/gm, '<div style="margin:4px 0">$1</div>');
 
     // Line breaks
     html = html.replace(/\n/g, '<br>');
@@ -74,57 +56,64 @@
     return html;
   }
 
+  // ── Message handling ──
   function addMessage(role, content) {
     const div = document.createElement('div');
     div.className = `message ${role}`;
-    div.innerHTML = role === 'assistant' ? renderMarkdown(content) : content;
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    div.innerHTML = role === 'assistant' ? mdToHtml(content) : content;
+    div.dataset.raw = content;
+    return div;
   }
 
-  function showStatus(message) {
-    statusText.textContent = message;
-    statusBar.style.display = 'flex';
+  function scrollToBottom() {
+    const messages = document.getElementById('messages');
+    messages.scrollTop = messages.scrollHeight;
   }
 
-  function hideStatus() {
-    statusBar.style.display = 'none';
-  }
-
+  // ── Streaming chat ──
   async function sendMessage() {
-    const message = inputEl.value.trim();
-    if (!message || isProcessing) return;
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const message = input.value.trim();
 
-    isProcessing = true;
+    if (!message || isStreaming) return;
+
+    isStreaming = true;
     sendBtn.disabled = true;
-    inputEl.value = '';
+    input.value = '';
 
-    addMessage('user', message);
+    // Add user message
+    const messages = document.getElementById('messages');
+    messages.appendChild(addMessage('user', message));
+    scrollToBottom();
+
+    // Add assistant placeholder
+    const assistantMsg = addMessage('assistant', '');
+    assistantMsg.innerHTML = '<div class="status-row" style="color:var(--fp-text-muted);font-size:13px;display:flex;align-items:center;gap:8px;">⏳ Analyzing intent...</div>';
+    messages.appendChild(assistantMsg);
+    scrollToBottom();
 
     try {
-      const response = await fetch(`${HOST}/api/v1/chat/stream`, {
+      const response = await fetch(`${config.apiBase}/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': apiKey,
+          'X-API-Key': config.apiKey,
         },
         body: JSON.stringify({
-          message,
-          conversation_id: conversationId,
+          message: message,
+          tenant_id: config.tenantId || 'default',
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        addMessage('assistant', `**Error:** ${error.detail || 'Request failed'}`);
-        hideStatus();
-        return;
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      // Read SSE stream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let fullText = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -137,60 +126,75 @@
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
 
-          const data = JSON.parse(line.slice(6));
+          try {
+            const event = JSON.parse(line.slice(6));
 
-          if (data.type === 'status') {
-            showStatus(data.message);
-          } else if (data.type === 'complete') {
-            addMessage('assistant', data.content);
-            hideStatus();
-          } else if (data.type === 'error') {
-            addMessage('assistant', `**Error:** ${data.error}`);
-            hideStatus();
+            if (event.type === 'status') {
+              assistantMsg.innerHTML = `<div style="color:var(--fp-text-muted);font-size:13px;display:flex;align-items:center;gap:8px;">⏳ ${event.message}</div>`;
+            }
+            else if (event.type === 'tool_start') {
+              assistantMsg.innerHTML = `<div style="color:var(--fp-text-muted);font-size:13px;display:flex;align-items:center;gap:8px;">🔍 Executing ${event.name}...</div>`;
+            }
+            else if (event.type === 'text_delta') {
+              fullText += event.text;
+              assistantMsg.innerHTML = mdToHtml(fullText) + '<span class="cursor"></span>';
+              scrollToBottom();
+            }
+            else if (event.type === 'complete') {
+              fullText = event.response || fullText;
+              assistantMsg.innerHTML = mdToHtml(fullText);
+              assistantMsg.dataset.raw = fullText;
+            }
+          } catch (e) {
+            // Skip malformed events
           }
         }
       }
+
     } catch (err) {
-      addMessage('assistant', `**Connection Error:** ${err.message}`);
-      hideStatus();
+      assistantMsg.innerHTML = `<div style="color:#dc2626;font-size:13px;">⚠ ${err.message}</div>`;
     } finally {
-      isProcessing = false;
+      isStreaming = false;
       sendBtn.disabled = false;
-      inputEl.focus();
+      scrollToBottom();
     }
   }
 
-  // Event listeners
-  sendBtn.addEventListener('click', sendMessage);
+  // ── Init on message from loader ──
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'finpilot:init') {
+      config = e.data.config;
+      applyTheme(config.theme);
 
-  inputEl.addEventListener('keydown', (e) => {
+      // Add welcome
+      const messages = document.getElementById('messages');
+      messages.appendChild(addMessage('assistant',
+        '**Financial Analyst Ready**\n\n' +
+        '• Cash flow & runway\n' +
+        '• Revenue, margins, P&L\n' +
+        '• AR aging & collections\n' +
+        '• Tax liability estimates\n' +
+        '• Loan readiness assessment\n' +
+        '• Expense breakdown by vendor\n\n' +
+        'All answers computed from **live database queries**.'
+      ));
+    }
+  });
+
+  // ── UI bindings ──
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('user-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  minimizeBtn.addEventListener('click', () => {
-    window.parent.postMessage({ type: 'toggle', visible: false }, '*');
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    document.getElementById('messages').innerHTML = '';
   });
 
-  // Auto-resize iframe height
-  function notifyResize() {
-    const height = Math.min(document.body.scrollHeight + 40, window.innerHeight);
-    window.parent.postMessage({ type: 'resize', height }, '*');
-  }
-
-  // Welcome message
-  addMessage('assistant',
-    '## FinPilot AI Financial Copilot\n\n' +
-    'Ask me about:\n' +
-    '• Cash flow and runway projections\n' +
-    '• Financing options (WeBank Weiyedai)\n' +
-    '• Financial health benchmarking\n' +
-    '• Overdue invoice collection\n' +
-    '• Tax estimates and compliance\n' +
-    '• Expense optimization'
-  );
-
-  inputEl.focus();
+  document.getElementById('close-btn').addEventListener('click', () => {
+    window.parent.postMessage({ type: 'finpilot:close' }, '*');
+  });
 })();

@@ -1,150 +1,193 @@
-"""LLM integration: Anthropic Claude client with tool-use loop.
-
-CRITICAL: The LLM NEVER performs arithmetic. It only:
-1. Selects tools to call
-2. Assembles prose/markdown over returned JSON data
-
-If no ANTHROPIC_API_KEY is set, falls back to a deterministic
-template-based response generator (useful for testing/offline demo).
-"""
+"""Live Anthropic Claude integration with streaming and tool-use."""
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any, AsyncIterator, Callable, Optional
+
+from anthropic import AsyncAnthropic
+from anthropic.types import MessageStreamEvent
 
 from config import settings
 
 
-SYSTEM_PROMPT = """You are FinPilot, an elite autonomous financial decision agent for SMEs.
-
-CORE RULES (NON-NEGOTIABLE):
-1. You NEVER calculate financial numbers yourself. ALWAYS use tools.
-2. You NEVER invent data. Only use data returned by tools.
-3. Start with the BOTTOM LINE / executive summary — no pleasantries.
-4. Format ALL numbers in clean markdown tables with units (¥, %, days).
-5. Highlight critical metrics in bold callouts like: > **Cash Runway: 2.6 Mo**
-6. End with numbered ACTION STEPS with exact dates and CNY amounts.
-7. Eliminate conversational fluff: no "Hello", "I hope this helps", "As an AI".
-8. Speak with the precision of a CFO briefing a board.
-
-RESPONSE STRUCTURE:
-- Executive summary (1-2 sentences with the answer)
-- Data tables
-- Metric pills for critical values
-- Numbered action steps with dates + amounts"""
-
-
 class LLMClient:
-    """Anthropic Claude client wrapper with graceful fallback."""
+    """Production LLM client with real Anthropic API."""
 
     def __init__(self):
-        self.client = None
-        self.available = False
+        if not settings.ANTHROPIC_API_KEY or settings.ANTHROPIC_API_KEY.startswith("sk-ant-your"):
+            raise ValueError(
+                "ANTHROPIC_API_KEY required. Set real key in .env"
+            )
 
-        if settings.ANTHROPIC_API_KEY:
-            try:
-                from anthropic import AsyncAnthropic
-                self.client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-                self.available = True
-            except Exception:
-                self.available = False
+        self.client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.model = settings.LLM_MODEL
+        self.max_tokens = settings.LLM_MAX_TOKENS
 
-    async def run_tool_loop(
+    async def execute_with_tools(
         self,
-        query: str,
-        system_context: str,
-        tools: list,
-        tool_executor,
+        user_query: str,
+        system_prompt: str,
+        tools: list[dict],
+        tool_executor: Callable,
         max_iterations: int = 5,
     ) -> tuple[str, list[str]]:
-        """Run the tool-use loop.
+        """Execute tool-use loop with Claude.
 
         Args:
-            query: User's question
-            system_context: Tenant data context
-            tools: List of Anthropic tool schemas
-            tool_executor: Async function(tool_name, args) -> dict
+            user_query: User's question
+            system_prompt: System instructions + schema context
+            tools: Anthropic tool definitions
+            tool_executor: async fn(tool_name, args) -> dict
+            max_iterations: Safety limit
 
         Returns:
-            (final_response_text, tools_used_list)
+            (final_text_response, list_of_tool_names_used)
         """
-        if not self.available:
-            return await self._fallback_response(query, system_context, tools, tool_executor)
-
-        messages = [{"role": "user", "content": query}]
+        messages = [{"role": "user", "content": user_query}]
         tools_used = []
 
-        for _ in range(max_iterations):
+        for iteration in range(max_iterations):
             response = await self.client.messages.create(
-                model=settings.LLM_MODEL,
-                max_tokens=settings.LLM_MAX_TOKENS,
-                temperature=settings.LLM_TEMPERATURE,
-                system=f"{SYSTEM_PROMPT}\n\nTENANT CONTEXT:\n{system_context}",
+                model=self.model,
+                max_tokens=self.max_tokens,
+                system=system_prompt,
                 tools=tools,
                 messages=messages,
             )
 
-            # Check for tool use
-            tool_uses = [b for b in response.content if b.type == "tool_use"]
+            # Extract tool uses
+            tool_blocks = [b for b in response.content if b.type == "tool_use"]
 
-            if not tool_uses:
-                # No more tools — extract text response
-                text = "".join(b.text for b in response.content if b.type == "text")
+            if not tool_blocks:
+                # No more tools → extract final text
+                text = "".join(
+                    b.text for b in response.content if b.type == "text"
+                )
                 return text, tools_used
 
             # Execute tools
             messages.append({"role": "assistant", "content": response.content})
             tool_results = []
 
-            for tool_use in tool_uses:
-                tools_used.append(tool_use.name)
+            for tool_block in tool_blocks:
+                tools_used.append(tool_block.name)
                 try:
-                    result = await tool_executor(tool_use.name, tool_use.input)
+                    result = await tool_executor(tool_block.name, tool_block.input)
                     tool_results.append({
                         "type": "tool_result",
-                        "tool_use_id": tool_use.id,
+                        "tool_use_id": tool_block.id,
                         "content": json.dumps(result, default=str),
                     })
                 except Exception as e:
                     tool_results.append({
                         "type": "tool_result",
-                        "tool_use_id": tool_use.id,
+                        "tool_use_id": tool_block.id,
                         "content": json.dumps({"error": str(e)}),
                         "is_error": True,
                     })
 
             messages.append({"role": "user", "content": tool_results})
 
-        # Max iterations reached
-        return "Analysis incomplete: maximum tool iterations reached.", tools_used
+        return "Analysis incomplete: max tool iterations reached", tools_used
 
-    async def _fallback_response(
-        self, query: str, system_context: str, tools: list, tool_executor
-    ) -> tuple[str, list[str]]:
-        """Deterministic fallback when LLM is unavailable.
+    async def stream_with_tools(
+        self,
+        user_query: str,
+        system_prompt: str,
+        tools: list[dict],
+        tool_executor: Callable,
+        status_callback: Optional[Callable[[str], None]] = None,
+    ) -> AsyncIterator[dict]:
+        """Stream response with tool execution and status updates.
 
-        Executes the most relevant tools and formats output using CFO-level formatters.
+        Yields:
+            {"type": "status", "message": "..."}
+            {"type": "tool_start", "name": "..."}
+            {"type": "tool_result", "name": "...", "result": {...}}
+            {"type": "text_delta", "text": "..."}
+            {"type": "complete", "response": "...", "tools_used": [...]}
         """
-        from app.agent.formatters import format_agent_response
-        from app.agent.router import classify_intent
-
+        messages = [{"role": "user", "content": user_query}]
         tools_used = []
-        results = {}
+        accumulated_text = []
 
-        for tool in tools[:4]:
-            try:
-                result = await tool_executor(tool["name"], {})
-                results[tool["name"]] = result
-                tools_used.append(tool["name"])
-            except Exception as e:
-                results[tool["name"]] = {"error": str(e)}
+        if status_callback:
+            await status_callback("Analyzing intent...")
 
-        # Determine pillar for formatting
-        pillar = classify_intent(query)
+        for iteration in range(5):
+            async with self.client.messages.stream(
+                model=self.model,
+                max_tokens=self.max_tokens,
+                system=system_prompt,
+                tools=tools,
+                messages=messages,
+            ) as stream:
+                tool_blocks = []
+                text_blocks = []
 
-        # Use CFO-level formatter
-        response_text = format_agent_response(pillar, results)
-        return response_text, tools_used
+                async for event in stream:
+                    if event.type == "content_block_start":
+                        if event.content_block.type == "tool_use":
+                            tool_name = event.content_block.name
+                            yield {
+                                "type": "tool_start",
+                                "name": tool_name,
+                            }
+
+                    elif event.type == "content_block_delta":
+                        if event.delta.type == "text_delta":
+                            text = event.delta.text
+                            accumulated_text.append(text)
+                            yield {"type": "text_delta", "text": text}
+
+                message = await stream.get_final_message()
+                tool_blocks = [b for b in message.content if b.type == "tool_use"]
+                text_blocks = [b for b in message.content if b.type == "text"]
+
+            if not tool_blocks:
+                final_text = "".join(accumulated_text)
+                yield {
+                    "type": "complete",
+                    "response": final_text,
+                    "tools_used": tools_used,
+                }
+                return
+
+            # Execute tools
+            messages.append({"role": "assistant", "content": message.content})
+            tool_results = []
+
+            for tool_block in tool_blocks:
+                tools_used.append(tool_block.name)
+
+                if status_callback:
+                    await status_callback(f"Executing {tool_block.name}...")
+
+                try:
+                    result = await tool_executor(tool_block.name, tool_block.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tool_block.id,
+                        "content": json.dumps(result, default=str),
+                    })
+                    yield {
+                        "type": "tool_result",
+                        "name": tool_block.name,
+                        "result": result,
+                    }
+                except Exception as e:
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": tool_block.id,
+                        "content": json.dumps({"error": str(e)}),
+                        "is_error": True,
+                    })
+
+            messages.append({"role": "user", "content": tool_results})
+
+            if status_callback:
+                await status_callback("Synthesizing response...")
 
 
-llm_client = LLMClient()
+def get_llm_client() -> LLMClient:
+    return LLMClient()
