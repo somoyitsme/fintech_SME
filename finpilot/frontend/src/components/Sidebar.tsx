@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Home, 
   UserCheck, 
@@ -6,7 +6,6 @@ import {
   ShoppingBag, 
   Package, 
   Layers, 
-  TrendingUp, 
   ArrowLeftRight, 
   Sliders, 
   MinusCircle, 
@@ -17,12 +16,11 @@ import {
   Settings, 
   Award, 
   CheckSquare, 
-  ChevronDown, 
   ChevronRight,
   Truck,
-  Building2,
-  DollarSign,
-  Cpu
+  Database,
+  X,
+  ShieldCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,6 +28,8 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   userRole?: string;
   userName?: string;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 interface SubMenuItem {
@@ -41,6 +41,7 @@ interface MenuGroup {
   id: string;
   label: string;
   icon: any;
+  category?: string;
   subItems?: SubMenuItem[];
 }
 
@@ -48,7 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab, 
   setActiveTab, 
   userRole = "Managing Director",
-  userName = "MD Nazmul Hasan"
+  userName = "MD Nazmul Hasan",
+  isMobileOpen = false,
+  onCloseMobile
 }) => {
   // Expandable sections state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -64,6 +67,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     users: false
   });
 
+  // Auto-expand the active section based on the current active tab
+  useEffect(() => {
+    menuGroups.forEach(group => {
+      if (group.subItems && group.subItems.some(sub => sub.id === activeTab)) {
+        setOpenSections(prev => ({ ...prev, [group.id]: true }));
+      }
+    });
+  }, [activeTab]);
+
   const toggleSection = (key: string) => {
     setOpenSections(prev => ({
       ...prev,
@@ -71,255 +83,311 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }));
   };
 
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    if (onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   const menuGroups: MenuGroup[] = [
     {
       id: 'home-dashboard',
-      label: 'Home',
-      icon: Home
+      label: 'Home Dashboard',
+      icon: Home,
+      category: 'Overview'
     },
     {
-      id: 'users',
-      label: 'User Management',
-      icon: UserCheck,
+      id: 'sell',
+      label: 'Sell & POS Terminal',
+      icon: ShoppingBag,
+      category: 'Operations',
       subItems: [
-        { id: 'users-list', label: 'Users' },
-        { id: 'users-roles', label: 'Roles' },
-        { id: 'users-commission', label: 'Sales Commission Agents' }
-      ]
-    },
-    {
-      id: 'contacts',
-      label: 'Contacts',
-      icon: Users,
-      subItems: [
-        { id: 'contacts-suppliers', label: 'Suppliers' },
-        { id: 'contacts-customers', label: 'Customers' },
-        { id: 'contacts-groups', label: 'Customer Groups' },
-        { id: 'contacts-import', label: 'Import Contacts' }
+        { id: 'sell-all', label: 'All Sales Orders' },
+        { id: 'sell-pos', label: 'POS Terminal (Cashier)' },
+        { id: 'sell-pos-list', label: 'POS Receipts Ledger' },
+        { id: 'sell-add', label: 'Add Manual Sale' },
+        { id: 'sell-drafts', label: 'Draft Orders' },
+        { id: 'sell-quotations', label: 'Quotations & Proformas' },
+        { id: 'sell-returns', label: 'Sale Returns' },
+        { id: 'sell-shipments', label: 'Courier Shipments' },
+        { id: 'sell-discounts', label: 'Discounts & Promos' },
+        { id: 'sell-import', label: 'Import Sales CSV' }
       ]
     },
     {
       id: 'products',
-      label: 'Products',
+      label: 'Products & Inventory',
       icon: Package,
+      category: 'Operations',
       subItems: [
-        { id: 'products-list', label: 'List Products' },
-        { id: 'products-add', label: 'Add Product' },
-        { id: 'products-prices', label: 'Update Price' },
-        { id: 'products-labels', label: 'Print Labels' },
-        { id: 'products-variations', label: 'Variations' },
+        { id: 'products-list', label: 'List Products (Catalog)' },
+        { id: 'products-add', label: 'Add New Product' },
+        { id: 'products-prices', label: 'Update Prices' },
+        { id: 'products-labels', label: 'Print Barcode Labels' },
+        { id: 'products-variations', label: 'Product Variations' },
         { id: 'products-import', label: 'Import Products' },
-        { id: 'products-units', label: 'Units' },
-        { id: 'products-categories', label: 'Categories' },
-        { id: 'products-brands', label: 'Brands' },
-        { id: 'products-warranties', label: 'Warranties' }
+        { id: 'products-units', label: 'Measurement Units' },
+        { id: 'products-categories', label: 'Hardware Categories' },
+        { id: 'products-brands', label: 'Authorized Brands' },
+        { id: 'products-warranties', label: 'Warranty Ledgers' }
       ]
     },
     {
       id: 'purchases',
-      label: 'Purchases',
+      label: 'Purchases & POs',
       icon: Layers,
+      category: 'Operations',
       subItems: [
-        { id: 'purchases-list', label: 'List Purchases' },
-        { id: 'purchases-add', label: 'Add Purchase' },
-        { id: 'purchases-returns', label: 'List Purchase Return' }
-      ]
-    },
-    {
-      id: 'sell',
-      label: 'Sell',
-      icon: ShoppingBag,
-      subItems: [
-        { id: 'sell-all', label: 'All sales' },
-        { id: 'sell-add', label: 'Add Sale' },
-        { id: 'sell-pos-list', label: 'List POS' },
-        { id: 'sell-pos', label: 'POS' },
-        { id: 'sell-drafts', label: 'List Drafts' },
-        { id: 'sell-quotations', label: 'List quotations' },
-        { id: 'sell-returns', label: 'List Sell Return' },
-        { id: 'sell-shipments', label: 'Shipments' },
-        { id: 'sell-discounts', label: 'Discounts' },
-        { id: 'sell-import', label: 'Import Sales' }
+        { id: 'purchases-list', label: 'Purchase Orders' },
+        { id: 'purchases-add', label: 'Create Purchase Order' },
+        { id: 'purchases-returns', label: 'Purchase Returns' }
       ]
     },
     {
       id: 'transfers',
       label: 'Stock Transfers',
       icon: Truck,
+      category: 'Operations',
       subItems: [
-        { id: 'stock-transfers-list', label: 'List Stock Transfers' },
-        { id: 'stock-transfers-add', label: 'Add Stock Transfer' }
+        { id: 'stock-transfers-list', label: 'Transfer Ledgers' },
+        { id: 'stock-transfers-add', label: 'New Inter-Store Transfer' }
       ]
     },
     {
       id: 'adjustments',
-      label: 'Stock Adjustment',
+      label: 'Stock Adjustments',
       icon: Sliders,
+      category: 'Operations',
       subItems: [
-        { id: 'stock-adjustments-list', label: 'List Stock Adjustments' },
+        { id: 'stock-adjustments-list', label: 'Adjustment Audits' },
         { id: 'stock-adjustments-add', label: 'Add Stock Adjustment' }
       ]
     },
     {
-      id: 'expenses',
-      label: 'Expenses',
-      icon: MinusCircle,
+      id: 'contacts',
+      label: 'Contacts & CRM',
+      icon: Users,
+      category: 'Relations',
       subItems: [
-        { id: 'expenses-list', label: 'List Expenses' },
-        { id: 'expenses-add', label: 'Add Expense' },
-        { id: 'expenses-categories', label: 'Expense Categories' }
+        { id: 'contacts-suppliers', label: 'Hardware Suppliers' },
+        { id: 'contacts-customers', label: 'Customer Directory' },
+        { id: 'contacts-groups', label: 'Customer Pricing Groups' },
+        { id: 'contacts-import', label: 'Import Contacts' }
       ]
     },
     {
       id: 'accounts',
       label: 'Payment Accounts',
       icon: CreditCard,
+      category: 'Finance',
       subItems: [
-        { id: 'accounts-list', label: 'List Accounts' },
+        { id: 'accounts-list', label: 'Bank & Cash Ledgers' },
         { id: 'accounts-balancesheet', label: 'Balance Sheet' },
         { id: 'accounts-trialbalance', label: 'Trial Balance' },
-        { id: 'accounts-cashflow', label: 'Cash Flow' }
+        { id: 'accounts-cashflow', label: 'Cash Flow Audit' }
+      ]
+    },
+    {
+      id: 'expenses',
+      label: 'Operating Expenses',
+      icon: MinusCircle,
+      category: 'Finance',
+      subItems: [
+        { id: 'expenses-list', label: 'Expense Ledgers' },
+        { id: 'expenses-add', label: 'Record New Expense' },
+        { id: 'expenses-categories', label: 'Expense Categories' }
       ]
     },
     {
       id: 'reports',
-      label: 'Reports',
+      label: 'Reports & Analytics',
       icon: BarChart3,
+      category: 'Finance',
       subItems: [
-        { id: 'reports-profit-loss', label: 'Profit / Loss Report' },
-        { id: 'reports-purchases-sales', label: 'Purchase & Sale Report' },
-        { id: 'reports-tax', label: 'Tax Report (VAT)' },
-        { id: 'reports-contacts', label: 'Supplier & Customer Report' },
-        { id: 'reports-stock', label: 'Stock Report' },
-        { id: 'reports-trending', label: 'Trending Products' }
+        { id: 'reports-profit-loss', label: 'Profit & Loss Statement' },
+        { id: 'reports-purchases-sales', label: 'Purchase vs Sales Audit' },
+        { id: 'reports-tax', label: 'NBR Tax & VAT Report' },
+        { id: 'reports-contacts', label: 'Client Ledger Summary' },
+        { id: 'reports-stock', label: 'Stock Valuation Report' },
+        { id: 'reports-trending', label: 'Trending Hardware SKUs' }
       ]
     },
     {
-      id: 'notifications-templates',
-      label: 'Notification Templates',
-      icon: Bell
-    },
-    {
-      id: 'user-manual',
-      label: 'User Manual',
-      icon: BookOpen
-    },
-    {
-      id: 'settings-business',
-      label: 'Settings',
-      icon: Settings
-    },
-    {
-      id: 'hrm-staff',
-      label: 'HRM',
-      icon: Award
+      id: 'users',
+      label: 'Staff & Roles',
+      icon: UserCheck,
+      category: 'Administration',
+      subItems: [
+        { id: 'users-list', label: 'Staff Accounts' },
+        { id: 'users-roles', label: 'Roles & Permissions' },
+        { id: 'users-commission', label: 'Sales Commission Agents' }
+      ]
     },
     {
       id: 'essentials-todo',
-      label: 'Essentials',
-      icon: CheckSquare
+      label: 'Store Operations Checklist',
+      icon: CheckSquare,
+      category: 'Administration'
+    },
+    {
+      id: 'admin-database',
+      label: 'Database & Audit Export',
+      icon: Database,
+      category: 'Administration'
+    },
+    {
+      id: 'settings-business',
+      label: 'System & Gateway Settings',
+      icon: Settings,
+      category: 'Administration'
     }
   ];
 
   return (
-    <aside className="w-64 bg-[#111827] text-slate-300 border-r border-[#1f2937] flex flex-col justify-between h-screen fixed left-0 top-0 z-50 select-none shadow-xl">
-      <div className="overflow-y-auto overflow-x-hidden flex-1 scrollbar-thin scrollbar-thumb-slate-700">
-        {/* Brand Header: NAZMUL / Dhaka Silicon */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-[#1f2937] bg-[#0f172a]">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow">
-              N
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-40 bg-stone-950/60 dark:bg-black/80 backdrop-blur-xs lg:hidden transition-opacity duration-200"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <aside
+        className={`w-64 bg-surface-secondary dark:bg-[#161B16] border-r border-boundary-subtle flex flex-col justify-between h-screen fixed lg:sticky top-0 z-50 transition-transform duration-200 ease-in-out select-none shadow-md lg:shadow-none ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <div className="overflow-y-auto overflow-x-hidden flex-1 scrollbar-thin">
+          {/* Brand Header */}
+          <div className="h-15 flex items-center justify-between px-4 border-b border-boundary-subtle bg-surface/80 dark:bg-[#181C18]/80 backdrop-blur-xs sticky top-0 z-10">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-brand-ochre flex items-center justify-center text-stone-950 font-black text-xs shadow-xs tracking-wider">
+                DS
+              </div>
+              <div className="leading-tight">
+                <div className="font-bold text-content-primary text-xs tracking-tight">
+                  Dhaka Silicon Ltd.
+                </div>
+                <div className="text-[10px] text-content-muted font-mono">
+                  Hardware Wholesale ERP
+                </div>
+              </div>
             </div>
-            <div className="font-extrabold tracking-wider text-white text-base">
-              NAZMUL
+
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-semibold text-stone-800 dark:text-brand-sage bg-brand-sage/30 dark:bg-brand-sage/15 px-1.5 py-0.5 rounded border border-brand-sageDark/30">
+                v4.2
+              </span>
+              {/* Close Button on Mobile Drawer */}
+              <button
+                onClick={onCloseMobile}
+                className="lg:hidden p-1 rounded-md text-content-muted hover:text-content-primary hover:bg-surface-tertiary"
+                aria-label="Close sidebar"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <span className="text-[10px] text-blue-400 font-mono bg-blue-950/60 px-2 py-0.5 rounded border border-blue-800">
-            ERP v4.2
-          </span>
-        </div>
 
-        {/* Navigation List */}
-        <nav className="p-2 space-y-0.5 text-xs">
-          {menuGroups.map((group) => {
-            const Icon = group.icon;
-            const hasSub = group.subItems && group.subItems.length > 0;
-            const isOpen = openSections[group.id] || false;
-            const isGroupActive = activeTab === group.id || (group.subItems && group.subItems.some(s => s.id === activeTab));
+          {/* Navigation List */}
+          <nav className="p-2 space-y-1 text-xs">
+            {menuGroups.map((group, index) => {
+              const Icon = group.icon;
+              const hasSub = group.subItems && group.subItems.length > 0;
+              const isOpen = openSections[group.id] || false;
+              const isGroupActive = activeTab === group.id || (group.subItems && group.subItems.some(s => s.id === activeTab));
 
-            return (
-              <div key={group.id} className="space-y-0.5">
-                {hasSub ? (
-                  <div>
+              // Show category divider when category changes
+              const prevGroup = index > 0 ? menuGroups[index - 1] : null;
+              const showCategory = group.category && (!prevGroup || prevGroup.category !== group.category);
+
+              return (
+                <div key={group.id} className="space-y-0.5">
+                  {showCategory && (
+                    <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-content-muted/80">
+                      {group.category}
+                    </div>
+                  )}
+
+                  {hasSub ? (
+                    <div>
+                      <button
+                        onClick={() => toggleSection(group.id)}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all duration-150 font-medium ${
+                          isGroupActive 
+                            ? 'bg-brand-sage/30 text-stone-900 dark:bg-brand-sage/15 dark:text-brand-sage border border-brand-sageDark/30 font-semibold' 
+                            : 'hover:bg-surface-tertiary/70 text-content-secondary hover:text-content-primary'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <Icon className={`w-4 h-4 flex-shrink-0 ${isGroupActive ? 'text-brand-ochreDeep dark:text-brand-ochre' : 'text-content-muted'}`} />
+                          <span className="truncate">{group.label}</span>
+                        </div>
+                        <ChevronRight className={`w-3.5 h-3.5 text-content-muted transition-transform duration-150 flex-shrink-0 ${isOpen ? 'rotate-90 text-brand-ochreDeep dark:text-brand-ochre' : ''}`} />
+                      </button>
+
+                      {/* Submenu Items */}
+                      {isOpen && (
+                        <div className="ml-4 pl-2 my-1 space-y-0.5 border-l border-boundary-subtle">
+                          {group.subItems!.map((sub) => {
+                            const isSubActive = activeTab === sub.id;
+                            return (
+                              <button
+                                key={sub.id}
+                                onClick={() => handleNavClick(sub.id)}
+                                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11.5px] transition-all duration-100 flex items-center gap-1.5 ${
+                                  isSubActive
+                                    ? 'bg-brand-sage text-stone-950 font-bold shadow-xs'
+                                    : 'text-content-secondary hover:text-content-primary hover:bg-surface-tertiary/60'
+                                }`}
+                              >
+                                <span className={`text-[9px] ${isSubActive ? 'text-stone-950 font-bold' : 'text-content-muted'}`}>•</span>
+                                <span className="truncate">{sub.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <button
-                      onClick={() => toggleSection(group.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition font-medium ${
-                        isGroupActive 
-                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-                          : 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
+                      onClick={() => handleNavClick(group.id)}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-150 font-medium ${
+                        activeTab === group.id 
+                          ? 'bg-brand-sage text-stone-950 font-bold shadow-xs border border-brand-sageDark/30' 
+                          : 'hover:bg-surface-tertiary/70 text-content-secondary hover:text-content-primary'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="w-4 h-4 text-slate-400" />
-                        <span>{group.label}</span>
-                      </div>
-                      <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-90 text-blue-400' : ''}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${activeTab === group.id ? 'text-stone-950' : 'text-content-muted'}`} />
+                      <span className="truncate">{group.label}</span>
                     </button>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+        </div>
 
-                    {/* Submenu Items */}
-                    {isOpen && (
-                      <div className="ml-5 pl-2.5 my-1 space-y-0.5 border-l border-slate-700">
-                        {group.subItems!.map((sub) => {
-                          const isSubActive = activeTab === sub.id;
-                          return (
-                            <button
-                              key={sub.id}
-                              onClick={() => setActiveTab(sub.id)}
-                              className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11.5px] transition flex items-center gap-1.5 ${
-                                isSubActive
-                                  ? 'bg-blue-600 text-white font-semibold shadow-sm'
-                                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-                              }`}
-                            >
-                              <span className="text-slate-500 font-mono text-[9px]">―</span>
-                              <span>{sub.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setActiveTab(group.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition font-medium ${
-                      activeTab === group.id 
-                        ? 'bg-blue-600 text-white shadow' 
-                        : 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 text-slate-400" />
-                    <span>{group.label}</span>
-                  </button>
-                )}
+        {/* User Footer Profile */}
+        <div className="p-3 border-t border-boundary-subtle bg-surface/90 dark:bg-[#181C18]/90 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-brand-ochre flex items-center justify-center font-bold text-stone-950 text-xs shadow-xs">
+              {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-content-primary truncate">{userName}</div>
+              <div className="text-[10px] text-status-success font-medium flex items-center gap-1 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-status-success inline-block"></span>
+                <span>{userRole}</span>
               </div>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* User Footer Profile */}
-      <div className="p-3 border-t border-[#1f2937] bg-[#0f172a] text-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs shadow">
-            {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-slate-200 truncate">{userName}</div>
-            <div className="text-[10px] text-emerald-400 font-mono truncate">● {userRole}</div>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

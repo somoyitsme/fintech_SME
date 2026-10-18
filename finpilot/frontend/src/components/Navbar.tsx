@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Maximize2, 
   Minimize2, 
@@ -7,24 +8,26 @@ import {
   ShoppingBag, 
   DollarSign, 
   Bell, 
-  User, 
   LogOut, 
   ChevronDown, 
   Check, 
   X, 
-  Globe, 
   Calendar,
   AlertTriangle,
   Package,
   Truck,
-  Building2,
-  Delete,
-  CheckCircle2
+  Menu,
+  ShieldCheck,
+  CheckCheck
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { ThemeToggle } from './common/ThemeToggle';
+import { Button } from './common/Button';
+import { Badge } from './common/Badge';
 
 interface NavbarProps {
   companyName: string;
+  pageTitle?: string;
   industry: string;
   currency: string;
   healthScore: number;
@@ -35,22 +38,25 @@ interface NavbarProps {
   onSwitchUser?: (user: { name: string; role: string; email: string }) => void;
   onNavigateTab?: (tab: string) => void;
   onOpenPos?: () => void;
+  onToggleMobileSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   companyName,
-  industry,
-  currency,
-  healthScore,
+  pageTitle = 'Dashboard',
+  industry: _industry,
+  currency: _currency,
+  healthScore: _healthScore,
   userName = "MD Nazmul Hasan",
   userRole = "Managing Director",
   userEmail = "nazmul@dhakasilicon.com",
   onLogout,
   onSwitchUser,
   onNavigateTab,
-  onOpenPos
+  onOpenPos,
+  onToggleMobileSidebar
 }) => {
-  const { products, orders, cashRegister, openCashRegister, closeCashRegister, addNewProduct, addNewCustomer, addSupplier, addExpense } = useStore();
+  const { products: _products, orders: _orders, cashRegister, openCashRegister, closeCashRegister, addNewProduct, addNewCustomer, addSupplier, addExpense } = useStore();
   
   // Header Modals & Dropdowns State
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -59,8 +65,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [quickAddTab, setQuickAddTab] = useState<'product' | 'customer' | 'supplier' | 'expense'>('product');
   const [registerOpen, setRegisterOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsRead, setNotificationsRead] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [language, setLanguage] = useState<'English' | 'বাংলা'>('English');
 
   // Calculator State
   const [calcInput, setCalcInput] = useState('0');
@@ -187,7 +193,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       name: newSupName,
       contactPerson: newSupContact || 'Sales Rep',
       phone: newSupPhone || '+880 1700-000000',
-      email: `${newSupName.toLowerCase().replace(/\\s+/g, '')}@supplier.bd`,
+      email: `${newSupName.toLowerCase().replace(/\s+/g, '')}@supplier.bd`,
       address: 'Dhaka, Bangladesh',
       country: 'Bangladesh',
       category: newSupCategory,
@@ -219,9 +225,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   // Close dropdowns on outside click
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!dropdownRef.current?.contains(target) && !notificationRef.current?.contains(target)) {
         setUserDropdownOpen(false);
         setNotificationsOpen(false);
       }
@@ -231,162 +239,222 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   return (
-    <header className="h-14 bg-[#1e293b] text-white border-b border-[#334155] sticky top-0 z-40 flex items-center justify-between px-4 ml-64 shadow-md select-none">
-      {/* Left: Brand / System indicator */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="font-semibold text-xs tracking-wide text-slate-200">
-            {companyName}
-          </span>
-        </div>
-        <span className="text-[11px] bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded border border-slate-600 font-mono">
-          Dhaka, BD (৳)
-        </span>
-      </div>
+    <>
+    <header className="sticky top-0 z-30 h-16 overflow-visible border-b border-boundary-subtle bg-surface/90 backdrop-blur-sm shadow-[0_1px_0_rgba(17,24,39,0.02)] select-none transition-colors duration-200">
+      <div className="flex h-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-6 overflow-visible">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          {onToggleMobileSidebar && (
+            <button
+              onClick={onToggleMobileSidebar}
+              className="lg:hidden p-2 rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-secondary transition-colors"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          )}
 
-      {/* Right Controls: Exactly as in market ERP (Fullscreen, Quick Add, Calc, SALE POS, Cash Drawer, Date, Lang, Notifications, User) */}
-      <div className="flex items-center gap-2">
-        {/* 1. Fullscreen Toggle */}
-        <button
-          onClick={toggleFullscreen}
-          className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/70 transition"
-          title="Toggle Fullscreen"
-        >
-          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </button>
-
-        {/* 2. Quick Add (+) Button */}
-        <button
-          onClick={() => setQuickAddOpen(true)}
-          className="p-1.5 rounded-lg text-white bg-blue-600 hover:bg-blue-500 transition shadow-sm flex items-center justify-center font-bold"
-          title="Quick Add (Product, Customer, Supplier, Expense)"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-
-        {/* 3. Calculator (🖩) Button */}
-        <button
-          onClick={() => setCalcOpen(true)}
-          className="p-1.5 rounded-lg text-white bg-teal-600 hover:bg-teal-500 transition shadow-sm flex items-center justify-center"
-          title="Open Calculator"
-        >
-          <Calculator className="w-4 h-4" />
-        </button>
-
-        {/* 4. SALE (POS) Direct Shortcut Button */}
-        <button
-          onClick={() => {
-            if (onOpenPos) onOpenPos();
-            else if (onNavigateTab) onNavigateTab('sell-pos');
-          }}
-          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg flex items-center gap-1.5 transition shadow-sm tracking-wider"
-          title="Open POS Terminal"
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>SALE</span>
-        </button>
-
-        {/* 5. Today's Cash Register / Cash Drawer (💵) Button */}
-        <button
-          onClick={() => setRegisterOpen(true)}
-          className="p-1.5 rounded-lg text-white bg-emerald-700 hover:bg-emerald-600 transition shadow-sm flex items-center justify-center"
-          title="Today's Cash Register Details"
-        >
-          <DollarSign className="w-4 h-4" />
-        </button>
-
-        {/* 6. Current Date Display */}
-        <div className="hidden lg:flex items-center gap-1 text-xs text-slate-300 font-mono px-2 py-1 bg-slate-800/80 rounded border border-slate-700">
-          <Calendar className="w-3.5 h-3.5 text-blue-400" />
-          <span>17/10/2026</span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-content-muted">
+              <span className="hidden sm:inline">{companyName}</span>
+              <span className="hidden sm:inline" aria-hidden="true">/</span>
+              <span>Workspace</span>
+            </div>
+            <p className="text-sm font-semibold tracking-tight text-content-primary truncate">{pageTitle}</p>
+          </div>
         </div>
 
-        {/* 7. Language Selector */}
-        <button
-          onClick={() => setLanguage(l => l === 'English' ? 'বাংলা' : 'English')}
-          className="flex items-center gap-1 text-xs text-slate-300 hover:text-white px-2 py-1 bg-slate-800/80 rounded border border-slate-700 transition"
-          title="Switch Language"
-        >
-          <Globe className="w-3.5 h-3.5 text-slate-400" />
-          <span>{language === 'English' ? 'Eng' : 'বাং'}</span>
-        </button>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={toggleFullscreen}
+            className="hidden sm:flex p-2 rounded-lg text-content-muted hover:text-content-primary hover:bg-surface-secondary transition"
+            title="Toggle Fullscreen"
+            aria-label="Toggle Fullscreen"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
 
-        {/* 8. Notification Bell */}
-        <div className="relative">
+          <button
+            onClick={() => setQuickAddOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-ochre text-stone-950 shadow-sm transition hover:bg-brand-ochreDark"
+            title="Quick Add (Product, Customer, Supplier, Expense)"
+            aria-label="Quick Add"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setCalcOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-boundary-subtle bg-surface-secondary text-content-secondary transition hover:text-content-primary"
+            title="Open POS Calculator"
+            aria-label="Open Calculator"
+          >
+            <Calculator className="w-4 h-4" />
+          </button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              if (onOpenPos) onOpenPos();
+              else if (onNavigateTab) onNavigateTab('sell-pos');
+            }}
+            leftIcon={<ShoppingBag className="w-3.5 h-3.5 text-brand-ochre" />}
+            className="hidden sm:inline-flex font-bold tracking-[0.12em]"
+            title="Open POS Terminal"
+          >
+            <span>SALE</span>
+          </Button>
+
+          <button
+            onClick={() => setRegisterOpen(true)}
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border transition ${
+              cashRegister.isOpen
+                ? 'border-brand-sageDark/40 bg-brand-sage/20 text-stone-900 dark:text-brand-sage'
+                : 'border-boundary-subtle bg-surface-secondary text-content-muted hover:text-content-primary'
+            }`}
+            title="Today's Cash Register Details"
+            aria-label="Cash Register"
+          >
+            <DollarSign className="w-4 h-4" />
+          </button>
+
+          <div className="hidden xl:flex items-center gap-1.5 rounded-lg border border-boundary-subtle bg-surface-secondary px-2.5 py-1.5 text-[11px] text-content-muted font-tabular">
+            <Calendar className="w-3.5 h-3.5 text-brand-ochreDeep dark:text-brand-ochre" />
+            <span>17/10/2026</span>
+          </div>
+
+          <ThemeToggle variant="cycle" className="hidden sm:inline-flex" />
+        </div>
+
+        {/* Notification Bell */}
+        <div className="relative" ref={notificationRef}>
           <button
             onClick={() => {
               setNotificationsOpen(!notificationsOpen);
               setUserDropdownOpen(false);
             }}
-            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/70 transition relative"
+            className={`relative flex h-10 w-10 items-center justify-center rounded-xl text-content-secondary transition-colors hover:bg-surface-secondary hover:text-content-primary ${
+              notificationsOpen ? 'bg-surface-secondary text-content-primary' : ''
+            }`}
             title="System Notifications"
+            aria-label={notificationsRead ? 'Notifications' : 'Notifications, 3 unread'}
+            aria-expanded={notificationsOpen}
+            aria-controls="notifications-panel"
           >
-            <Bell className="w-4 h-4" />
-            <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1 right-1"></span>
+            <Bell className="h-5 w-5" aria-hidden="true" />
+            {!notificationsRead && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-surface bg-status-danger px-1 text-[10px] font-bold leading-none text-white shadow-sm"
+              >
+                3
+              </span>
+            )}
           </button>
 
-          {/* Notifications Popover */}
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-[#1e293b] border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs text-slate-200 animate-in fade-in">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-700 font-semibold text-slate-100">
-                <span>Notifications (3 New)</span>
-                <span className="text-[10px] text-blue-400">Mark all read</span>
+            <section
+              id="notifications-panel"
+              aria-label="Notifications"
+              className="absolute right-0 top-full z-50 mt-3 flex max-h-[min(34rem,calc(100dvh-5rem))] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-boundary-strong bg-surface text-content-primary shadow-2xl shadow-stone-950/15 animate-in fade-in zoom-in-95"
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-boundary-subtle px-4 py-3.5">
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight">Notifications</h2>
+                  <p className="mt-0.5 text-[11px] text-content-muted">
+                    {notificationsRead ? 'You’re all caught up' : '3 unread alerts'}
+                  </p>
+                </div>
+                {!notificationsRead && (
+                  <button
+                    type="button"
+                    onClick={() => setNotificationsRead(true)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold text-content-secondary transition hover:bg-surface-secondary hover:text-content-primary"
+                  >
+                    <CheckCheck className="h-3.5 w-3.5" />
+                    Mark all read
+                  </button>
+                )}
               </div>
-              <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
-                <div className="p-2 rounded bg-slate-800/80 border border-slate-700/60 flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-slate-200">Low Stock Alert: RTX 4080 Super</div>
-                    <div className="text-[11px] text-slate-400">Only 14 units left in Banani Central Vault. Reorder threshold is 10.</div>
+              <div className="overflow-y-auto">
+                <article className={`flex gap-3 border-b border-boundary-subtle px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-warningBg text-status-warning">
+                    <AlertTriangle className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-xs font-semibold leading-5">Low stock: RTX 4080 Super</h3>
+                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">Only 14 units left in Banani Central Vault. Reorder threshold is 10.</p>
+                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Inventory</p>
                   </div>
-                </div>
-                <div className="p-2 rounded bg-slate-800/80 border border-slate-700/60 flex items-start gap-2">
-                  <Truck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-slate-200">Steadfast Courier Delivery Out</div>
-                    <div className="text-[11px] text-slate-400">Consignment STDF-CTG-81920 out for delivery in Chattogram.</div>
+                </article>
+                <article className={`flex gap-3 border-b border-boundary-subtle px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-successBg text-status-success">
+                    <Truck className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-xs font-semibold leading-5">Courier delivery in progress</h3>
+                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">Consignment STDF-CTG-81920 is out for delivery in Chattogram.</p>
+                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Delivery</p>
                   </div>
-                </div>
-                <div className="p-2 rounded bg-slate-800/80 border border-slate-700/60 flex items-start gap-2">
-                  <Package className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-slate-200">Customs Port Duty Cleared</div>
-                    <div className="text-[11px] text-slate-400">PO-2026-ASUS-091 cleared customs at Chittagong Port.</div>
+                </article>
+                <article className={`flex gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-infoBg text-status-info">
+                    <Package className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-xs font-semibold leading-5">Customs duty cleared</h3>
+                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">PO-2026-ASUS-091 cleared customs at Chittagong Port.</p>
+                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Purchasing</p>
                   </div>
-                </div>
+                </article>
               </div>
-            </div>
+            </section>
           )}
         </div>
 
-        {/* 9. User Profile Dropdown */}
+        {/* User Profile Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => {
               setUserDropdownOpen(!userDropdownOpen);
               setNotificationsOpen(false);
             }}
-            className="flex items-center gap-2 pl-2 pr-1.5 py-1 rounded-lg text-slate-200 hover:text-white hover:bg-slate-700/70 transition text-xs font-medium"
+            className="flex items-center gap-2 pl-2 pr-1.5 py-1 rounded-lg text-content-primary hover:bg-surface-secondary transition text-xs font-medium"
+            aria-label="User profile menu"
           >
-            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center font-bold text-[11px]">
+            <div className="w-6 h-6 rounded-full bg-brand-ochre flex items-center justify-center font-bold text-stone-950 text-[11px] shadow-xs">
               {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
             </div>
-            <span className="hidden sm:inline font-semibold">{userName}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden md:inline font-semibold text-content-primary truncate max-w-[120px]">{userName}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-content-muted" />
           </button>
 
           {/* User Menu Dropdown */}
           {userDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-[#1e293b] border border-slate-700 rounded-xl shadow-2xl p-2 z-50 text-xs text-slate-200 animate-in fade-in">
-              <div className="p-2.5 bg-slate-800/80 rounded-lg mb-2">
-                <div className="font-bold text-white text-sm">{userName}</div>
-                <div className="text-[11px] text-blue-400 font-mono">{userRole}</div>
-                <div className="text-[10px] text-slate-400">{userEmail}</div>
+            <div className="absolute right-0 mt-2 w-64 max-h-[calc(100vh-6rem)] overflow-y-auto bg-surface border border-boundary-strong rounded-xl shadow-xl p-2 z-50 text-xs text-content-primary animate-in fade-in zoom-in-95">
+              <div className="p-2.5 bg-surface-secondary rounded-lg mb-2">
+                <div className="font-bold text-content-primary text-sm">{userName}</div>
+                <div className="text-[11px] text-brand-ochreDeep dark:text-brand-ochre font-mono font-medium">{userRole}</div>
+                <div className="text-[10px] text-content-muted truncate">{userEmail}</div>
+              </div>
+
+              {/* Mobile theme toggle fallback */}
+              <div className="sm:hidden px-2 py-1 mb-2 border-b border-boundary-subtle pb-2">
+                <div className="text-[10px] uppercase font-bold text-content-muted mb-1">Theme</div>
+                <ThemeToggle variant="buttons" className="w-full justify-between" />
               </div>
 
               <div className="space-y-1">
-                <div className="px-2 py-1 text-[10px] uppercase font-bold text-slate-400">Switch Account</div>
+                <div className="px-2 py-1 text-[10px] uppercase font-bold text-content-muted">Switch Role</div>
                 <button
                   onClick={() => {
                     if (onSwitchUser) onSwitchUser({
@@ -396,13 +464,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                     });
                     setUserDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-800 flex items-center justify-between text-slate-300 hover:text-white"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-secondary flex items-center justify-between text-content-primary transition"
                 >
                   <div>
                     <div className="font-semibold">MD Nazmul Hasan</div>
-                    <div className="text-[10px] text-slate-400">Managing Director</div>
+                    <div className="text-[10px] text-content-muted">Managing Director</div>
                   </div>
-                  {userName.includes("Nazmul") && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  {userName.includes("Nazmul") && <Check className="w-3.5 h-3.5 text-status-success" />}
                 </button>
                 <button
                   onClick={() => {
@@ -413,23 +481,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                     });
                     setUserDropdownOpen(false);
                   }}
-                  className="w-full text-left px-2 py-1.5 rounded hover:bg-slate-800 flex items-center justify-between text-slate-300 hover:text-white"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-secondary flex items-center justify-between text-content-primary transition"
                 >
                   <div>
                     <div className="font-semibold">Tanvir Ahmed</div>
-                    <div className="text-[10px] text-slate-400">Senior Sales Lead</div>
+                    <div className="text-[10px] text-content-muted">Senior Sales Lead</div>
                   </div>
-                  {userName.includes("Tanvir") && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  {userName.includes("Tanvir") && <Check className="w-3.5 h-3.5 text-status-success" />}
                 </button>
               </div>
 
-              <div className="pt-2 mt-2 border-t border-slate-700">
+              <div className="pt-2 mt-2 border-t border-boundary-subtle">
                 <button
                   onClick={() => {
                     setUserDropdownOpen(false);
                     if (onLogout) onLogout();
                   }}
-                  className="w-full text-left px-2 py-1.5 rounded text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 font-medium"
+                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-status-danger hover:bg-status-dangerBg flex items-center gap-2 font-medium transition"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Log Out of Session</span>
@@ -439,442 +507,445 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+    </header>
 
       {/* ============================================================== */}
-      {/* MODAL 1: WORKING CALCULATOR POPUP */}
+      {/* MODAL 1: POS CALCULATOR */}
       {/* ============================================================== */}
-      {calcOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-80 shadow-2xl overflow-hidden p-4 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+      {calcOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-3 bg-stone-950/60 dark:bg-black/80 backdrop-blur-xs">
+          <div className="bg-surface border border-boundary-strong rounded-2xl w-80 max-h-[calc(100dvh-1.5rem)] overflow-y-auto shadow-2xl p-4 text-content-primary animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-boundary-subtle">
               <div className="flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-teal-400" />
+                <Calculator className="w-5 h-5 text-brand-ochreDeep dark:text-brand-ochre" />
                 <span className="font-bold text-sm">ERP POS Calculator</span>
               </div>
-              <button onClick={() => setCalcOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setCalcOpen(false)} className="text-content-muted hover:text-content-primary p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Display */}
-            <div className="my-3 p-3 bg-slate-900 border border-slate-700 rounded-xl text-right">
-              <div className="text-xs text-slate-400 h-4 font-mono">
+            <div className="my-3 p-3 bg-surface-secondary border border-boundary-subtle rounded-xl text-right">
+              <div className="text-xs text-content-muted h-4 font-mono font-tabular">
                 {calcPrev !== null ? `${calcPrev} ${calcOp}` : ''}
               </div>
-              <div className="text-2xl font-bold font-mono tracking-wider overflow-x-auto text-emerald-400">
+              <div className="text-2xl font-bold font-mono font-tabular tracking-wider overflow-x-auto text-content-primary">
                 {calcInput}
               </div>
             </div>
 
             {/* Keypad */}
             <div className="grid grid-cols-4 gap-2 text-sm font-semibold">
-              <button onClick={handleCalcClear} className="p-3 bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl hover:bg-rose-600/50">C</button>
-              <button onClick={() => handleCalcOp('/')} className="p-3 bg-slate-800 text-teal-400 border border-slate-700 rounded-xl hover:bg-slate-700">÷</button>
-              <button onClick={() => handleCalcOp('*')} className="p-3 bg-slate-800 text-teal-400 border border-slate-700 rounded-xl hover:bg-slate-700">×</button>
-              <button onClick={() => setCalcInput(prev => prev.length > 1 ? prev.slice(0, -1) : '0')} className="p-3 bg-slate-800 text-amber-400 border border-slate-700 rounded-xl hover:bg-slate-700">⌫</button>
+              <button onClick={handleCalcClear} className="p-3 bg-status-dangerBg text-status-danger border border-status-dangerBorder rounded-xl hover:opacity-90 font-bold">C</button>
+              <button onClick={() => handleCalcOp('/')} className="p-3 bg-surface-secondary text-brand-ochreDeep dark:text-brand-ochre border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">÷</button>
+              <button onClick={() => handleCalcOp('*')} className="p-3 bg-surface-secondary text-brand-ochreDeep dark:text-brand-ochre border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">×</button>
+              <button onClick={() => setCalcInput(prev => prev.length > 1 ? prev.slice(0, -1) : '0')} className="p-3 bg-surface-secondary text-status-warning border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">⌫</button>
 
-              <button onClick={() => handleCalcDigit('7')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">7</button>
-              <button onClick={() => handleCalcDigit('8')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">8</button>
-              <button onClick={() => handleCalcDigit('9')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">9</button>
-              <button onClick={() => handleCalcOp('-')} className="p-3 bg-slate-800 text-teal-400 border border-slate-700 rounded-xl hover:bg-slate-700">-</button>
+              <button onClick={() => handleCalcDigit('7')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">7</button>
+              <button onClick={() => handleCalcDigit('8')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">8</button>
+              <button onClick={() => handleCalcDigit('9')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">9</button>
+              <button onClick={() => handleCalcOp('-')} className="p-3 bg-surface-secondary text-brand-ochreDeep dark:text-brand-ochre border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">-</button>
 
-              <button onClick={() => handleCalcDigit('4')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">4</button>
-              <button onClick={() => handleCalcDigit('5')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">5</button>
-              <button onClick={() => handleCalcDigit('6')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">6</button>
-              <button onClick={() => handleCalcOp('+')} className="p-3 bg-slate-800 text-teal-400 border border-slate-700 rounded-xl hover:bg-slate-700">+</button>
+              <button onClick={() => handleCalcDigit('4')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">4</button>
+              <button onClick={() => handleCalcDigit('5')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">5</button>
+              <button onClick={() => handleCalcDigit('6')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">6</button>
+              <button onClick={() => handleCalcOp('+')} className="p-3 bg-surface-secondary text-brand-ochreDeep dark:text-brand-ochre border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">+</button>
 
-              <button onClick={() => handleCalcDigit('1')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">1</button>
-              <button onClick={() => handleCalcDigit('2')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">2</button>
-              <button onClick={() => handleCalcDigit('3')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">3</button>
-              <button onClick={handleCalcEquals} className="row-span-2 p-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 font-bold flex items-center justify-center text-lg">=</button>
+              <button onClick={() => handleCalcDigit('1')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">1</button>
+              <button onClick={() => handleCalcDigit('2')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">2</button>
+              <button onClick={() => handleCalcDigit('3')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">3</button>
+              <button onClick={handleCalcEquals} className="row-span-2 p-3 bg-brand-ochre text-stone-950 font-bold rounded-xl hover:bg-brand-ochreDark flex items-center justify-center text-lg shadow-sm">=</button>
 
-              <button onClick={() => handleCalcDigit('0')} className="col-span-2 p-3 bg-slate-800 rounded-xl hover:bg-slate-700">0</button>
-              <button onClick={() => handleCalcDigit('.')} className="p-3 bg-slate-800 rounded-xl hover:bg-slate-700">.</button>
+              <button onClick={() => handleCalcDigit('0')} className="col-span-2 p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">0</button>
+              <button onClick={() => handleCalcDigit('.')} className="p-3 bg-surface-secondary border border-boundary-subtle rounded-xl hover:bg-surface-tertiary">.</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
-      {/* MODAL 2: QUICK ADD MODAL (Product, Customer, Supplier, Expense) */}
+      {/* MODAL 2: QUICK ADD MODAL */}
       {/* ============================================================== */}
-      {quickAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden p-5 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+      {quickAddOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-3 bg-stone-950/60 dark:bg-black/80 backdrop-blur-xs">
+          <div className="bg-surface border border-boundary-strong rounded-2xl w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto shadow-2xl p-5 text-content-primary animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-boundary-subtle">
               <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5 text-blue-400" />
-                <span className="font-bold text-base">Quick Add Entry</span>
+                <div className="w-7 h-7 rounded-lg bg-brand-ochre flex items-center justify-center text-stone-950 font-bold">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-base text-content-primary">Quick Add Enterprise Entity</h3>
               </div>
-              <button onClick={() => setQuickAddOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setQuickAddOpen(false)} className="text-content-muted hover:text-content-primary p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1.5 my-3 p-1 bg-slate-900 rounded-xl text-xs font-semibold">
-              <button
-                onClick={() => setQuickAddTab('product')}
-                className={`flex-1 py-1.5 rounded-lg transition ${quickAddTab === 'product' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                + Product
-              </button>
-              <button
-                onClick={() => setQuickAddTab('customer')}
-                className={`flex-1 py-1.5 rounded-lg transition ${quickAddTab === 'customer' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                + Customer
-              </button>
-              <button
-                onClick={() => setQuickAddTab('supplier')}
-                className={`flex-1 py-1.5 rounded-lg transition ${quickAddTab === 'supplier' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                + Supplier
-              </button>
-              <button
-                onClick={() => setQuickAddTab('expense')}
-                className={`flex-1 py-1.5 rounded-lg transition ${quickAddTab === 'expense' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'}`}
-              >
-                + Expense
-              </button>
+            {/* Quick Add Sub-Tabs */}
+            <div className="flex items-center gap-1 my-4 p-1 bg-surface-secondary rounded-xl border border-boundary-subtle text-xs">
+              {(['product', 'customer', 'supplier', 'expense'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setQuickAddTab(tab)}
+                  className={`flex-1 py-1.5 rounded-lg capitalize font-semibold transition ${
+                    quickAddTab === tab
+                      ? 'bg-surface text-content-primary shadow-xs border border-boundary-subtle'
+                      : 'text-content-muted hover:text-content-primary'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
-            {/* TAB CONTENT */}
+            {/* FORM 1: PRODUCT */}
             {quickAddTab === 'product' && (
               <form onSubmit={handleQuickAddProduct} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1">Product Name</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Product Hardware Model</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Gigabyte GeForce RTX 4070 Windforce OC 12GB"
+                    placeholder="e.g. Gigabyte RTX 4070 Windforce OC 12GB"
                     value={newProdName}
                     onChange={e => setNewProdName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary focus:border-brand-ochre focus:ring-1 focus:ring-brand-ochre"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1">Category</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Category</label>
                     <select
                       value={newProdCategory}
                       onChange={e => setNewProdCategory(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                     >
                       <option>Graphics Cards</option>
                       <option>Processors</option>
                       <option>Motherboards</option>
                       <option>Memory (RAM)</option>
-                      <option>Storage</option>
+                      <option>Storage (SSD)</option>
                       <option>Power Supplies</option>
-                      <option>Cooling</option>
-                      <option>Casings</option>
-                      <option>Monitors</option>
-                      <option>Laptops</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Brand</label>
-                    <input
-                      type="text"
+                    <label className="block text-content-secondary font-semibold mb-1">Brand</label>
+                    <select
                       value={newProdBrand}
                       onChange={e => setNewProdBrand(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
-                    />
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
+                    >
+                      <option>ASUS</option>
+                      <option>MSI</option>
+                      <option>Gigabyte</option>
+                      <option>Intel</option>
+                      <option>AMD</option>
+                      <option>Samsung</option>
+                      <option>Corsair</option>
+                    </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1">Selling Price (৳)</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Retail Price (৳)</label>
                     <input
                       type="number"
                       required
                       placeholder="85000"
                       value={newProdPrice}
                       onChange={e => setNewProdPrice(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Cost Price (৳)</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Cost Price (৳)</label>
                     <input
                       type="number"
                       placeholder="68000"
                       value={newProdCost}
                       onChange={e => setNewProdCost(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Initial Stock</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Initial Units</label>
                     <input
                       type="number"
+                      placeholder="10"
                       value={newProdStock}
                       onChange={e => setNewProdStock(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-                >
-                  Save Product to Catalog
-                </button>
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+                  <Button type="submit" variant="brand" size="sm">Save Product</Button>
+                </div>
               </form>
             )}
 
+            {/* FORM 2: CUSTOMER */}
             {quickAddTab === 'customer' && (
               <form onSubmit={handleQuickAddCustomer} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1">Customer / Company Name</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Customer / Enterprise Name</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Star Gaming Zone BD"
+                    placeholder="e.g. Star Computer Point"
                     value={newCustName}
                     onChange={e => setNewCustName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1">Contact Phone</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Phone / Mobile</label>
                     <input
                       type="text"
                       required
                       placeholder="+880 1711-000000"
                       value={newCustPhone}
                       onChange={e => setNewCustPhone(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Customer Type</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Client Tier</label>
                     <select
                       value={newCustType}
                       onChange={e => setNewCustType(e.target.value as any)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                     >
-                      <option>Wholesale</option>
-                      <option>Corporate</option>
-                      <option>Retail</option>
+                      <option value="Wholesale">Wholesale Dealer</option>
+                      <option value="Retail">Retail Walk-in</option>
+                      <option value="Corporate">Corporate / Institute</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Delivery Address</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Delivery / Billing Address</label>
                   <input
                     type="text"
-                    placeholder="e.g. Multiplan Center Level 4, Dhaka"
+                    placeholder="Multiplan Center, Level 4, Shop 402, Elephant Road, Dhaka"
                     value={newCustAddress}
                     onChange={e => setNewCustAddress(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-                >
-                  Save Customer Record
-                </button>
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+                  <Button type="submit" variant="brand" size="sm">Add Customer</Button>
+                </div>
               </form>
             )}
 
+            {/* FORM 3: SUPPLIER */}
             {quickAddTab === 'supplier' && (
               <form onSubmit={handleQuickAddSupplier} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1">Supplier Company Name</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Vendor / Principal Company</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Gigabyte South Asia Logistics"
+                    placeholder="e.g. Gigabyte Regional APAC (Taiwan)"
                     value={newSupName}
                     onChange={e => setNewSupName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1">Contact Person</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Contact Person</label>
                     <input
                       type="text"
-                      placeholder="e.g. Alan Walker"
+                      placeholder="e.g. Kelvin Chen (Sales Lead)"
                       value={newSupContact}
                       onChange={e => setNewSupContact(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Phone</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Phone Number</label>
                     <input
                       type="text"
-                      placeholder="+880 1819-000000"
+                      placeholder="+886 2 8912-4000"
                       value={newSupPhone}
                       onChange={e => setNewSupPhone(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Product Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Graphics Cards & Motherboards"
+                  <label className="block text-content-secondary font-semibold mb-1">Product Category</label>
+                  <select
                     value={newSupCategory}
                     onChange={e => setNewSupCategory(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
-                  />
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
+                  >
+                    <option>Graphics Cards & GPUs</option>
+                    <option>Processors (CPUs)</option>
+                    <option>Motherboards</option>
+                    <option>Memory & SSD Storage</option>
+                  </select>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-                >
-                  Save Supplier Contact
-                </button>
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+                  <Button type="submit" variant="brand" size="sm">Register Supplier</Button>
+                </div>
               </form>
             )}
 
+            {/* FORM 4: EXPENSE */}
             {quickAddTab === 'expense' && (
               <form onSubmit={handleQuickAddExpense} className="space-y-3 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-400 mb-1">Category</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Category</label>
                     <select
                       value={newExpCat}
                       onChange={e => setNewExpCat(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                     >
                       <option>Logistics & Couriers</option>
-                      <option>Customs & Port Duty</option>
-                      <option>Rent & Lease</option>
-                      <option>Utilities & Fiber</option>
-                      <option>Packaging & Transport</option>
-                      <option>Salaries & Payroll</option>
+                      <option>Chittagong Port Customs</option>
+                      <option>Showroom Rent & Utilities</option>
+                      <option>Packaging & Supplies</option>
+                      <option>Marketing & Promotion</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Amount (৳)</label>
+                    <label className="block text-content-secondary font-semibold mb-1">Amount (৳)</label>
                     <input
                       type="number"
                       required
                       placeholder="15000"
                       value={newExpAmount}
                       onChange={e => setNewExpAmount(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                      className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary font-tabular"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Vendor / Payee</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Payee Vendor / Service</label>
                   <input
                     type="text"
-                    placeholder="e.g. Steadfast Logistics BD"
+                    placeholder="e.g. Steadfast Courier Ltd."
                     value={newExpVendor}
                     onChange={e => setNewExpVendor(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Description / Notes</label>
+                  <label className="block text-content-secondary font-semibold mb-1">Notes / Description</label>
                   <input
                     type="text"
-                    placeholder="e.g. Inter-city courier consignment shipping charge"
+                    placeholder="Courier parcel consignment fees for 48 shipments"
                     value={newExpDesc}
                     onChange={e => setNewExpDesc(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-content-primary"
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-                >
-                  Record Expense
-                </button>
+                <div className="pt-2 flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setQuickAddOpen(false)}>Cancel</Button>
+                  <Button type="submit" variant="brand" size="sm">Record Expense</Button>
+                </div>
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ============================================================== */}
-      {/* MODAL 3: CASH REGISTER / DRAWER SUMMARY */}
+      {/* MODAL 3: CASH REGISTER DETAILS */}
       {/* ============================================================== */}
-      {registerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-5 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-700">
+      {registerOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-3 bg-stone-950/60 dark:bg-black/80 backdrop-blur-xs">
+          <div className="bg-surface border border-boundary-strong rounded-2xl w-full max-w-md max-h-[calc(100dvh-1.5rem)] overflow-y-auto shadow-2xl p-5 text-content-primary animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-boundary-subtle">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-base">Cash Register / Drawer Status</span>
+                <DollarSign className="w-5 h-5 text-brand-ochreDeep dark:text-brand-ochre" />
+                <span className="font-bold text-sm">Today's Cash Drawer (Banani Vault)</span>
               </div>
-              <button onClick={() => setRegisterOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setRegisterOpen(false)} className="text-content-muted hover:text-content-primary p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="my-4 space-y-3 text-xs">
-              <div className="flex justify-between items-center p-2.5 bg-slate-800 rounded-lg">
-                <span className="text-slate-400">Register Status</span>
-                <span className={`px-2 py-0.5 rounded font-bold ${cashRegister.isOpen ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                  {cashRegister.isOpen ? '● OPEN' : 'CLOSED'}
-                </span>
+            <div className="my-4 space-y-2.5 text-xs">
+              <div className="p-3 bg-surface-secondary rounded-xl flex items-center justify-between border border-boundary-subtle">
+                <span className="text-content-secondary">Drawer Status:</span>
+                <Badge variant={cashRegister.isOpen ? 'success' : 'neutral'} dot>
+                  {cashRegister.isOpen ? 'Open' : 'Closed'}
+                </Badge>
               </div>
-              <div className="flex justify-between items-center p-2.5 bg-slate-800 rounded-lg">
-                <span className="text-slate-400">Opened At</span>
-                <span className="font-mono text-slate-200">{cashRegister.openedAt}</span>
+              <div className="p-3 bg-surface-secondary rounded-xl flex items-center justify-between border border-boundary-subtle font-tabular">
+                <span className="text-content-secondary">Morning Opening Float:</span>
+                <span className="font-bold text-content-primary">৳ {cashRegister.openingCash.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center p-2.5 bg-slate-800 rounded-lg">
-                <span className="text-slate-400">Opening Cash in Hand</span>
-                <span className="font-mono font-bold text-white">৳{cashRegister.openingCash.toLocaleString()}</span>
+              <div className="p-3 bg-surface-secondary rounded-xl flex items-center justify-between border border-boundary-subtle font-tabular">
+                <span className="text-content-secondary">Total Inflows (In-store Cash):</span>
+                <span className="font-bold text-status-success">+ ৳ {cashRegister.cashSales.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center p-2.5 bg-slate-800 rounded-lg">
-                <span className="text-slate-400">Today's Cash Sales</span>
-                <span className="font-mono font-bold text-emerald-400">+ ৳{cashRegister.cashSales.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl">
-                <span className="font-bold text-slate-200">Total Cash in Drawer</span>
-                <span className="font-mono font-extrabold text-base text-emerald-400">
-                  ৳{cashRegister.totalCash.toLocaleString()}
+              <div className="p-3 bg-brand-sage/20 dark:bg-brand-sage/10 rounded-xl flex items-center justify-between border border-brand-sageDark/30 font-tabular">
+                <span className="font-bold text-content-primary">Expected Cash in Drawer:</span>
+                <span className="text-base font-extrabold text-stone-900 dark:text-brand-sage">
+                  ৳ {cashRegister.totalCash.toLocaleString()}
                 </span>
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              {cashRegister.isOpen ? (
-                <button
-                  onClick={() => {
-                    closeCashRegister();
-                    setRegisterOpen(false);
-                  }}
-                  className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition"
-                >
-                  Close & Reconcile Register
-                </button>
-              ) : (
-                <div className="flex gap-2 w-full">
+            {!cashRegister.isOpen ? (
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-content-secondary mb-1">Set Opening Cash Float (৳)</label>
                   <input
                     type="number"
                     value={openingInput}
                     onChange={e => setOpeningInput(e.target.value)}
-                    className="w-1/2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
-                    placeholder="Opening amount"
+                    className="w-full bg-surface border border-boundary-strong rounded-lg p-2 text-xs font-tabular text-content-primary"
                   />
-                  <button
-                    onClick={() => {
-                      openCashRegister(parseFloat(openingInput) || 50000);
-                      setRegisterOpen(false);
-                    }}
-                    className="w-1/2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition text-xs"
-                  >
-                    Open Register
-                  </button>
                 </div>
-              )}
-            </div>
+                <Button
+                  variant="brand"
+                  size="md"
+                  className="w-full font-bold"
+                  onClick={() => openCashRegister(parseFloat(openingInput) || 50000)}
+                >
+                  Open Cash Drawer for Trading
+                </Button>
+              </div>
+            ) : (
+              <div className="pt-2 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setRegisterOpen(false)}
+                >
+                  Dismiss
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="flex-1 font-bold"
+                  onClick={() => {
+                    closeCashRegister();
+                    setRegisterOpen(false);
+                  }}
+                >
+                  Reconcile & Close Register
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </header>
+    </>
   );
 };
