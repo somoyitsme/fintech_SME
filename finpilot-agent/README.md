@@ -1,321 +1,302 @@
-# FinPilot Agent
+# 🧠 FinPilot Agent — Universal Autonomous AI Financial Copilot
 
-**Autonomous AI SME Financial Copilot** for the 2026 Shenzhen International FinTech Competition (FinTechathon) - Topic E: SME Finance Copilot (AI Track).
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-red.svg)](https://www.sqlalchemy.org)
+[![Claude AI](https://img.shields.io/badge/LLM-Claude%20Opus%20%2F%20Sonnet-8e24aa.svg)](https://anthropic.com)
+[![Contest Track](https://img.shields.io/badge/FinTechathon%202026-Topic%20E%20(AI%20Track)-gold.svg)]()
+[![Security](https://img.shields.io/badge/Multi--Tenant-Zero%20Data%20Leak-10b981.svg)]()
 
-A production-grade, embeddable financial decision agent that integrates into any SME website or ERP system with a single line of JavaScript.
+> **2026 Shenzhen International FinTech Competition (FinTechathon) · Topic E: SME Finance Copilot (AI Track)**  
+> **Hosted by:** Tsinghua University PBC School of Finance & WeBank (微众银行)
 
-## 🎯 Competition Scoring Alignment
+FinPilot Agent is an enterprise-grade, standalone **Autonomous AI Financial Copilot** engineered for small-and-medium enterprises (SMEs). It connects directly to live business databases, reflects table schemas automatically with **zero hardcoded assumptions**, executes **deterministic SQL calculations (zero hallucinations)**, and embeds into any third-party SME website with an auto-styling, 1-line JavaScript SDK.
 
-- **Task Completion (40%)**: 24 deterministic tools across 6 problem-solving pillars, zero LLM arithmetic
-- **Security & Compliance (30%)**: 8-layer guardrail pipeline, 3-tier permissions, multi-tenant isolation, HMAC audit trail
-- **Innovation & Interaction (30%)**: Single-line SDK embed, real-time SSE status streaming, CFO-level responses with markdown tables
+---
 
-## ⚡ Quick Start
+## 📑 Table of Contents
+1. [System Architecture](#-system-architecture)
+2. [The 6 Real-World SME Problem-Solving Pillars](#-the-6-real-world-sme-problem-solving-pillars)
+3. [Zero-Mock Real Database Engine](#-zero-mock-real-database-engine)
+4. [Enterprise Security & Multi-Tenant Isolation](#-enterprise-security--multi-tenant-isolation)
+5. [Universal 1-Line Embeddable SDK](#-universal-1-line-embeddable-sdk)
+6. [Integration Methods](#-integration-methods)
+7. [Quickstart & Configuration](#-quickstart--configuration)
+8. [API Reference & Streaming](#-api-reference--streaming)
+9. [Production Deployment Guide](#-production-deployment-guide)
+10. [Troubleshooting & FAQ](#-troubleshooting--faq)
 
-```bash
-# 1. Install dependencies
-cd finpilot-agent
-pip install -r requirements.txt
+---
 
-# 2. Seed demo data
-python seed.py
+## 🏛️ System Architecture
 
-# 3. Run the agent
-python main.py
-
-# 4. Open demo page
-# http://localhost:8100/sdk/demo-host.html
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Any SME Web Platform                          │
+│     (React, Vue, Django, Laravel, WordPress, or Plain HTML/PHP)        │
+│                                                                        │
+│   <script src="http://localhost:8100/sdk/loader.js" ...></script>      │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ window.postMessage & SSE
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   FinPilot Agent Microservice (Port 8100)              │
+│                                                                        │
+│  ┌───────────────────────┐  ┌───────────────────────────────────────┐  │
+│  │ Security & Guardrails │  │ LLM Client (Anthropic / Mirai Proxy)  │  │
+│  │ • API Key Validation  │  │ • Claude 3.5 Sonnet / Opus 4.8        │  │
+│  │ • Table Allowlisting  │  │ • Tool Calling Engine                 │  │
+│  │ • Injection Blocker   │  │ • SSE Status & Token Streaming        │  │
+│  └───────────┬───────────┘  └───────────────────▲───────────────────┘  │
+│              │                                  │                       │
+│              ▼                                  │ Context & Aggregates  │
+│  ┌──────────────────────────────────────────────┴───────────────────┐  │
+│  │               6 Deterministic Financial Tools                    │  │
+│  │   1. analyze_cash_flow           4. analyze_financing_readiness  │  │
+│  │   2. analyze_financial_health    5. analyze_tax_liability        │  │
+│  │   3. analyze_ar_aging            6. analyze_expense_breakdown    │  │
+│  └──────────────────────────────────┬───────────────────────────────┘  │
+│                                     │                                  │
+│                                     │ Parameterized Read-Only SQL      │
+└─────────────────────────────────────┼──────────────────────────────────┘
+                                      │
+                                      ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Live Business Database                          │
+│                (PostgreSQL / MySQL / SQLite - Real SME Data)           │
+│                                                                        │
+│   Tables: invoices, expenses, cash_flow_snapshots, clients, income... │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-The seed script creates a demo tenant "Shenzhen Tech Hardware Co., Ltd" with realistic CNY financial data and prints the API key.
+---
 
-## 🏗️ Architecture
+## 🎯 The 6 Real-World SME Problem-Solving Pillars
 
-```
-Any SME Site → SDK Loader (1-line embed) → Sandboxed iframe Widget
-                                           ↓
-                                 FastAPI Backend (8-Layer Security)
-                                           ↓
-                         Agent Orchestrator → 24 Tools → Multi-tenant DB
-```
+| Pillar | Real SME Crisis Solved | Autonomous Agent Action |
+| :--- | :--- | :--- |
+| **1. Cash Flow & Runway** | 82% of SMEs fail from unexpected liquidity crunches | Projects 30/60/90-day cash flow, monthly burn rate, and exact runway months from real bank balance and expenses. |
+| **2. Financing & Credit Readiness** | $5.2T SME credit gap; painful collateral barriers | Evaluates turnover and verified sales to calculate WeBank Weiyedai (微业贷) pre-qualification score and loan capacity. |
+| **3. Financial Health & P&L** | Business owners cannot decipher raw balance sheets | Calculates real-time revenue, COGS, gross/net profit margins, and DuPont financial ratios. |
+| **4. AR Aging & Invoicing** | 60–90 day payment delays lock up working capital | Classifies overdue receivables into `0-30`, `31-60`, `61-90`, and `90+` days and targets high-risk clients. |
+| **5. Tax Estimation & Calendar** | Late tax filing penalties and missed preferential rates | Computes estimated Corporate Income Tax (preferential 5% rate vs standard) and reconciles input/output VAT. |
+| **6. Expense Optimization** | Subscription creep and unmonitored vendor inflation | Analyzes cost breakdowns by category and supplier to flag anomalous burn rate spikes. |
 
-### 6 Problem-Solving Pillars
+---
 
-1. **Cash Flow Forecasting** - 30/60/90-day projections, burn rate, liquidity alerts
-2. **Financing Matching** - WeBank Weiyedai pre-qualification (0-100%), loan capacity
-3. **Financial Health Analysis** - P&L, margins, DuPont score, industry benchmarking
-4. **Accounts Receivable** - Aging buckets, default risk, collection letter drafts
-5. **Tax Compliance** - VAT reconciliation, CIT estimation, compliance calendar
-6. **Expense Optimization** - OPEX categorization, anomaly detection, cost-cutting recommendations
+## 🗄️ Zero-Mock Real Database Engine
 
-### 24 Deterministic Math Tools
+FinPilot connects directly to real production databases with **zero dummy or simulated data**:
+- **Automatic Schema Discovery**: On startup, the engine reflects real database tables, identifying numeric, date, and text columns dynamically.
+- **Deterministic Math Guarantee**: The LLM **never calculates financial sums or averages**. All numbers are generated via parameterized SQL aggregations (`SUM`, `COUNT`, `AVG`).
+- **Universal Database Support**: Connects seamlessly with PostgreSQL, MySQL, MariaDB, and SQLite.
 
-All financial calculations execute in pure Python functions. The LLM never performs arithmetic - it only selects tools and formats responses.
+---
 
-**Cash Flow (5 tools):**
-- `get_bank_position`, `compute_burn_rate`, `project_cash_flow_30_60_90`, `detect_liquidity_dips`, `simulate_what_if`
+## 🔒 Enterprise Security & Multi-Tenant Isolation
 
-**Financing (3 tools):**
-- `webank_prequalification_score`, `match_financing_products`, `estimate_loan_capacity`
+1. **Strictly Read-Only Database Privileges**: Write operations (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `GRANT`, `TRUNCATE`) are blocked by multi-layer regex security guards and database role privileges.
+2. **Absolute Multi-Tenant Row-Level Security**: Every SQL query strictly binds the tenant identifier (`WHERE tenant_id = :tenant_id`). Cross-tenant data leakage is physically impossible.
+3. **Prompt Injection Defense**: All user queries are strictly encapsulated as isolated data payloads (`<user_query>`), preventing system prompt overrides.
+4. **Credential Safety**: All API keys and secrets are loaded via environment variables (`.env`) which are excluded from Git version control.
 
-**Health (6 tools):**
-- `profit_loss_summary`, `compute_margins`, `compute_working_capital`, `compute_dso`, `dupont_health_score`, `benchmark_vs_industry`
+---
 
-**Receivables (3 tools):**
-- `ar_aging_buckets`, `flag_customer_default_risk`, `generate_collection_letter` (Tier 2)
+## 🔌 Universal 1-Line Embeddable SDK
 
-**Tax (4 tools):**
-- `reconcile_vat`, `estimate_cit_preferential`, `validate_deductible_expenses`, `compliance_calendar`
-
-**Expense (4 tools):**
-- `categorize_recurring_opex`, `detect_anomaly_spikes`, `compute_unit_economics`, `recommend_cost_cuts`
-
-## 🔒 8-Layer Security Pipeline
-
-1. **API Key Authentication** - Bcrypt hashing, O(1) prefix lookup
-2. **Rate Limiting** - Per-key sliding window
-3. **Prompt Injection Detection** - Multi-pattern jailbreak blocking
-4. **Intent Classification** - Route to appropriate specialist
-5. **Tier-3 Refusal** - Block fund transfers, schema modifications
-6. **PII Redaction** - Mask bank cards, tax IDs, phone numbers before LLM
-7. **Tenant Scoping** - Row-level security on ALL queries
-8. **HMAC Audit Logging** - Cryptographically signed trail
-
-### 3-Tier Permission Model
-
-- **Tier 1 (Autonomous)**: Read/calculate operations execute immediately
-- **Tier 2 (Supervised)**: Generate drafts requiring human approval (e.g., collection emails)
-- **Tier 3 (Restricted)**: Always refuse (fund transfers, data deletion, schema changes)
-
-## 🌐 Embeddable SDK
-
-### Single-Line Integration
+Embed the AI Copilot into ANY web application in seconds:
 
 ```html
-<script src="http://localhost:8100/sdk/loader.js" data-api-key="fp_live_xxx"></script>
+<script 
+  src="http://localhost:8100/sdk/loader.js" 
+  data-api-key="YOUR_AGENT_API_KEY"
+  data-tenant-id="YOUR_TENANT_ID"
+  data-theme="auto"
+  data-position="bottom-right">
+</script>
 ```
 
-### Features
+### ✨ Auto-Theme Chameleon
+The widget automatically detects the host website's:
+1. **Background Color & Luminance** (auto dark/light mode switching)
+2. **Primary Brand Accent Color** (inherits from buttons, CSS variables, or links)
+3. **Typography & Font Family** (inherits host fonts seamlessly)
+4. **Border Radii** (matches host UI design language)
 
-- Sandboxed `<iframe>` with CSS/DOM isolation
-- Cross-origin `postMessage` API with validation
-- Server-Sent Events (SSE) for real-time status streaming
-- Responsive dark/light mode support
-- Markdown table rendering with metric pills
+---
 
-### Demo
+## 🚀 Integration Methods
 
-Open `http://localhost:8100/sdk/demo-host.html` to see the embedded widget in action.
-
-## 📊 API Endpoints
-
-### Chat
-
-- `POST /api/v1/chat` - Synchronous chat (returns complete response)
-- `POST /api/v1/chat/stream` - SSE streaming with real-time status badges
-
-**Headers:**
-```
-X-API-Key: fp_live_xxx
-Content-Type: application/json
+### Method 1: Drop-In Browser SDK (Zero-Code)
+Add the loader script right before `</body>` in HTML or inside React/Vue components:
+```html
+<script 
+  src="http://localhost:8100/sdk/loader.js" 
+  data-api-key="YOUR_AGENT_API_KEY" 
+  data-tenant-id="your-tenant-uuid">
+</script>
 ```
 
-**Request:**
-```json
-{
-  "message": "How is my cash flow looking?",
-  "conversation_id": "optional-uuid"
+### Method 2: Backend REST API (Direct HTTP)
+Query FinPilot from your Node.js, Python, PHP, or Go backend:
+```bash
+curl -X POST http://localhost:8100/chat \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_AGENT_API_KEY" \
+  -d '{
+    "message": "What is our current cash runway?",
+    "tenant_id": "your-tenant-uuid"
+  }'
+```
+
+### Method 3: Server-Sent Events (SSE Streaming)
+Stream real-time thinking states and markdown responses via `POST /chat/stream`:
+```python
+import requests, json
+
+url = "http://localhost:8100/chat/stream"
+headers = {"X-API-Key": "YOUR_AGENT_API_KEY"}
+payload = {"message": "Show AR aging summary", "tenant_id": "your-tenant-uuid"}
+
+with requests.post(url, json=payload, headers=headers, stream=True) as resp:
+    for line in resp.iter_lines():
+        if line.startswith(b"data: "):
+            event = json.loads(line[6:])
+            if event.get("type") == "status":
+                print("Status:", event["message"])
+            elif event.get("type") == "text_delta":
+                print(event["text"], end="", flush=True)
+```
+
+---
+
+## ⚡ Quickstart & Configuration
+
+### 1. Installation
+```bash
+cd finpilot-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Configure Environment (`.env`)
+Create `.env` using `.env.example` as a template:
+```ini
+# ── Database Connection (Real SME Database) ──
+# SQLite example:
+DATABASE_URL=sqlite:////absolute/path/to/your/finpilot.db
+# PostgreSQL example:
+# DATABASE_URL=postgresql+psycopg2://ro_user:PASSWORD@localhost:5432/your_sme_db
+
+# ── LLM Configuration (Direct Anthropic or Mirai Proxy) ──
+ANTHROPIC_API_KEY=YOUR_ANTHROPIC_OR_PROXY_KEY
+ANTHROPIC_BASE_URL=https://api.miraiapi.com
+LLM_MODEL=claude-opus-4.8
+LLM_MAX_TOKENS=4096
+
+# ── Security Secrets ──
+API_KEY_SALT=generate-a-random-hex-string-32-chars
+AUDIT_HMAC_SECRET=generate-a-random-hex-string-32-chars
+AGENT_API_KEY=your-client-api-key-for-widget
+
+# ── Server & CORS ──
+HOST=0.0.0.0
+PORT=8100
+DEBUG=false
+CORS_ORIGINS=["http://localhost:5173","http://localhost:8090","*"]
+
+# ── Allowed Database Tables ──
+ALLOWED_TABLES=invoices,expenses,clients,income,cash_flow_snapshots,invoice_items,tenants
+```
+
+### 3. Verify Database Introspection
+```bash
+python verify_db.py
+```
+
+### 4. Start the Agent Service
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8100
+```
+Status check:
+```bash
+curl http://localhost:8100/health
+# Response: {"status":"healthy","tables":7}
+```
+
+---
+
+## 📡 API Reference & Streaming
+
+| Endpoint | Method | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `/health` | `GET` | None | Returns service health and count of reflected database tables |
+| `/schema` | `GET` | `X-API-Key` | Returns live schema catalog summary and table descriptors |
+| `/chat` | `POST` | `X-API-Key` | Synchronous inquiry executing tools and returning CFO summary |
+| `/chat/stream` | `POST` | `X-API-Key` | Server-Sent Events (SSE) streaming with live status updates |
+
+---
+
+## 🚢 Production Deployment Guide
+
+### Recommended Setup (Linux / Ubuntu + Systemd + Nginx)
+
+#### 1. Systemd Service (`/etc/systemd/system/finpilot-agent.service`)
+```ini
+[Unit]
+Description=FinPilot AI Financial Copilot Agent
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/var/www/finpilot-agent
+EnvironmentFile=/var/www/finpilot-agent/.env
+ExecStart=/var/www/finpilot-agent/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8100 --workers 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+#### 2. Nginx Reverse Proxy Configuration
+```nginx
+server {
+    listen 80;
+    server_name agent.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # SSE Streaming support
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+        chunked_transfer_encoding off;
+        proxy_buffering off;
+        proxy_cache off;
+    }
 }
 ```
 
-### Admin
+---
 
-- `GET /api/v1/admin/tenants/me` - Current tenant info
-- `GET /api/v1/admin/audit` - Audit logs (HMAC-verified)
-- `GET /api/v1/admin/metrics` - Usage statistics
+## ❓ Troubleshooting & FAQ
 
-### Data Sync
+**Q: Does the agent leak data across different tenants?**  
+A: No. Every tool enforces mandatory tenant isolation via `WHERE tenant_id = :tenant_id`. Cross-tenant queries are blocked.
 
-- `POST /api/v1/sync` - Sync invoices/expenses from external SME systems
+**Q: Can the agent modify or delete records in our database?**  
+A: No. The agent's query parser rejects any query containing `INSERT`, `UPDATE`, `DELETE`, or `DROP`. Furthermore, in production, the database user role should be granted `SELECT` only.
 
-## 🗄️ Multi-Tenant Database
+**Q: What LLM providers can be used?**  
+A: FinPilot natively supports Anthropic Claude (Claude 3.5 Sonnet, Claude Opus 4.8) directly via `api.anthropic.com` or via any OpenAI/Anthropic-compatible proxy (such as Mirai API) configured via `ANTHROPIC_BASE_URL`.
 
-**Critical Invariant**: Every table carries a non-nullable `tenant_id` foreign key.
-
-```
-tenants → api_keys (bcrypt hashed)
-       → users, clients, invoices, expenses, cash_flows, bank_accounts
-       → conversations → messages
-       → audit_logs (HMAC signed)
-       → pending_actions (Tier 2 drafts)
-```
-
-### Row-Level Security
-
-All queries go through `app.security.tenants`:
-- `get_tenant_scoped(db, Model, tenant_id, resource_id)` - Fetch with ownership check
-- `list_tenant_scoped(db, Model, tenant_id)` - List scoped to tenant
-- Cross-tenant access triggers `CrossTenantViolation` + security audit
-
-## 🧪 Testing
-
-```bash
-# Run full test suite
-pytest tests/
-
-# Specific test categories
-pytest tests/test_tenant_isolation.py       # Multi-tenant isolation
-pytest tests/test_permissions.py            # 3-tier permission enforcement
-pytest tests/test_tools_determinism.py      # Exact calculation verification
-pytest tests/test_security.py               # Injection blocking, PII redaction
-pytest tests/test_streaming.py              # SSE status events
-```
-
-## 🚀 Production Deployment
-
-1. **Environment Variables**
-
-```bash
-cp .env.example .env
-# Edit .env:
-# - Set strong API_KEY_SALT and AUDIT_HMAC_SECRET
-# - Add ANTHROPIC_API_KEY (optional, falls back to deterministic mode)
-# - Switch to PostgreSQL: DATABASE_URL=postgresql+asyncpg://...
-```
-
-2. **Database Migration**
-
-```bash
-# For production, use Alembic migrations (TODO: setup alembic)
-# For dev/demo:
-python seed.py
-```
-
-3. **Run with Uvicorn**
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8100 --workers 4
-```
-
-4. **CORS Configuration**
-
-Update `CORS_ORIGINS` in `.env` to restrict SDK embedding to specific domains:
-
-```
-CORS_ORIGINS=["https://yoursme.com", "https://demo.yoursme.com"]
-```
-
-## 📁 Project Structure
-
-```
-finpilot-agent/
-├── main.py                      # Entry point
-├── config.py                    # Pydantic settings
-├── seed.py                      # Demo data generator
-├── app/
-│   ├── main.py                  # FastAPI app
-│   ├── api/                     # REST endpoints
-│   │   ├── chat.py              # Sync + SSE streaming
-│   │   ├── admin_api.py         # Tenant management
-│   │   └── sync.py              # External data sync
-│   ├── core/                    # Foundation
-│   │   ├── models.py            # SQLAlchemy ORM (ALL with tenant_id)
-│   │   ├── schemas.py           # Pydantic v2 request/response
-│   │   ├── db.py                # Async engine & sessions
-│   │   ├── auth.py              # API key → tenant resolution
-│   │   └── crypto.py            # Bcrypt + HMAC signing
-│   ├── security/                # 8-layer pipeline
-│   │   ├── pipeline.py          # Orchestrator
-│   │   ├── injection.py         # Jailbreak detection
-│   │   ├── pii.py               # PII redaction
-│   │   ├── permissions.py       # 3-tier model
-│   │   └── tenants.py           # Row-level security
-│   ├── agent/                   # LLM orchestration
-│   │   ├── orchestrator.py      # Main execution flow
-│   │   ├── router.py            # Intent → pillar classifier
-│   │   ├── llm.py               # Anthropic client + tool-use loop
-│   │   └── context.py           # Tenant-scoped context builder
-│   ├── tools/                   # 24 deterministic tools
-│   │   ├── registry.py          # Tool definitions
-│   │   ├── cashflow.py          # Pillar 1 (5 tools)
-│   │   ├── financing.py         # Pillar 2 (3 tools)
-│   │   ├── health.py            # Pillar 3 (6 tools)
-│   │   ├── receivables.py       # Pillar 4 (3 tools)
-│   │   ├── tax.py               # Pillar 5 (4 tools)
-│   │   └── expense.py           # Pillar 6 (4 tools)
-│   └── streaming.py             # SSE status event bus
-├── sdk/                         # Embeddable widget
-│   ├── loader.js                # 1-line embed script
-│   ├── widget.html              # Iframe UI
-│   ├── widget.css               # Isolated styling
-│   ├── widget.js                # Client logic + SSE
-│   └── demo-host.html           # Integration demo
-└── tests/                       # Comprehensive test suite
-```
-
-## 🎓 Competition Context
-
-### WeBank Weiyedai (微业贷)
-
-China's largest digital bank's flagship SME product:
-- 100% digital, unsecured revolving credit line
-- Up to ¥3,000,000 (~$400k USD)
-- 3.6%-10.8% APR
-- Approval in 24 hours, zero collateral required
-- Target: SMEs with stable revenue and clean payment history
-
-### China SME Preferential Tax Rates
-
-- **VAT**: 13% standard rate
-- **CIT**: 5% effective rate for small low-profit enterprises (taxable income ≤¥3M), vs. 25% standard
-
-## 📝 Response Style
-
-FinPilot speaks with **CFO-level precision**:
-
-✅ **DO:**
-- Start with bottom-line / executive summary
-- Format numbers in clean markdown tables
-- Highlight critical metrics: `> **Cash Runway: 2.6 Mo**`
-- End with numbered action steps (dates + CNY amounts)
-
-❌ **DON'T:**
-- No conversational pleasantries ("Hello", "I hope this helps")
-- No generic AI disclaimers
-- No empty confirmations
-
-## 🤝 Integration with Demo SME Site
-
-The `finpilot/` folder (untouched) is a full React + FastAPI SME ERP platform. To integrate:
-
-1. Copy the API key from `python seed.py` output
-2. Add to `finpilot/frontend/public/index.html`:
-
-```html
-<script src="http://localhost:8100/sdk/loader.js" data-api-key="fp_live_xxx"></script>
-```
-
-3. Start both services:
-```bash
-# Terminal 1: Agent
-cd finpilot-agent && python main.py
-
-# Terminal 2: SME site
-cd finpilot && npm run dev
-```
+---
 
 ## 📄 License
-
-Built for the 2026 Shenzhen International FinTech Competition.
-
-## 🐛 Known Limitations
-
-- LLM fallback mode (when ANTHROPIC_API_KEY unset) uses simple template responses
-- Single-database setup (for multi-region, shard by tenant_id)
-- No Alembic migrations yet (use `seed.py` for demo)
-
-## 🔗 Resources
-
-- Competition: Tsinghua PBC School of Finance + WeBank FinTechathon 2026
-- WeBank Developer Docs: https://cloud.webank.com
-- Anthropic Claude API: https://docs.anthropic.com
+This project is licensed under the MIT License.

@@ -16,6 +16,7 @@
   }
 
   const API_KEY = script.dataset.apiKey;
+  const TENANT_ID = script.dataset.tenantId || '28434594-e04c-4aae-aa17-d4612114e348';
   const THEME_MODE = script.dataset.theme || 'auto'; // auto | light | dark
   const API_BASE = script.src.replace(/\/sdk\/loader\.js.*$/, '');
   const POSITION = script.dataset.position || 'bottom-right';
@@ -131,6 +132,7 @@
         config: {
           apiKey: API_KEY,
           apiBase: API_BASE,
+          tenantId: TENANT_ID,
           theme: theme,
         },
       }, '*');

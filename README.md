@@ -1,212 +1,152 @@
 # FinPilot — Autonomous AI Financial Copilot & SME ERP Platform
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev)
-[![Gemini AI](https://img.shields.io/badge/AI%20Engine-Google%20Gemini-8e24aa.svg)](https://ai.google.dev)
-[![Currency](https://img.shields.io/badge/Currency-BDT%20(%E0%A7%B3)-orange.svg)]()
-[![Security](https://img.shields.io/badge/Security-3--Tier%20Guardrails-10b981.svg)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg)](https://typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646cff.svg)](https://vitejs.dev)
+[![AI Engine](https://img.shields.io/badge/AI%20Engine-Claude%20Opus%20%2F%20Sonnet-8e24aa.svg)](https://anthropic.com)
+[![Security](https://img.shields.io/badge/Security-Multi--Tenant%20Isolated-10b981.svg)]()
+[![Contest](https://img.shields.io/badge/FinTechathon%202026-Topic%20E%20(AI%20Track)-gold.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-FinPilot is an enterprise-grade financial management platform tailored for Bangladeshi SMEs, retail merchants, wholesalers, and commercial distributors. The project is built on an architectural separation between an **Autonomous AI Financial Copilot Microservice** and an **SME Management & POS ERP System**.
+> **2026 Shenzhen International FinTech Competition (FinTechathon) · Topic E: SME Finance Copilot (AI Track)**  
+> **Hosted by:** Tsinghua University PBC School of Finance & WeBank (微众银行)
+
+FinPilot is a dual-offering financial intelligence and management suite built for small and medium enterprises (SMEs), retailers, hardware wholesalers, and commercial distributors:
+
+1. **[FinPilot Agent (`finpilot-agent`)](finpilot-agent/README.md)**: An autonomous AI Financial Copilot microservice (Port `8100`) that connects directly to real SME databases, reflects schemas dynamically with **zero hardcoded assumptions**, computes **deterministic SQL metrics (zero hallucination)**, and embeds into any website via a 1-line auto-theming JavaScript SDK.
+2. **[FinPilot SME ERP (`finpilot`)](finpilot/frontend/README.md)**: A production-ready reference SME management cockpit (Port `5173` & `8090`) for **Dhaka Silicon & Hardware Ltd.** featuring Point-of-Sale (POS), inventory transfers, invoice aging, expense tracking, and native AI Copilot integration.
 
 ---
 
 ## 🏛️ System Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 CLIENT ACCESS LAYER                                    │
-│                                                                                        │
-│   [ Customer Copilot Portal ]        [ Platform Admin Console ]    [ SME Salesman POS] │
-│      (http://localhost:8100)          (http://localhost:8100/admin)   (localhost:5173) │
-└───────────────────────────┬───────────────────────────────┬────────────────────────────┘
-                            │                               │
-                            │ 1-Line Embed SDK or REST API  │ Internal ERP REST
-                            ▼                               ▼
-┌──────────────────────────────────────────────┐ ┌───────────────────────────────────────┐
-│     STANDALONE AI AGENT PLATFORM (Port 8100) │ │        SME BACKEND ERP (Port 8090)    │
-│                                              │ │                                       │
-│  ├── Multi-Tenant Security & Isolation       │ │  ├── Role-Based Access Control (RBAC) │
-│  │   (Cryptographic API keys, zero leak)     │ │  │   (Owner/Admin vs. Salesman)       │
-│  ├── Admin Security Gate (Passphrase Auth)   │ │  ├── Dynamic POS & Inventory Engine   │
-│  ├── 3-Tier Execution Guardrails:            │ │  │   (Real-time stock, custom disc)   │
-│  │   • Tier 1: Autonomous Read & Analysis    │ │  ├── Courier Integration Hub          │
-│  │   • Tier 2: Supervised Draft (HITL)       │ │  │   (Pathao, Steadfast COD API)      │
-│  │   • Tier 3: Restricted Zero Fund Movement │ │  ├── Customer CRM & Phone Lookup      │
-│  ├── Hybrid Reasoning Core:                  │ │  └── Accounting & Invoicing Ledgers   │
-│  │   • Deterministic Python Tool Execution   │ └───────────────────────────────────────┘
-│  │   • Google Gemini LLM Synthesis Engine    │
-│  └── 5 Core Financial Capabilities:          │
-│      1. Cash Flow & Runway Forecasting       │
-│      2. SME Loan & Credit Matching           │
-│      3. Financial Health & P&L Benchmarks    │
-│      4. Receivables & Overdue Recovery       │
-│      5. Bangladesh NBR Tax & VAT Calendar    │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   CLIENT LAYER                                          │
+│                                                                                         │
+│     [ SME ERP Management Cockpit ]                 [ External 3rd-Party SME Site ]      │
+│      (http://localhost:5173)                             (Any CRM / Billing Portal)     │
+└───────────────────────────┬──────────────────────────────────────────┬──────────────────┘
+                            │                                          │
+                            │                                          │ <script src="http://localhost:8100/sdk/loader.js" ...>
+                            ▼                                          ▼
+┌──────────────────────────────────────────────┐  ┌───────────────────────────────────────┐
+│           SME ERP BACKEND (Port 8090)        │  │     FINPILOT AI AGENT (Port 8100)     │
+│                                              │  │                                       │
+│  • FastAPI REST APIs                         │  │  • 1-Line Drop-in Chameleon SDK       │
+│  • Invoicing & PDF Generation                │  │  • Real-Time Thinking & Status Stream │
+│  • POS Sales & Live Inventory Decrementing   │  │  • 6 Deterministic Financial Tools    │
+│  • Contacts, Suppliers & Ledger Accounting   │  │  • Claude 3.5 Sonnet / Opus 4.8 LLM   │
+└──────────────────────┬───────────────────────┘  └───────────────────┬───────────────────┘
+                       │                                              │
+                       │ Parameterized Read/Write                     │ Parameterized Read-Only SQL
+                       ▼                                              ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                LIVE BUSINESS DATABASE                                   │
+│                   (SQLite / PostgreSQL / MySQL - Real Business Ledger)                  │
+│                                                                                         │
+│   Tables: cash_flow_snapshots, invoices, expenses, clients, income, invoice_items...    │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🌟 Key Modules & Features
+## 🎯 The 6 Core Problem-Solving Pillars
 
-### 1. Autonomous AI Financial Copilot (`finpilot-agent`, Port 8100)
-- **Natural AI Advisory**: Powered by Google Gemini (`gemini-flash-latest`, with fallback to `gemini-3.5-flash` and `gemini-3.8-flash`), acting as an executive fractional CFO for Bangladeshi businesses.
-- **Zero Arithmetic Hallucination**: The LLM does not perform speculative mental arithmetic; all metrics, cash balances, tax estimates, and debt service ratios are computed by verified deterministic Python algorithms first and injected as verified tool context.
-- **Rolling 90-Day Cash Flow Projections**: Evaluates daily cash inflows, recurring lease and payroll obligations, weekend velocity spikes (+38%), and Monte Carlo uncertainty corridors to identify buffer breach days (e.g. Day 38 floor risk).
-- **Scenario Sandbox ("What-If" Analysis)**: Instant delta calculation for staffing changes, inventory purchase batches, and overdue collection acceleration without touching the live ledger.
-- **Bangladesh Financing Matcher**: Multi-criteria matching engine against 30+ verified Bangladeshi loans and credit lines (BRAC Bank Uddokta, City Bank Shommilito, IDLC Factoring, Bangladesh Bank ICT Refinance Scheme, WeBank Weiyedai, bKash Merchant Credit).
-- **Accounts Receivable Intelligence**: Delinquency categorization (0–30, 31–60, 60+ days) and automated tone-adjusted payment notice drafting (Polite, Firm, Formal Legal).
-- **NBR Tax & VAT Calendar**: Automated Mushak 9.1 VAT estimation (due before the 15th of each month), quarterly Advance Income Tax (AIT), and deductible expense audits.
-
-### 2. Dedicated Web Interfaces (Port 8100)
-- **Customer Copilot Portal (`/` & `/customer`)**:
-  - Minimalist, calm dark slate user experience.
-  - No contest buzzwords or confusing labels.
-  - Strict tenant isolation: Customers only see their own business workspace (`Dhaka Silicon & Hardware Ltd.`).
-  - Interactive Copilot chat with rapid prompt suggestions and deep-dive analytics tabs.
-- **Admin & Observability Console (`/admin`)**:
-  - Protected behind an **Admin Security Gate** requiring the Master Passphrase.
-  - Unauthenticated access is completely blocked.
-  - Masked API keys (`fpk_live_ab...`) for tenant credential safety.
-  - Real-time audit telemetry log and 3-Tier security policy inspection.
-
-### 3. SME Management & POS ERP (`finpilot`, Port 5173 / 8090)
-- **Role-Based Access Control (RBAC)**: Distinct permissions for Business Owner/Admin vs. Salesman.
-- **Salesman POS & Catalog**:
-  - Live stock tracking: Stock updates automatically upon sale.
-  - Flexible checkout: Salesmen can adjust transaction amounts, unit prices, and offer custom discounts.
-  - Customer lookup by phone number/ID to link existing members or automatically register new walk-in clients.
-  - Courier Delivery Dispatch: One-click courier order creation for **Pathao** and **Steadfast** (Cash-on-Delivery) for online orders.
+| Pillar | Real SME Crisis Solved | Autonomous Agent Action |
+| :--- | :--- | :--- |
+| **1. Cash Flow & Runway** | 82% of SMEs fail from unexpected liquidity crunches | Projects 30/60/90-day cash flow, monthly burn rate, and exact runway months from real bank balance and expenses. |
+| **2. Financing & Credit Readiness** | $5.2T SME credit gap; painful collateral barriers | Evaluates turnover and verified sales to calculate WeBank Weiyedai (微业贷) pre-qualification score and loan capacity. |
+| **3. Financial Health & P&L** | Business owners cannot decipher raw balance sheets | Calculates real-time revenue, COGS, gross/net profit margins, and DuPont financial ratios. |
+| **4. AR Aging & Invoicing** | 60–90 day payment delays lock up working capital | Classifies overdue receivables into `0-30`, `31-60`, `61-90`, and `90+` days and targets high-risk clients. |
+| **5. Tax Estimation & Calendar** | Late tax filing penalties and missed preferential rates | Computes estimated Corporate Income Tax (preferential 5% rate vs standard) and reconciles input/output VAT. |
+| **6. Expense Optimization** | Subscription creep and unmonitored vendor inflation | Analyzes cost breakdowns by category and supplier to flag anomalous burn rate spikes. |
 
 ---
 
-## 🔒 Security Architecture & Guardrails
+## 🔒 Enterprise Security & Multi-Tenancy
 
-| Permission Tier | Authority | Permitted Operations | Guardrail Policy |
-| :--- | :--- | :--- | :--- |
-| **Tier 1: Autonomous** | Read-Only Analysis | Forecast cash flow, compute health scores, calculate NBR taxes | Deterministic code execution; read-only database queries. |
-| **Tier 2: Supervised** | Drafts & Notices | Draft payment collection notices, prepare bank loan pre-qualification packs | Human-in-the-Loop (HITL) review required before sending. |
-| **Tier 3: Restricted** | Fund Movement | Wire transfers, bank withdrawals, loan disbursement | **Hard Blocked**: The agent has zero fund movement capability. |
-
-- **Strict Tenant Privacy**: API keys (`fpk_live_...`) are cryptographically hashed using SHA-256 in the database. Tenants cannot view or access data belonging to any other business.
-- **Secret Protection**: `.env` files containing live API keys and SQLite database files are excluded via `.gitignore` to guarantee zero credential leakage.
+- **Deterministic Arithmetic Guarantee**: The LLM **NEVER computes mathematical operations**. All balances, totals, and ratios are calculated via parameterized SQL aggregations (`SUM`, `COUNT`, `AVG`).
+- **Strict Multi-Tenant Row-Level Security**: Every SQL query strictly binds the tenant identifier (`WHERE tenant_id = :tenant_id`). Cross-tenant data leakage is structurally impossible.
+- **Strictly Read-Only Database Role**: Write operations (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `GRANT`) are blocked by multi-layer regex security gates and database role privileges.
+- **Prompt Injection Defense**: All user inputs are encapsulated within isolated `<user_query>` data tags, preventing system prompt overrides.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quickstart Guide (Run Everything Locally)
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+ and npm
-- Git
-
----
-
-### Step 1: Clone the Repository
-```bash
-git clone https://github.com/somoyitsme/fintech_SME.git
-cd fintech_SME
-```
-
----
-
-### Step 2: Configure Environment Variables
-
-Create `.env` inside `finpilot-agent/`:
-```bash
-cp finpilot-agent/.env.example finpilot-agent/.env
-```
-Edit `finpilot-agent/.env` and add your Google Gemini API key:
-```ini
-APP_NAME="FinPilot Agent Service"
-APP_ENV="development"
-PORT=8100
-HOST="0.0.0.0"
-DEBUG=True
-SECRET_KEY="your-secret-key-change-in-production"
-ADMIN_PASSWORD="admin@finpilot2026"
-DATABASE_URL="sqlite:///./agent.db"
-
-# Google Gemini API Key
-GEMINI_API_KEY="your-gemini-api-key-here"
-GEMINI_MODEL="gemini-flash-latest"
-
-DEFAULT_RATE_LIMIT_PER_MINUTE=120
-CORS_ORIGINS=["*"]
-```
-
----
-
-### Step 3: Launch FinPilot AI Agent Service (Port 8100)
-
+### 1. Start the FinPilot AI Agent (Port 8100)
 ```bash
 cd finpilot-agent
-python3 -m venv .venv
 source .venv/bin/activate
-pip install -r <(python3 -c "import tomli; f=open('pyproject.toml','rb'); print('\n'.join(tomli.load(f)['project']['dependencies']))" 2>/dev/null || echo "fastapi uvicorn sqlalchemy pydantic pydantic-settings google-genai httpx")
-
-# Run the agent server
-uvicorn agent_core.main:app --host 0.0.0.0 --port 8100 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8100
 ```
-Access the agent interfaces:
-- **Customer Copilot Portal**: [http://localhost:8100/](http://localhost:8100/)
-- **Admin Security Console**: [http://localhost:8100/admin](http://localhost:8100/admin) *(Passphrase: `admin@finpilot2026`)*
-- **Interactive Swagger Docs**: [http://localhost:8100/docs](http://localhost:8100/docs)
+- Health Check: `http://localhost:8100/health` (Status: `healthy`, 7 tables reflected)
+- Interactive API Docs: `http://localhost:8100/docs`
 
----
-
-### Step 4: Launch SME ERP Platform (Port 8090 & Port 5173)
-
-**Terminal 1 — Backend (Port 8090):**
+### 2. Start the SME ERP Backend (Port 8090)
 ```bash
 cd finpilot/backend
-python3 -m venv .venv
 source .venv/bin/activate
-pip install fastapi uvicorn sqlalchemy pydantic pytest reportlab
-uvicorn app.main:app --host 0.0.0.0 --port 8090 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8090
 ```
+- Backend Health Check: `http://localhost:8090/health`
+- Backend API Docs: `http://localhost:8090/docs`
 
-**Terminal 2 — Frontend (Port 5173):**
+### 3. Start the SME ERP Frontend (Port 5173)
 ```bash
 cd finpilot/frontend
-npm install
 npm run dev
 ```
-Open **`http://localhost:5173`** in your browser.
+- Open in Browser: `http://localhost:5173`
+- The FinPilot AI Copilot widget will float automatically in the bottom-right corner.
 
 ---
 
-## 🔑 Demo Credentials
+## 🔌 Integrating the Copilot into ANY Third-Party SME Site
 
-### Standalone Agent Platform (Port 8100)
-| Portal | Access URL | Credentials | Role |
-| :--- | :--- | :--- | :--- |
-| **Customer Copilot** | `http://localhost:8100/` | Active Workspace Key: `fpk_live_dhaka_silicon` | Business Owner (Dhaka Silicon & Hardware Ltd.) |
-| **Admin Console** | `http://localhost:8100/admin` | Master Passphrase: `admin@finpilot2026` | Platform Super Administrator |
+Add this single script tag right before `</body>`:
 
-### SME Management ERP (Port 5173)
-| Role | Email | Password | Permissions |
-| :--- | :--- | :--- | :--- |
-| **Managing Director (Admin)** | `admin@dhakasilicon.com` | `Admin123!` | Full financial visibility, settings, staff management |
-| **Salesman Lead** | `salesman@dhakasilicon.com` | `Sales123!` | POS checkout, inventory addition, courier dispatch |
+```html
+<script 
+  src="http://localhost:8100/sdk/loader.js" 
+  data-api-key="fp_live_f407b24b5fcf1fc17c717429793a9ca4"
+  data-tenant-id="28434594-e04c-4aae-aa17-d4612114e348"
+  data-theme="auto"
+  data-position="bottom-right">
+</script>
+```
+
+### Chameleon Theme Auto-Adaptation:
+The embedded widget automatically:
+- Detects the host website's background color and switches between sleek Dark/Light modes.
+- Inherits the primary brand accent color from the host page's buttons and CSS variables.
+- Matches typography (`Inter`, `system-ui`) and border radii dynamically.
 
 ---
 
-## 🧪 Testing & Verification
+## 📂 Project Directory Structure
 
-Run the automated backend test suites:
-```bash
-# Agent test suite
-cd finpilot-agent
-pytest tests/ -v
-
-# SME ERP test suite
-cd ../finpilot/backend
-pytest tests/ -v
+```
+├── README.md                      # System Master Documentation
+├── finpilot/                      # SME Management & ERP System
+│   ├── backend/                   # FastAPI Backend (Port 8090)
+│   │   ├── app/                   # Invoices, Expenses, Cash Flow, POS
+│   │   └── finpilot.db            # Live SQLite SME Database
+│   └── frontend/                  # React 18 + Vite + Tailwind ERP (Port 5173)
+│       ├── src/pages/             # Sell (POS), Invoices, Products, Contacts...
+│       └── index.html             # Embedded Copilot Loader
+└── finpilot-agent/                # Standalone AI Copilot Microservice (Port 8100)
+    ├── app/
+    │   ├── agent/                 # Orchestrator, Live LLM Client, 6 Tools
+    │   └── core/                  # Schema Reflection Engine & Security
+    ├── sdk/                       # loader.js, widget.html, widget.js
+    └── config.py                  # Dynamic Environment Settings
 ```
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.

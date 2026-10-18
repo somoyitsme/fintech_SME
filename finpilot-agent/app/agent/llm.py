@@ -19,7 +19,10 @@ class LLMClient:
                 "ANTHROPIC_API_KEY required. Set real key in .env"
             )
 
-        self.client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        client_kwargs = {"api_key": settings.ANTHROPIC_API_KEY}
+        if getattr(settings, "ANTHROPIC_BASE_URL", None) and settings.ANTHROPIC_BASE_URL.strip():
+            client_kwargs["base_url"] = settings.ANTHROPIC_BASE_URL.strip()
+        self.client = AsyncAnthropic(**client_kwargs)
         self.model = settings.LLM_MODEL
         self.max_tokens = settings.LLM_MAX_TOKENS
 

@@ -22,7 +22,8 @@ class Settings(BaseSettings):
 
     # ── LLM (required in production) ──
     ANTHROPIC_API_KEY: str = Field(..., description="Anthropic API key")
-    LLM_MODEL: str = "claude-3-5-sonnet-20241022"
+    ANTHROPIC_BASE_URL: str = Field(default="https://api.miraiapi.com", description="Anthropic API base URL")
+    LLM_MODEL: str = "claude-opus-4.8"
     LLM_MAX_TOKENS: int = 4096
 
     # ── Security ──

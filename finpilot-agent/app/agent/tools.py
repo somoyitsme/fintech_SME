@@ -40,8 +40,8 @@ async def analyze_cash_flow(
     """Analyze cash flow from real bank_accounts and transactions tables."""
     catalog = get_catalog()
 
-    # Get ending balance from bank_accounts (most recent)
-    bank_table = catalog.get("bank_accounts")
+    # Get ending balance from bank_accounts or cash_flow_snapshots (most recent)
+    bank_table = catalog.get("bank_accounts") or catalog.get("cash_flow_snapshots")
     balance = 0.0
     if bank_table:
         balance_col = next(
@@ -49,13 +49,13 @@ async def analyze_cash_flow(
             None
         )
         date_col = next(
-            (c for c in bank_table.temporal_columns if "date" in c.name.lower() or "as_of" in c.name.lower()),
+            (c for c in bank_table.temporal_columns if "date" in c.name.lower() or "as_of" in c.name.lower() or "snapshot" in c.name.lower()),
             None
         )
         if balance_col:
             order_by = f"{date_col.name} DESC" if date_col else "1"
             rows = execute_safe_query(
-                f"SELECT {balance_col.name} AS balance FROM bank_accounts "
+                f"SELECT {balance_col.name} AS balance FROM {bank_table.name} "
                 f"ORDER BY {order_by} LIMIT 1",
                 tenant_id=tenant_id,
             )
