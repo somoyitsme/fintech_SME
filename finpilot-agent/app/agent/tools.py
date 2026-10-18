@@ -40,26 +40,20 @@ async def analyze_cash_flow(
     """Analyze cash flow from real bank_accounts and transactions tables."""
     catalog = get_catalog()
 
-    # Get ending balance from bank_accounts or cash_flow_snapshots (most recent)
-    bank_table = catalog.get("bank_accounts") or catalog.get("cash_flow_snapshots")
+    # Get ending balance from payment_accounts, bank_accounts or cash_flow_snapshots
+    bank_table = catalog.get("payment_accounts") or catalog.get("bank_accounts") or catalog.get("cash_flow_snapshots")
     balance = 0.0
     if bank_table:
         balance_col = next(
             (c for c in bank_table.numeric_columns if "balance" in c.name.lower()),
             None
         )
-        date_col = next(
-            (c for c in bank_table.temporal_columns if "date" in c.name.lower() or "as_of" in c.name.lower() or "snapshot" in c.name.lower()),
-            None
-        )
         if balance_col:
-            order_by = f"{date_col.name} DESC" if date_col else "1"
             rows = execute_safe_query(
-                f"SELECT {balance_col.name} AS balance FROM {bank_table.name} "
-                f"ORDER BY {order_by} LIMIT 1",
+                f"SELECT SUM({balance_col.name}) AS balance FROM {bank_table.name}",
                 tenant_id=tenant_id,
             )
-            if rows:
+            if rows and rows[0].get("balance") is not None:
                 balance = float(rows[0]["balance"])
 
     # Calculate burn rate from expenses
@@ -78,8 +72,8 @@ async def analyze_cash_flow(
             rows = execute_safe_query(
                 f"""
                 SELECT SUM({amount_col.name}) AS total
-                FROM expenses
-                WHERE {date_col.name} >= {date_sub_sql(date_col.name, period_days)}
+                FROM {expense_table.name}
+                WHERE {date_col.name} >= {date_sub_sql('now', period_days)}
                 """,
                 tenant_id=tenant_id,
             )
@@ -89,8 +83,8 @@ async def analyze_cash_flow(
 
     runway_months = balance / monthly_burn if monthly_burn > 0 else float('inf')
 
-    # Get inflows from sales/invoices
-    sales_table = catalog.get("sales") or catalog.get("invoices")
+    # Get inflows from orders/sales/invoices
+    sales_table = catalog.get("orders") or catalog.get("sales") or catalog.get("invoices")
     inflows = 0.0
     if sales_table:
         amount_col = next(
@@ -106,7 +100,7 @@ async def analyze_cash_flow(
                 f"""
                 SELECT SUM({amount_col.name}) AS total
                 FROM {sales_table.name}
-                WHERE {date_col.name} >= {date_sub_sql(date_col.name, period_days)}
+                WHERE {date_col.name} >= {date_sub_sql('now', period_days)}
                 """,
                 tenant_id=tenant_id,
             )
@@ -122,7 +116,7 @@ async def analyze_cash_flow(
         "period_inflows": inflows,
         "net_change": net_change,
         "period_days": period_days,
-        "data_source": "Real SQL aggregations from bank_accounts, expenses, sales tables"
+        "data_source": f"Real SQL aggregations from {bank_table.name if bank_table else 'accounts'}, {expense_table.name if expense_table else 'expenses'}, {sales_table.name if sales_table else 'orders'} tables"
     }
 
 
@@ -130,8 +124,8 @@ async def analyze_financial_health(tenant_id: str) -> dict[str, Any]:
     """Analyze P&L and margins from real transactions."""
     catalog = get_catalog()
 
-    # Revenue from sales/invoices
-    sales_table = catalog.get("sales") or catalog.get("invoices")
+    # Revenue from orders/sales/invoices
+    sales_table = catalog.get("orders") or catalog.get("sales") or catalog.get("invoices")
     revenue = 0.0
     if sales_table:
         amount_col = next(
@@ -159,9 +153,9 @@ async def analyze_financial_health(tenant_id: str) -> dict[str, Any]:
             None
         )
         if amount_col:
-            where_clause = "WHERE " + (f"{category_col.name} IN ('COGS', 'Cost of Goods', 'Materials', 'Inventory')" if category_col else "1=1")
+            where_clause = "WHERE " + (f"{category_col.name} IN ('Customs & Port Duty', 'COGS', 'Cost of Goods', 'Materials', 'Inventory')" if category_col else "1=1")
             rows = execute_safe_query(
-                f"SELECT SUM({amount_col.name}) AS cogs FROM expenses {where_clause}",
+                f"SELECT SUM({amount_col.name}) AS cogs FROM {expense_table.name} {where_clause}",
                 tenant_id=tenant_id,
             )
             if rows and rows[0].get("cogs"):
@@ -176,7 +170,7 @@ async def analyze_financial_health(tenant_id: str) -> dict[str, Any]:
         )
         if amount_col:
             rows = execute_safe_query(
-                f"SELECT SUM({amount_col.name}) AS total FROM expenses",
+                f"SELECT SUM({amount_col.name}) AS total FROM {expense_table.name}",
                 tenant_id=tenant_id,
             )
             if rows and rows[0].get("total"):
@@ -197,17 +191,17 @@ async def analyze_financial_health(tenant_id: str) -> dict[str, Any]:
         "net_profit": net_profit,
         "gross_margin_pct": gross_margin,
         "net_margin_pct": net_margin,
-        "data_source": "Real SQL from sales, invoices, expenses tables"
+        "data_source": f"Real SQL from {sales_table.name if sales_table else 'sales'}, {expense_table.name if expense_table else 'expenses'} tables"
     }
 
 
 async def analyze_ar_aging(tenant_id: str) -> dict[str, Any]:
-    """Analyze accounts receivable aging from real invoices."""
+    """Analyze accounts receivable aging from real invoices/orders."""
     catalog = get_catalog()
 
-    invoices = catalog.get("invoices")
+    invoices = catalog.get("orders") or catalog.get("invoices")
     if not invoices:
-        return {"error": "No invoices table found"}
+        return {"error": "No invoices or orders table found"}
 
     amount_col = next(
         (c for c in invoices.numeric_columns if "amount" in c.name.lower() or "total" in c.name.lower()),
@@ -218,30 +212,30 @@ async def analyze_ar_aging(tenant_id: str) -> dict[str, Any]:
         None
     )
     status_col = next(
-        (c for c in invoices.text_columns if "status" in c.name.lower()),
+        (c for c in invoices.text_columns if "payment_status" in c.name.lower() or "status" in c.name.lower()),
         None
     )
 
     if not amount_col or not date_col:
         return {"error": "Missing amount or date column in invoices"}
 
-    # Overdue invoices grouped by age buckets
+    # Overdue/open invoices or orders grouped by age buckets
     where_clause = ""
     if status_col:
-        where_clause = f"WHERE {status_col.name} IN ('pending', 'overdue', 'open', 'unpaid')"
+        where_clause = f"WHERE {status_col.name} IN ('Credit 30D', 'COD Pending', 'Partial', 'pending', 'overdue', 'open', 'unpaid')"
 
     rows = execute_safe_query(
         f"""
         SELECT
             CASE
-                WHEN {date_col.name} >= {date_sub_sql(date_col.name, 30)} THEN '0-30'
-                WHEN {date_col.name} >= {date_sub_sql(date_col.name, 60)} THEN '31-60'
-                WHEN {date_col.name} >= {date_sub_sql(date_col.name, 90)} THEN '61-90'
+                WHEN {date_col.name} >= {date_sub_sql('now', 30)} THEN '0-30'
+                WHEN {date_col.name} >= {date_sub_sql('now', 60)} THEN '31-60'
+                WHEN {date_col.name} >= {date_sub_sql('now', 90)} THEN '61-90'
                 ELSE '90+'
             END AS aging_bucket,
             COUNT(*) AS invoice_count,
             SUM({amount_col.name}) AS total_amount
-        FROM invoices
+        FROM {invoices.name}
         {where_clause}
         GROUP BY aging_bucket
         ORDER BY aging_bucket
@@ -255,7 +249,7 @@ async def analyze_ar_aging(tenant_id: str) -> dict[str, Any]:
     return {
         "buckets": buckets,
         "total_receivables": total_ar,
-        "data_source": "Real SQL aggregations from invoices table"
+        "data_source": f"Real SQL aggregations from {invoices.name} table"
     }
 
 
@@ -392,6 +386,40 @@ async def analyze_expense_breakdown(tenant_id: str) -> dict[str, Any]:
     }
 
 
+async def analyze_inventory_valuation(tenant_id: str) -> dict[str, Any]:
+    """Analyze real inventory valuation, total units, and reorder warnings from products."""
+    catalog = get_catalog()
+    prod_table = catalog.get("products") or catalog.get("inventory")
+    if not prod_table:
+        return {"error": "No products or inventory table found in database"}
+
+    rows = execute_safe_query(
+        f"""
+        SELECT id, name, sku, category, retail_price, cost_price, stock_count, min_threshold
+        FROM {prod_table.name}
+        """,
+        tenant_id=tenant_id
+    )
+    total_items = len(rows)
+    total_units = sum(int(r.get("stock_count", 0) or 0) for r in rows)
+    total_cost_val = sum(float(r.get("cost_price", 0) or 0) * int(r.get("stock_count", 0) or 0) for r in rows)
+    total_retail_val = sum(float(r.get("retail_price", 0) or 0) * int(r.get("stock_count", 0) or 0) for r in rows)
+    low_stock = [
+        {"name": r["name"], "sku": r["sku"], "stock": r["stock_count"], "threshold": r.get("min_threshold", 0)}
+        for r in rows if int(r.get("stock_count", 0) or 0) <= int(r.get("min_threshold", 0) or 0)
+    ]
+    return {
+        "total_products": total_items,
+        "total_units": total_units,
+        "inventory_cost_valuation": total_cost_val,
+        "inventory_retail_valuation": total_retail_val,
+        "potential_gross_profit": total_retail_val - total_cost_val,
+        "low_stock_alerts_count": len(low_stock),
+        "low_stock_items": low_stock[:10],
+        "data_source": f"Real SQL from {prod_table.name} table"
+    }
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Tool Definitions for Anthropic
 # ──────────────────────────────────────────────────────────────────────────
@@ -400,7 +428,7 @@ def get_all_tools() -> list[ToolDef]:
     return [
         ToolDef(
             name="analyze_cash_flow",
-            description="Get cash flow, burn rate, runway from bank_accounts and expenses tables",
+            description="Get cash flow, burn rate, runway from payment_accounts/bank_accounts and expenses tables",
             input_schema={
                 "type": "object",
                 "properties": {
@@ -415,15 +443,21 @@ def get_all_tools() -> list[ToolDef]:
         ),
         ToolDef(
             name="analyze_financial_health",
-            description="Get revenue, COGS, margins, net profit from sales and expenses",
+            description="Get revenue, COGS, margins, net profit from orders/sales and expenses",
             input_schema={"type": "object", "properties": {}},
             handler=analyze_financial_health,
         ),
         ToolDef(
             name="analyze_ar_aging",
-            description="Get accounts receivable aging buckets (0-30, 31-60, 61-90, 90+)",
+            description="Get accounts receivable aging buckets (0-30, 31-60, 61-90, 90+) from orders/invoices",
             input_schema={"type": "object", "properties": {}},
             handler=analyze_ar_aging,
+        ),
+        ToolDef(
+            name="analyze_inventory_valuation",
+            description="Get inventory stock counts, cost/retail valuations, and reorder warnings from products/inventory table",
+            input_schema={"type": "object", "properties": {}},
+            handler=analyze_inventory_valuation,
         ),
         ToolDef(
             name="analyze_financing_readiness",

@@ -143,9 +143,21 @@ class LLMClient:
                             accumulated_text.append(text)
                             yield {"type": "text_delta", "text": text}
 
-                message = await stream.get_final_message()
-                tool_blocks = [b for b in message.content if b.type == "tool_use"]
-                text_blocks = [b for b in message.content if b.type == "text"]
+                try:
+                    message = await stream.get_final_message()
+                    tool_blocks = [b for b in message.content if b.type == "tool_use"]
+                    text_blocks = [b for b in message.content if b.type == "text"]
+                except Exception:
+                    resp = await self.client.messages.create(
+                        model=self.model,
+                        max_tokens=self.max_tokens,
+                        system=system_prompt,
+                        tools=tools,
+                        messages=messages,
+                    )
+                    tool_blocks = [b for b in resp.content if b.type == "tool_use"]
+                    text_blocks = [b for b in resp.content if b.type == "text"]
+                    message = resp
 
             if not tool_blocks:
                 final_text = "".join(accumulated_text)

@@ -62,7 +62,7 @@ class ColumnSchema:
 
     @property
     def is_temporal(self) -> bool:
-        return any(t in self.data_type.lower() for t in ("date", "time", "timestamp"))
+        return any(t in self.data_type.lower() for t in ("date", "time", "timestamp")) or any(t in self.name.lower() for t in ("date", "time", "created_at", "updated_at"))
 
 
 @dataclass
@@ -369,6 +369,11 @@ def date_sub_sql(column: str, days: int) -> str:
     """
     dialect = get_db_engine().catalog.dialect
     if dialect == "sqlite":
+        if column.upper() in ("CURRENT_DATE", "'NOW'", "NOW"):
+            return f"date('now', '-{days} days')"
         return f"date({column}, '-{days} days')"
     else:  # PostgreSQL, MySQL
+        if column.upper() in ("CURRENT_DATE", "'NOW'", "NOW"):
+            return f"CURRENT_DATE - INTERVAL '{days} days'"
         return f"{column} - INTERVAL '{days} days'"
+
