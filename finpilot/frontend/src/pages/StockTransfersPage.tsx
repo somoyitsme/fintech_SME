@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
-import { Truck, Plus, Search, ArrowRight, CheckCircle2, Clock, X } from 'lucide-react';
+import { Plus, ArrowRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { Card } from '../components/common/Card';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { TabGroup } from '../components/common/TabGroup';
+import { Input } from '../components/common/Input';
+import { Select } from '../components/common/Select';
+import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
+import { PageHeader } from '../components/common/PageHeader';
 
 interface StockTransfersPageProps {
   initialTab?: 'list' | 'add';
@@ -8,8 +16,7 @@ interface StockTransfersPageProps {
 
 export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialTab = 'list' }) => {
   const { products, stockTransfers, createStockTransfer } = useStore();
-  const [activeTab, setActiveTab] = useState<'list' | 'add'>(initialTab);
-  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   React.useEffect(() => {
     setActiveTab(initialTab);
@@ -37,160 +44,168 @@ export const StockTransfersPage: React.FC<StockTransfersPageProps> = ({ initialT
     setActiveTab('list');
   };
 
+  const tabs = [
+    { id: 'list', label: `Transfers Log (${stockTransfers.length})` },
+    { id: 'add', label: 'Create Inter-Branch Transfer' }
+  ];
+
+  const totalTransferredUnits = stockTransfers.reduce((acc, t) => acc + t.quantity, 0);
+
   return (
-    <div className="space-y-5 text-slate-800 dark:text-slate-100 select-none">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <Truck className="w-6 h-6 text-blue-500" />
-            Inter-Branch Stock Transfers
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Relocate stock between Banani Central Vault, Multiplan Center & IDB Bhaban showrooms
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Inventory"
+        title="Stock transfers"
+        description="Move stock between locations with a clear transfer ledger."
+        actions={<Button
+          variant="brand"
+          size="sm"
+          onClick={() => setActiveTab('add')}
+        >
+          <Plus className="w-4 h-4 mr-1.5" />
+          New Stock Transfer
+        </Button>}
+      />
+
+      <p className="text-xs text-content-secondary"><strong className="font-semibold text-content-primary">{stockTransfers.length}</strong> recorded transfers · <strong className="font-semibold text-content-primary">{totalTransferredUnits.toLocaleString()}</strong> units relocated</p>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          List Stock Transfers ({stockTransfers.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Add Stock Transfer
-        </button>
-      </div>
+      <TabGroup
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
+      {/* ============================================================== */}
+      {/* TAB 1: LIST TRANSFERS */}
+      {/* ============================================================== */}
+      {activeTab === 'list' && (
+        <DataTable isEmpty={stockTransfers.length === 0} emptyMessage="No stock transfers recorded.">
+          <TableHeader>
+            <tr>
+              <TableHeadCell>Transfer # & Date</TableHeadCell>
+              <TableHeadCell>Hardware Product</TableHeadCell>
+              <TableHeadCell>Source Warehouse</TableHeadCell>
+              <TableHeadCell align="center"><span aria-label="Transfer direction">→</span></TableHeadCell>
+              <TableHeadCell>Destination Branch</TableHeadCell>
+              <TableHeadCell align="center">Quantity</TableHeadCell>
+              <TableHeadCell align="center">Status</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {stockTransfers.map((tr) => (
+              <TableRow key={tr.id}>
+                <TableCell>
+                  <div className="font-semibold text-content-primary">{tr.transferNumber}</div>
+                  <div className="text-[11px] text-content-muted font-mono">{tr.transferDate}</div>
+                </TableCell>
+                <TableCell className="font-medium text-content-primary max-w-xs truncate">
+                  {tr.productName}
+                </TableCell>
+                <TableCell className="text-content-secondary text-xs">
+                  {tr.fromLocation}
+                </TableCell>
+                <TableCell align="center">
+                  <ArrowRight className="w-4 h-4 text-brand-ochre mx-auto" />
+                </TableCell>
+                <TableCell className="text-content-secondary text-xs">
+                  {tr.toLocation}
+                </TableCell>
+                <TableCell align="center" tabular className="font-bold text-content-primary">
+                  {tr.quantity} Units
+                </TableCell>
+                <TableCell align="center">
+                  <Badge variant="success" size="sm">
+                    ● {tr.status}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB 2: ADD TRANSFER */}
+      {/* ============================================================== */}
       {activeTab === 'add' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-blue-500" />
-            Create Inter-Branch Stock Transfer
-          </h2>
+        <Card className="p-6 max-w-xl mx-auto space-y-4">
+          <div className="flex items-center gap-2 pb-3 border-b border-boundary-subtle">
+            <div className="p-1.5 rounded-lg bg-brand-olive/20 text-brand-dark dark:text-brand-cream">
+              <Plus className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-content-primary">Create Inter-Branch Stock Transfer</h3>
+              <p className="text-xs text-content-muted">Issue gate-pass challan to relocate inventory between showroom branches</p>
+            </div>
+          </div>
+
           <form onSubmit={handleTransferSubmit} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Source Warehouse</label>
-              <select
+              <label className="block text-xs font-semibold text-content-primary mb-1">Source Warehouse</label>
+              <Select
                 value={fromLoc}
                 onChange={e => setFromLoc(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Banani Central Vault #B4">Banani Central Vault #B4</option>
                 <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
                 <option value="IDB Bhaban Agargaon Branch">IDB Bhaban Agargaon Branch</option>
-              </select>
+              </Select>
             </div>
+
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Destination Showroom</label>
-              <select
+              <label className="block text-xs font-semibold text-content-primary mb-1">Destination Showroom</label>
+              <Select
                 value={toLoc}
                 onChange={e => setToLoc(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 <option value="Elephant Road Multiplan Branch">Elephant Road Multiplan Branch</option>
                 <option value="Banani Central Vault #B4">Banani Central Vault #B4</option>
                 <option value="IDB Bhaban Agargaon Branch">IDB Bhaban Agargaon Branch</option>
-              </select>
+              </Select>
             </div>
+
             <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product to Transfer</label>
-              <select
+              <label className="block text-xs font-semibold text-content-primary mb-1">Product to Transfer</label>
+              <Select
                 value={prodId}
                 onChange={e => setProdId(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
               >
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} (Available: {p.stockCount})</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name} (Available: {p.stockCount} units)
+                  </option>
                 ))}
-              </select>
+              </Select>
             </div>
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Units to Transfer</label>
-              <input
-                type="number"
-                min="1"
-                required
-                value={qty}
-                onChange={e => setQty(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-              />
+
+            <Input
+              label="Units to Relocate"
+              type="number"
+              min="1"
+              required
+              value={qty}
+              onChange={e => setQty(e.target.value)}
+            />
+
+            <Input
+              label="Transit Challan Notes"
+              placeholder="e.g. Replenish weekend showroom display counter"
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+            />
+
+            <div className="pt-2 flex justify-end gap-2.5">
+              <Button variant="outline" size="sm" type="button" onClick={() => setActiveTab('list')}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="md" type="submit">
+                Dispatch Stock Transfer
+              </Button>
             </div>
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Transit Challan Notes</label>
-              <input
-                type="text"
-                placeholder="e.g. Replenish weekend showroom display counter"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow mt-2"
-            >
-              Dispatch Stock Transfer
-            </button>
           </form>
-        </div>
+        </Card>
       )}
-
-      {activeTab === 'list' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-4">Transfer # & Date</th>
-                <th className="py-3 px-3">Hardware Product</th>
-                <th className="py-3 px-3">From Location</th>
-                <th className="py-3 px-3 text-center"></th>
-                <th className="py-3 px-3">To Location</th>
-                <th className="py-3 px-3 text-center">Quantity</th>
-                <th className="py-3 px-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-              {stockTransfers.map((tr) => (
-                <tr key={tr.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                  <td className="py-3 px-4">
-                    <div className="font-bold text-slate-900 dark:text-white text-xs">{tr.transferNumber}</div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">{tr.transferDate}</div>
-                  </td>
-                  <td className="py-3 px-3 font-semibold text-slate-800 dark:text-slate-200 max-w-xs truncate">
-                    {tr.productName}
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-slate-300 text-[11px]">
-                    {tr.fromLocation}
-                  </td>
-                  <td className="py-3 px-3 text-center text-blue-500">
-                    <ArrowRight className="w-3.5 h-3.5 mx-auto" />
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 dark:text-slate-300 text-[11px]">
-                    {tr.toLocation}
-                  </td>
-                  <td className="py-3 px-3 text-center font-mono font-bold text-blue-400">
-                    {tr.quantity} Units
-                  </td>
-                  <td className="py-3 px-3 text-center">
-                    <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                      ● {tr.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      )}
-
     </div>
   );
 };

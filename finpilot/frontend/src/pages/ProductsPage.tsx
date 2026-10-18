@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Package, 
   Plus, 
   Search, 
   Barcode, 
-  Edit3, 
-  AlertCircle, 
-  CheckCircle2, 
-  Printer, 
-  X, 
   SlidersHorizontal,
   Layers,
-  Award,
   ShieldCheck,
-  Tag
+  Tag,
+  Printer,
+  Boxes,
+  ArrowDownLeft,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useStore, Product } from '../context/StoreContext';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
+import { TabGroup, TabItem } from '../components/common/TabGroup';
+import { Modal } from '../components/common/Modal';
+import { Input } from '../components/common/Input';
+import { Select } from '../components/common/Select';
 
 interface ProductsPageProps {
   initialTab?: 'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties';
@@ -24,12 +30,12 @@ interface ProductsPageProps {
 
 export const ProductsPage: React.FC<ProductsPageProps> = ({ 
   initialTab = 'list',
-  onNavigateTab 
+  onNavigateTab: _onNavigateTab 
 }) => {
   const { products, addStock, addNewProduct } = useStore();
   const [activeTab, setActiveTab] = useState<'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties'>(initialTab);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
@@ -97,101 +103,59 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
     setActiveTab('list');
   };
 
+  const tabs: TabItem[] = [
+    { id: 'list', label: 'Product Catalog', count: products.length, icon: <Package className="w-3.5 h-3.5" /> },
+    { id: 'add', label: 'Add Product', icon: <Plus className="w-3.5 h-3.5" /> },
+    { id: 'prices', label: 'Update Prices', icon: <Tag className="w-3.5 h-3.5" /> },
+    { id: 'labels', label: 'Print Barcodes', icon: <Barcode className="w-3.5 h-3.5" /> },
+    { id: 'variations', label: 'Variations', icon: <SlidersHorizontal className="w-3.5 h-3.5" /> },
+    { id: 'import', label: 'Import CSV', icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
+    { id: 'units', label: 'Measurement Units', icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'categories', label: 'Categories', icon: <Boxes className="w-3.5 h-3.5" /> },
+    { id: 'brands', label: 'Authorized Brands', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+    { id: 'warranties', label: 'Warranty Ledgers', icon: <ShieldCheck className="w-3.5 h-3.5" /> }
+  ];
+
   return (
-    <div className="space-y-5 text-slate-800 dark:text-slate-100 select-none">
+    <div className="space-y-5 select-none animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-boundary-subtle">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <Package className="w-6 h-6 text-blue-500" />
-            Product & Inventory Catalog
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-content-primary flex items-center gap-2">
+            <Package className="w-6 h-6 text-brand-ochreDeep dark:text-brand-ochre" />
+            Hardware & Inventory Catalog
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            27 authentic StarTech hardware SKUs with stock monitoring, barcodes & retail prices
+          <p className="text-xs text-content-muted mt-0.5">
+            Real-time multi-location warehouse stock, barcode generation & retail margins
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setActiveTab('labels')}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition border border-slate-700"
+            leftIcon={<Barcode className="w-4 h-4 text-brand-ochreDeep dark:text-brand-ochre" />}
           >
-            <Barcode className="w-4 h-4 text-emerald-400" />
             <span>Print Labels</span>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="brand"
+            size="sm"
             onClick={() => setActiveTab('add')}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+            leftIcon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
             <span>Add Product</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'list' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          List Products ({products.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('add')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'add' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Add Product
-        </button>
-        <button
-          onClick={() => setActiveTab('prices')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'prices' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Update Price
-        </button>
-        <button
-          onClick={() => setActiveTab('labels')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'labels' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Print Labels
-        </button>
-        <button
-          onClick={() => setActiveTab('variations')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'variations' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Variations
-        </button>
-        <button
-          onClick={() => setActiveTab('import')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'import' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Import Products
-        </button>
-        <button
-          onClick={() => setActiveTab('units')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'units' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Units
-        </button>
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'categories' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Categories
-        </button>
-        <button
-          onClick={() => setActiveTab('brands')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'brands' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Brands
-        </button>
-        <button
-          onClick={() => setActiveTab('warranties')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'warranties' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Warranties
-        </button>
-      </div>
+      {/* Segmented Sub-Navigation Tabs */}
+      <TabGroup
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as any)}
+      />
 
       {/* ============================================================== */}
       {/* TAB 1: LIST PRODUCTS */}
@@ -199,23 +163,23 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
       {activeTab === 'list' && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1e293b] p-3 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3 sm:p-4 rounded-xl border border-boundary-subtle shadow-xs">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1">
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-content-muted" />
                 <input
                   type="text"
-                  placeholder="Search by product name, SKU or model..."
+                  placeholder="Search by hardware name, SKU or model..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 bg-surface-secondary border border-boundary-subtle rounded-lg text-xs text-content-primary placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-brand-ochre"
                 />
               </div>
 
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none"
+                className="bg-surface-secondary border border-boundary-subtle text-content-secondary text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-ochre cursor-pointer"
               >
                 {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
               </select>
@@ -223,90 +187,87 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
               <select
                 value={selectedBrand}
                 onChange={e => setSelectedBrand(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none"
+                className="bg-surface-secondary border border-boundary-subtle text-content-secondary text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-ochre cursor-pointer"
               >
                 {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
               </select>
             </div>
 
-            <div className="text-xs text-slate-400 font-mono">
-              Showing {filteredProducts.length} of {products.length} Products
+            <div className="text-xs text-content-muted font-mono font-tabular">
+              Showing {filteredProducts.length} of {products.length} SKUs
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-3 px-4">Hardware SKU & Model</th>
-                    <th className="py-3 px-3">Category</th>
-                    <th className="py-3 px-3">Brand</th>
-                    <th className="py-3 px-3">Location</th>
-                    <th className="py-3 px-3 text-center">Stock</th>
-                    <th className="py-3 px-4 text-right">Selling Price</th>
-                    <th className="py-3 px-3 text-right">Cost Price</th>
-                    <th className="py-3 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                  {filteredProducts.map((p) => {
-                    const isLow = p.stockCount <= p.minThreshold;
-                    return (
-                      <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3 px-4 max-w-xs">
-                          <div className="font-bold text-slate-900 dark:text-white text-xs truncate">
-                            {p.name}
-                          </div>
-                          <div className="text-[10px] text-blue-500 font-mono mt-0.5">
-                            {p.sku} • {p.warranty}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px]">
-                            {p.category}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-slate-700 dark:text-slate-300">
-                          {p.brand}
-                        </td>
-                        <td className="py-3 px-3 text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
-                          {p.location}
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono">
-                          <span className={`px-2 py-0.5 rounded-full font-bold text-[11px] inline-flex items-center gap-1 ${
-                            isLow 
-                              ? 'bg-rose-500/15 text-rose-500 border border-rose-500/30 animate-pulse' 
-                              : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-                          }`}>
-                            {p.stockCount} {p.unit}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right font-mono font-extrabold text-blue-600 dark:text-blue-400 text-sm">
-                          ৳ {p.retailPrice.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-3 text-right font-mono text-slate-400 text-xs">
-                          ৳ {p.costPrice.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <button
-                            onClick={() => {
-                              setStockModalProduct(p);
-                              setStockAddQty('10');
-                            }}
-                            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-bold shadow-sm transition"
-                          >
-                            + Stock
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Responsive Data Table */}
+          <DataTable className="[&_table]:min-w-[1040px]" isEmpty={filteredProducts.length === 0} emptyMessage="No hardware products found matching filter criteria.">
+            <TableHeader>
+              <tr>
+                <TableHeadCell>Hardware Model & SKU</TableHeadCell>
+                <TableHeadCell>Category</TableHeadCell>
+                <TableHeadCell>Brand</TableHeadCell>
+                <TableHeadCell>Vault Location</TableHeadCell>
+                <TableHeadCell align="center">Stock Level</TableHeadCell>
+                <TableHeadCell align="right">Selling Price</TableHeadCell>
+                <TableHeadCell align="right">Cost Price</TableHeadCell>
+                <TableHeadCell align="center">Action</TableHeadCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {filteredProducts.map((p) => {
+                const isLow = p.stockCount <= p.minThreshold;
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="max-w-xs">
+                      <div className="font-semibold text-content-primary text-[13px] leading-5 truncate">
+                        {p.name}
+                      </div>
+                      <div className="text-[11px] text-content-muted font-mono mt-0.5 truncate">
+                        {p.sku} • {p.warranty}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium text-content-secondary whitespace-nowrap">
+                      {p.category}
+                    </TableCell>
+                    <TableCell className="font-medium text-content-primary">
+                      {p.brand}
+                    </TableCell>
+                    <TableCell className="text-content-muted text-[11px] truncate max-w-[130px]">
+                      {p.location}
+                    </TableCell>
+                    <TableCell align="center">
+                      <div className="inline-flex min-w-[104px] flex-col items-center gap-0.5">
+                        <span className={`font-semibold font-tabular text-[13px] ${isLow ? 'text-status-danger' : 'text-content-primary'}`}>
+                          {p.stockCount} <span className="text-[11px] font-medium text-content-muted">{p.unit}</span>
+                        </span>
+                        <span className={`text-[10px] font-medium ${isLow ? 'text-status-danger' : 'text-content-muted'}`}>
+                          {isLow ? `Reorder at ${p.minThreshold}` : 'In stock'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell align="right" tabular className="font-bold text-content-primary text-sm">
+                      ৳ {p.retailPrice.toLocaleString()}
+                    </TableCell>
+                    <TableCell align="right" tabular className="text-content-muted text-xs">
+                      ৳ {p.costPrice.toLocaleString()}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setStockModalProduct(p);
+                          setStockAddQty('10');
+                        }}
+                        leftIcon={<ArrowDownLeft className="w-3 h-3 text-status-success" />}
+                      >
+                        Add Stock
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </DataTable>
         </div>
       )}
 
@@ -314,30 +275,26 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
       {/* TAB 2: ADD PRODUCT */}
       {/* ============================================================== */}
       {activeTab === 'add' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-2xl mx-auto">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-blue-500" />
-            Add New Hardware Product to Master Catalog
-          </h2>
-          <form onSubmit={handleAddProductSubmit} className="space-y-4 text-xs">
-            <div>
-              <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Product Title & Full Specifications</label>
-              <input
-                type="text"
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader
+            title="Register New Hardware Product"
+            subtitle="Add authentic computer components to the central warehouse catalog"
+          />
+          <CardContent>
+            <form onSubmit={handleAddProductSubmit} className="space-y-4 text-xs">
+              <Input
+                label="Product Title & Model Specifications"
                 required
                 value={pName}
                 onChange={e => setPName(e.target.value)}
-                placeholder="e.g. ASUS Dual GeForce RTX 4070 EVO OC Edition 12GB GDDR6X"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                placeholder="e.g. ASUS ROG Strix GeForce RTX 4080 Super 16GB OC"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Category</label>
-                <select
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Select
+                  label="Hardware Category"
                   value={pCategory}
                   onChange={e => setPCategory(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 >
                   <option>Graphics Cards</option>
                   <option>Processors</option>
@@ -349,166 +306,155 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
                   <option>Casings</option>
                   <option>Monitors</option>
                   <option>Laptops</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Brand / Manufacturer</label>
-                <input
-                  type="text"
+                </Select>
+
+                <Input
+                  label="Brand / Manufacturer"
                   required
                   value={pBrand}
                   onChange={e => setPBrand(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  placeholder="e.g. ASUS"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Retail Price (৳)</label>
-                <input
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input
+                  label="Selling Price (৳)"
                   type="number"
                   required
                   value={pPrice}
                   onChange={e => setPPrice(e.target.value)}
-                  placeholder="85000"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  placeholder="148000"
                 />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Cost Price (৳)</label>
-                <input
+
+                <Input
+                  label="Cost Price (৳)"
                   type="number"
                   value={pCost}
                   onChange={e => setPCost(e.target.value)}
-                  placeholder="68000"
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  placeholder="120000"
                 />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Initial Stock Units</label>
-                <input
+
+                <Input
+                  label="Initial Warehouse Units"
                   type="number"
                   value={pStock}
                   onChange={e => setPStock(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  placeholder="10"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Warehouse Vault Location</label>
-                <input
-                  type="text"
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Warehouse Storage Vault"
                   value={pLocation}
                   onChange={e => setPLocation(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Banani Central Vault #B1"
                 />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Official Warranty</label>
-                <input
-                  type="text"
+
+                <Input
+                  label="Official Warranty Duration"
                   value={pWarranty}
                   onChange={e => setPWarranty(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  placeholder="3 Years Official Replacement"
                 />
               </div>
-            </div>
-            <button
-              type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow"
-            >
-              Add Product to System
-            </button>
-          </form>
-        </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <Button type="button" variant="outline" onClick={() => setActiveTab('list')}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="brand">
+                  Save Product to Catalog
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================================== */}
       {/* TAB 3: PRINT BARCODE LABELS */}
       {/* ============================================================== */}
       {activeTab === 'labels' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Barcode className="w-5 h-5 text-emerald-400" />
-                Barcode Label Generator & Thermal Printing
-              </h2>
-              <p className="text-xs text-slate-400">
-                Generate high-density product barcode stickers for showroom retail packaging
-              </p>
-            </div>
-            <button 
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow transition"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Sticker Sheet</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-400 mb-1 text-xs">Select Hardware Product</label>
-              <select
-                value={selectedForLabel ? selectedForLabel.id : ''}
-                onChange={e => {
-                  const found = products.find(p => p.id === e.target.value);
-                  if (found) setSelectedForLabel(found);
-                }}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+        <Card className="space-y-4">
+          <CardHeader
+            title="Barcode Label Generator & Thermal Printing"
+            subtitle="Print high-density adhesive barcode stickers for showroom retail packaging"
+            action={
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={() => window.print()}
+                leftIcon={<Printer className="w-4 h-4" />}
               >
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} (৳{p.retailPrice.toLocaleString()})</option>
-                ))}
-              </select>
+                Print Sticker Sheet
+              </Button>
+            }
+          />
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-content-secondary font-semibold mb-1 text-xs">Select Hardware SKU</label>
+                <select
+                  value={selectedForLabel ? selectedForLabel.id : ''}
+                  onChange={e => {
+                    const found = products.find(p => p.id === e.target.value);
+                    if (found) setSelectedForLabel(found);
+                  }}
+                  className="w-full bg-surface border border-boundary-strong text-content-primary rounded-lg px-3 py-2 text-xs focus:outline-none"
+                >
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (৳{p.retailPrice.toLocaleString()})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-content-secondary font-semibold mb-1 text-xs">Number of Labels</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="32"
+                  value={labelQty}
+                  onChange={e => setLabelQty(parseInt(e.target.value) || 1)}
+                  className="w-full bg-surface border border-boundary-strong text-content-primary rounded-lg px-3 py-2 text-xs focus:outline-none font-tabular"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-slate-400 mb-1 text-xs">Number of Labels to Generate</label>
-              <input
-                type="number"
-                min="1"
-                max="32"
-                value={labelQty}
-                onChange={e => setLabelQty(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-              />
-            </div>
-          </div>
 
-          {/* Barcode Stickers Grid Preview */}
-          <div className="p-5 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              Preview Printable Sheet ({labelQty} Stickers)
+            {/* Barcode Stickers Grid Preview */}
+            <div className="p-4 sm:p-5 bg-surface-secondary rounded-xl border border-boundary-subtle">
+              <div className="text-xs font-semibold text-content-muted uppercase tracking-wider mb-3">
+                Print Sheet Preview ({labelQty} Adhesive Labels)
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Array.from({ length: labelQty }).map((_, i) => (
+                  <div key={i} className="p-3 bg-white text-stone-900 rounded-lg border border-stone-300 shadow-xs text-center flex flex-col justify-between h-32">
+                    <div className="text-[10px] font-black uppercase tracking-tight text-stone-950">
+                      DHAKA SILICON LTD
+                    </div>
+                    <div className="text-[10.5px] font-semibold line-clamp-2 text-stone-800 leading-tight">
+                      {selectedForLabel?.name}
+                    </div>
+                    {/* Simulated Barcode */}
+                    <div className="my-1 flex items-center justify-center gap-0.5 h-6">
+                      {Array.from({ length: 28 }).map((_, bIdx) => (
+                        <div 
+                          key={bIdx} 
+                          className={`h-full bg-black ${bIdx % 3 === 0 ? 'w-1' : bIdx % 2 === 0 ? 'w-0.5' : 'w-0.5 bg-transparent'}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-mono px-1 font-tabular">
+                      <span className="text-stone-600">{selectedForLabel?.sku}</span>
+                      <span className="font-extrabold text-stone-950">৳{selectedForLabel?.retailPrice.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Array.from({ length: labelQty }).map((_, i) => (
-                <div key={i} className="p-3 bg-white text-black rounded-lg border border-slate-300 shadow-sm text-center flex flex-col justify-between h-32">
-                  <div className="text-[10px] font-extrabold uppercase tracking-tight text-blue-900">
-                    DHAKA SILICON LTD
-                  </div>
-                  <div className="text-[11px] font-bold line-clamp-2 text-slate-800 leading-tight">
-                    {selectedForLabel?.name}
-                  </div>
-                  {/* Simulated Barcode */}
-                  <div className="my-1 flex items-center justify-center gap-0.5 h-6">
-                    {Array.from({ length: 28 }).map((_, bIdx) => (
-                      <div 
-                        key={bIdx} 
-                        className={`h-full bg-black ${bIdx % 3 === 0 ? 'w-1' : bIdx % 2 === 0 ? 'w-0.5' : 'w-0.5 bg-transparent'}`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] font-mono px-1">
-                    <span className="text-slate-600">{selectedForLabel?.sku}</span>
-                    <span className="font-extrabold text-black">৳{selectedForLabel?.retailPrice.toLocaleString()}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================================== */}
@@ -521,20 +467,22 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
             const totalStock = catProds.reduce((s, p) => s + p.stockCount, 0);
             const totalVal = catProds.reduce((s, p) => s + p.stockCount * p.retailPrice, 0);
             return (
-              <div key={cat} className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold text-sm text-blue-400">{cat}</span>
-                  <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
-                    {catProds.length} SKUs
-                  </span>
-                </div>
-                <div className="text-xs text-slate-400 mb-1">
-                  Units in Stock: <span className="font-bold text-white">{totalStock} Units</span>
-                </div>
-                <div className="text-xs text-slate-400">
-                  Inventory Valuation: <span className="font-bold text-emerald-400 font-mono">৳{totalVal.toLocaleString()}</span>
-                </div>
-              </div>
+              <Card key={cat} hoverable>
+                <CardHeader
+                  title={cat}
+                  action={<Badge variant="sand" size="sm">{catProds.length} SKUs</Badge>}
+                />
+                <CardContent className="space-y-1.5 text-xs">
+                  <div className="text-content-secondary flex justify-between">
+                    <span>Units in Stock:</span>
+                    <span className="font-bold text-content-primary font-tabular">{totalStock} Units</span>
+                  </div>
+                  <div className="text-content-secondary flex justify-between">
+                    <span>Valuation:</span>
+                    <span className="font-bold text-status-success font-tabular">৳ {totalVal.toLocaleString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
@@ -550,13 +498,13 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
             const count = bProds.length;
             const units = bProds.reduce((s, p) => s + p.stockCount, 0);
             return (
-              <div key={brand} className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm text-center">
-                <div className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 font-black text-sm flex items-center justify-center mx-auto mb-2">
+              <Card key={brand} hoverable className="text-center p-4">
+                <div className="w-10 h-10 rounded-full bg-brand-ochre/20 text-brand-ochreDeep dark:text-brand-ochre border border-brand-ochre/30 font-black text-sm flex items-center justify-center mx-auto mb-2">
                   {brand[0]}
                 </div>
-                <div className="font-bold text-slate-900 dark:text-white text-sm">{brand}</div>
-                <div className="text-xs text-slate-400 mt-1">{count} Products • {units} Units</div>
-              </div>
+                <div className="font-bold text-content-primary text-sm">{brand}</div>
+                <div className="text-xs text-content-muted mt-1 font-tabular">{count} Products • {units} Units</div>
+              </Card>
             );
           })}
         </div>
@@ -567,261 +515,251 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
       {/* ============================================================== */}
       {activeTab === 'warranties' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <ShieldCheck className="w-8 h-8 text-emerald-500 mb-2" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">3 Years Replacement Warranty</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Applicable to Intel 14th Gen, AMD Ryzen 7000 processors, and MSI/ASUS motherboards.
-            </p>
-          </div>
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <ShieldCheck className="w-8 h-8 text-blue-500 mb-2" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">5 Years / 10 Years Warranty</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Applicable to Samsung 990 Pro SSDs (5 Years) and Corsair RM850x Gold PSUs (10 Years official manufacturer guarantee).
-            </p>
-          </div>
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <ShieldCheck className="w-8 h-8 text-purple-500 mb-2" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Lifetime Official Warranty</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-              Applicable to Corsair Vengeance, G.Skill Trident Z5, and Team T-Force desktop DDR4/DDR5 memory modules.
-            </p>
-          </div>
+          <Card>
+            <CardContent className="p-5">
+              <ShieldCheck className="w-8 h-8 text-status-success mb-2" />
+              <h3 className="font-bold text-sm text-content-primary">3 Years Replacement Warranty</h3>
+              <p className="text-xs text-content-secondary mt-1">
+                Applicable to Intel 14th Gen, AMD Ryzen 7000 processors, and MSI/ASUS motherboards.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <ShieldCheck className="w-8 h-8 text-brand-ochreDeep dark:text-brand-ochre mb-2" />
+              <h3 className="font-bold text-sm text-content-primary">5 to 10 Years Warranty</h3>
+              <p className="text-xs text-content-secondary mt-1">
+                Applicable to Samsung 990 Pro SSDs (5 Years) and Corsair RM850x Gold PSUs (10 Years official guarantee).
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <ShieldCheck className="w-8 h-8 text-status-info mb-2" />
+              <h3 className="font-bold text-sm text-content-primary">Lifetime Official Warranty</h3>
+              <p className="text-xs text-content-secondary mt-1">
+                Applicable to Corsair Vengeance, G.Skill Trident Z5, and Team T-Force desktop DDR4/DDR5 modules.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* ============================================================== */}
-      {/* TAB 7: UPDATE PRICE / BULK PRICE TOOL */}
+      {/* TAB 7: UPDATE PRICES */}
       {/* ============================================================== */}
       {activeTab === 'prices' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-            <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                <Tag className="w-4 h-4 text-emerald-500" />
-                Hardware Selling Price Adjuster & Margin Multiplier
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Adjust retail pricing and gross margin markup across inventory</p>
-            </div>
-            <button
-              onClick={() => alert("Batch pricing updates committed successfully across all SKUs!")}
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition"
-            >
-              <span>Commit Price Changes</span>
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px]">
-                  <th className="py-2.5 px-4">Product Name & SKU</th>
-                  <th className="py-2.5 px-3">Brand</th>
-                  <th className="py-2.5 px-3 text-right">Cost Price (৳)</th>
-                  <th className="py-2.5 px-3 text-right">Current Retail Price (৳)</th>
-                  <th className="py-2.5 px-3 text-right">Gross Margin</th>
-                  <th className="py-2.5 px-4 text-right">New Retail Price (৳)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {products.slice(0, 10).map((p) => {
-                  const marginPct = Math.round(((p.retailPrice - p.costPrice) / p.retailPrice) * 100);
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-2.5 px-4">
-                        <div className="font-bold text-slate-900 dark:text-white truncate max-w-[240px]">{p.name}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{p.sku}</div>
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">{p.brand}</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-400">৳ {p.costPrice.toLocaleString()}</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ {p.retailPrice.toLocaleString()}</td>
-                      <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 font-bold">+{marginPct}%</td>
-                      <td className="py-2.5 px-4 text-right">
-                        <input
-                          type="number"
-                          defaultValue={p.retailPrice}
-                          className="w-28 px-2 py-1 text-right bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <Card>
+          <CardHeader
+            title="Batch Price Adjuster & Gross Margin Markup"
+            subtitle="Update wholesale selling prices and margin multipliers across product catalog"
+            action={
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={() => alert("Batch pricing updates committed successfully across all SKUs!")}
+              >
+                Commit Price Changes
+              </Button>
+            }
+          />
+          <DataTable>
+            <TableHeader>
+              <tr>
+                <TableHeadCell>Hardware Model & SKU</TableHeadCell>
+                <TableHeadCell>Brand</TableHeadCell>
+                <TableHeadCell align="right">Cost Price</TableHeadCell>
+                <TableHeadCell align="right">Current Retail</TableHeadCell>
+                <TableHeadCell align="right">Margin (%)</TableHeadCell>
+                <TableHeadCell align="right">New Price (৳)</TableHeadCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {products.slice(0, 10).map((p) => {
+                const marginPct = Math.round(((p.retailPrice - p.costPrice) / p.retailPrice) * 100);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <div className="font-semibold text-content-primary truncate max-w-[220px]">{p.name}</div>
+                      <div className="text-[10px] text-content-muted font-mono">{p.sku}</div>
+                    </TableCell>
+                    <TableCell className="text-content-secondary">{p.brand}</TableCell>
+                    <TableCell align="right" tabular className="text-content-muted">৳ {p.costPrice.toLocaleString()}</TableCell>
+                    <TableCell align="right" tabular className="font-bold text-content-primary">৳ {p.retailPrice.toLocaleString()}</TableCell>
+                    <TableCell align="right" tabular className="text-status-success font-semibold">+{marginPct}%</TableCell>
+                    <TableCell align="right">
+                      <input
+                        type="number"
+                        defaultValue={p.retailPrice}
+                        className="w-28 px-2 py-1 text-right bg-surface border border-boundary-strong rounded-lg text-content-primary font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-ochre font-tabular"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </DataTable>
+        </Card>
       )}
 
       {/* ============================================================== */}
       {/* TAB 8: PRODUCT VARIATIONS */}
       {/* ============================================================== */}
       {activeTab === 'variations' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700 mb-4">
-              <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-purple-500" />
-                  Product Variation Templates
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Attributes used for generating SKU matrices (RAM capacities, colors, form factors)</p>
-              </div>
-              <button
-                onClick={() => alert("Added new variation attribute: GPU Cooling Edition (Air Cooled / Liquid AIO)")}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
+        <Card>
+          <CardHeader
+            title="Product Variation Attributes"
+            subtitle="Attributes used for generating SKU matrices (RAM capacities, colors, form factors)"
+            action={
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={() => alert("Added new variation attribute: GPU Cooling Edition")}
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Variation</span>
-              </button>
-            </div>
-
+                Add Variation
+              </Button>
+            }
+          />
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-                <div className="font-bold text-sm text-purple-600 dark:text-purple-400">RAM Capacity & Speed</div>
+              <div className="p-4 bg-surface-secondary border border-boundary-subtle rounded-xl space-y-2">
+                <div className="font-bold text-xs uppercase tracking-wider text-brand-ochreDeep dark:text-brand-ochre">RAM Capacity & Speed</div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">16GB DDR5-6000MHz</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">32GB DDR5-6000MHz</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">64GB DDR5-6400MHz</span>
+                  <Badge variant="neutral" size="sm">16GB DDR5-6000MHz</Badge>
+                  <Badge variant="neutral" size="sm">32GB DDR5-6000MHz</Badge>
+                  <Badge variant="neutral" size="sm">64GB DDR5-6400MHz</Badge>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-                <div className="font-bold text-sm text-blue-600 dark:text-blue-400">Chassis Color Edition</div>
+              <div className="p-4 bg-surface-secondary border border-boundary-subtle rounded-xl space-y-2">
+                <div className="font-bold text-xs uppercase tracking-wider text-brand-ochreDeep dark:text-brand-ochre">Chassis Edition</div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">Matte Stealth Black</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">Arctic White Edition</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">Titanium Silver</span>
+                  <Badge variant="neutral" size="sm">Matte Stealth Black</Badge>
+                  <Badge variant="neutral" size="sm">Arctic White Edition</Badge>
+                  <Badge variant="neutral" size="sm">Titanium Silver</Badge>
                 </div>
               </div>
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
-                <div className="font-bold text-sm text-emerald-600 dark:text-emerald-400">Storage Capacity</div>
+              <div className="p-4 bg-surface-secondary border border-boundary-subtle rounded-xl space-y-2">
+                <div className="font-bold text-xs uppercase tracking-wider text-brand-ochreDeep dark:text-brand-ochre">NVMe Storage Tier</div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">1TB PCIe Gen4 NVMe</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">2TB PCIe Gen4 NVMe</span>
-                  <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-300 text-xs border border-slate-200 dark:border-slate-700">4TB PCIe Gen5 NVMe</span>
+                  <Badge variant="neutral" size="sm">1TB PCIe Gen4 NVMe</Badge>
+                  <Badge variant="neutral" size="sm">2TB PCIe Gen4 NVMe</Badge>
+                  <Badge variant="neutral" size="sm">4TB PCIe Gen5 NVMe</Badge>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================================== */}
       {/* TAB 9: IMPORT PRODUCTS */}
       {/* ============================================================== */}
       {activeTab === 'import' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm max-w-xl mx-auto text-center space-y-4">
-          <Package className="w-12 h-12 text-blue-500 mx-auto" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Import Products via CSV Spreadsheet</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Bulk upload new computer hardware catalog items, starting stock, and distributor barcodes.
-          </p>
-          <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 cursor-pointer hover:border-blue-500 transition">
-            <span className="text-xs text-slate-500 dark:text-slate-400">Drag and drop StarTech format .csv or .xlsx file here</span>
-          </div>
-          <button 
-            onClick={() => alert("Downloaded products_import_template.csv")}
-            className="text-xs text-blue-500 hover:underline font-semibold block mx-auto"
-          >
-            Download Products CSV Format Template
-          </button>
-        </div>
+        <Card className="max-w-xl mx-auto text-center">
+          <CardContent className="p-8 space-y-4">
+            <Package className="w-12 h-12 text-brand-ochre mx-auto" />
+            <h2 className="text-base font-bold text-content-primary">Import Products via CSV Spreadsheet</h2>
+            <p className="text-xs text-content-muted">
+              Bulk upload new computer hardware catalog items, starting stock, and distributor barcodes.
+            </p>
+            <div className="p-8 border-2 border-dashed border-boundary-strong rounded-xl bg-surface-secondary cursor-pointer hover:border-brand-ochre transition">
+              <span className="text-xs text-content-muted">Drag and drop StarTech format .csv or .xlsx file here</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => alert("Downloaded products_import_template.csv")}
+            >
+              Download Products CSV Format Template
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================================== */}
       {/* TAB 10: MEASUREMENT UNITS */}
       {/* ============================================================== */}
       {activeTab === 'units' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm space-y-4 max-w-2xl mx-auto">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-            <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-500" />
-                Measurement Units (UOM)
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Standard wholesale and retail inventory units</p>
-            </div>
-            <button
-              onClick={() => alert("Unit 'Reel / Spool' added successfully")}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 shadow transition"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Unit</span>
-            </button>
-          </div>
-
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-            <div className="py-2.5 flex justify-between items-center text-slate-700 dark:text-slate-300">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader
+            title="Measurement Units (UOM)"
+            subtitle="Standard wholesale and retail inventory units"
+            action={
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={() => alert("Unit 'Reel / Spool' added successfully")}
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+              >
+                Add Unit
+              </Button>
+            }
+          />
+          <div className="divide-y divide-boundary-subtle text-xs">
+            <div className="p-4 flex justify-between items-center">
               <div>
-                <span className="font-bold text-slate-900 dark:text-white">Pieces (Pcs)</span>
-                <span className="text-slate-500 text-[11px] ml-2">Short code: pc</span>
+                <span className="font-bold text-content-primary">Pieces (Pcs)</span>
+                <span className="text-content-muted text-[11px] ml-2 font-mono">Code: pc</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold">Base Unit (Default)</span>
+              <Badge variant="sage" size="sm">Base Unit (Default)</Badge>
             </div>
-            <div className="py-2.5 flex justify-between items-center text-slate-700 dark:text-slate-300">
+            <div className="p-4 flex justify-between items-center">
               <div>
-                <span className="font-bold text-slate-900 dark:text-white">Box / Carton (10 Units)</span>
-                <span className="text-slate-500 text-[11px] ml-2">Short code: bx-10</span>
+                <span className="font-bold text-content-primary">Box / Carton (10 Units)</span>
+                <span className="text-content-muted text-[11px] ml-2 font-mono">Code: bx-10</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">Multiplier: x10</span>
+              <Badge variant="neutral" size="sm">Multiplier: x10</Badge>
             </div>
-            <div className="py-2.5 flex justify-between items-center text-slate-700 dark:text-slate-300">
+            <div className="p-4 flex justify-between items-center">
               <div>
-                <span className="font-bold text-slate-900 dark:text-white">Master Crate (50 Units)</span>
-                <span className="text-slate-500 text-[11px] ml-2">Short code: crt-50</span>
+                <span className="font-bold text-content-primary">Master Crate (50 Units)</span>
+                <span className="text-content-muted text-[11px] ml-2 font-mono">Code: crt-50</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">Multiplier: x50</span>
+              <Badge variant="neutral" size="sm">Multiplier: x50</Badge>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* MODAL: ADD STOCK QUICK ACTION */}
-      {stockModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-md p-5 text-slate-100 shadow-2xl">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-700 mb-3">
-              <span className="font-bold text-sm">Add Stock Units</span>
-              <button onClick={() => setStockModalProduct(null)} className="text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="mb-3">
-              <div className="font-bold text-sm text-white">{stockModalProduct.name}</div>
-              <div className="text-xs text-blue-400 font-mono mt-0.5">Current Stock: {stockModalProduct.stockCount} {stockModalProduct.unit}</div>
-            </div>
-            <form onSubmit={handleStockAdd} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">Additional Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={stockAddQty}
-                  onChange={e => setStockAddQty(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-400 mb-1">Unit Cost Price (৳, Optional to update)</label>
-                <input
-                  type="number"
-                  placeholder={stockModalProduct.costPrice.toString()}
-                  value={stockAddCost}
-                  onChange={e => setStockAddCost(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition"
-              >
+      <Modal
+        isOpen={!!stockModalProduct}
+        onClose={() => setStockModalProduct(null)}
+        title="Add Warehouse Stock Units"
+        subtitle={stockModalProduct ? `${stockModalProduct.name} • Current: ${stockModalProduct.stockCount} ${stockModalProduct.unit}` : ''}
+      >
+        {stockModalProduct && (
+          <form onSubmit={handleStockAdd} className="space-y-4 text-xs">
+            <Input
+              label="Additional Stock Quantity"
+              type="number"
+              min="1"
+              required
+              value={stockAddQty}
+              onChange={e => setStockAddQty(e.target.value)}
+              autoFocus
+            />
+
+            <Input
+              label="Unit Cost Price (৳, Optional to update)"
+              type="number"
+              placeholder={stockModalProduct.costPrice.toString()}
+              value={stockAddCost}
+              onChange={e => setStockAddCost(e.target.value)}
+            />
+
+            <div className="pt-2 flex justify-end gap-2.5">
+              <Button type="button" variant="outline" onClick={() => setStockModalProduct(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="brand">
                 Confirm Restock
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };

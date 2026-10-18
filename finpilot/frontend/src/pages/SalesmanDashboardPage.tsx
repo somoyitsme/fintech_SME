@@ -170,7 +170,7 @@ export const SalesmanDashboardPage: React.FC<SalesmanDashboardProps> = ({ onNavi
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="enterprise-table w-full text-left text-xs">
               <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-500 dark:text-[#8b949e] font-semibold border-y border-slate-100 dark:border-[#30363d]">
                 <tr>
                   <th className="py-2.5 px-3">Client</th>

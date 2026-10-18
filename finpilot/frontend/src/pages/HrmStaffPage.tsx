@@ -184,7 +184,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
       {activeTab === 'users' && (
         <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="enterprise-table w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">User Name</th>
@@ -270,7 +270,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="enterprise-table w-full text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                     <th className="py-3 px-4">Role Title</th>
@@ -332,7 +332,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="enterprise-table w-full text-left text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
                     <th className="py-3 px-4">Sales Agent</th>

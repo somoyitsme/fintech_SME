@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Sidebar } from './components/Sidebar';
+import { AppSidebar } from './components/AppSidebar';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './pages/LoginPage';
 
 // Core ERP Pages
-import { DashboardPage } from './pages/DashboardPage';
+import { ExecutiveDashboardPage } from './pages/ExecutiveDashboardPage';
 import { ContactsPage } from './pages/ContactsPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { PurchasesPage } from './pages/PurchasesPage';
@@ -19,13 +19,30 @@ import { EssentialsPage } from './pages/EssentialsPage';
 import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { DatabaseAuditPage } from './pages/DatabaseAuditPage';
 
+const getPageTitle = (activeTab: string) => {
+  if (activeTab.startsWith('sell-')) return activeTab === 'sell-pos' ? 'Point of sale' : 'Sales & orders';
+  if (activeTab.startsWith('products-')) return 'Products';
+  if (activeTab.startsWith('purchases-')) return 'Purchasing';
+  if (activeTab.startsWith('stock-transfers-')) return 'Stock transfers';
+  if (activeTab.startsWith('stock-adjustments-')) return 'Stock adjustments';
+  if (activeTab.startsWith('contacts-')) return 'Contacts';
+  if (activeTab.startsWith('accounts-')) return 'Accounts';
+  if (activeTab.startsWith('expenses-')) return 'Expenses';
+  if (activeTab.startsWith('reports-')) return 'Reports';
+  if (activeTab.startsWith('users-')) return 'Staff & access';
+  if (activeTab === 'essentials-todo') return 'Operations checklist';
+  if (activeTab === 'admin-database') return 'Audit exports';
+  if (activeTab.startsWith('settings-')) return 'Settings';
+  return 'Dashboard';
+};
+
 export function App() {
   const [currentUser, setCurrentUser] = useState<{
     name: string;
     role: string;
     email: string;
   } | null>(() => {
-    const saved = localStorage.getItem('dhaka_silicon_logged_user_v2');
+    const saved = localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -37,6 +54,10 @@ export function App() {
   });
 
   const [activeTab, setActiveTab] = useState<string>('home-dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(
+    () => localStorage.getItem('finpilot_sidebar_collapsed') === 'true'
+  );
 
   const companyName = "Dhaka Silicon & Hardware Ltd.";
   const industry = "Computer Wholesale & Retail";
@@ -45,17 +66,20 @@ export function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('dhaka_silicon_logged_user_v2');
+    localStorage.removeItem('dhaka_silicon_logged_user');
     setCurrentUser(null);
   };
 
   const handleLogin = (user: { name: string; role: string; email: string }) => {
     localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
+    localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
     setCurrentUser(user);
     setActiveTab('home-dashboard');
   };
 
   const handleSwitchUser = (user: { name: string; role: string; email: string }) => {
     localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
+    localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
     setCurrentUser(user);
   };
 
@@ -70,10 +94,9 @@ export function App() {
       case 'admin-dashboard':
       case 'sales-dashboard':
         return (
-          <DashboardPage 
+          <ExecutiveDashboardPage 
             key="home-dashboard"
             onNavigateTab={setActiveTab} 
-            userRole={currentUser.role}
             userName={currentUser.name}
           />
         );
@@ -214,10 +237,9 @@ export function App() {
 
       default:
         return (
-          <DashboardPage 
+          <ExecutiveDashboardPage 
             key="default-dashboard"
             onNavigateTab={setActiveTab} 
-            userRole={currentUser.role}
             userName={currentUser.name}
           />
         );
@@ -225,19 +247,26 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-slate-100 flex transition-colors">
-      {/* Expandable Sidebar */}
-      <Sidebar 
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(212,163,115,0.12),_transparent_30%),var(--bg-app)] text-content-primary flex transition-colors duration-200">
+      <AppSidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         userRole={currentUser.role}
         userName={currentUser.name}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => {
+          const nextCollapsed = !isSidebarCollapsed;
+          localStorage.setItem('finpilot_sidebar_collapsed', String(nextCollapsed));
+          setIsSidebarCollapsed(nextCollapsed);
+        }}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar 
           companyName={companyName}
+          pageTitle={getPageTitle(activeTab)}
           industry={industry}
           currency={currency}
           healthScore={healthScore}
@@ -248,10 +277,13 @@ export function App() {
           onSwitchUser={handleSwitchUser}
           onNavigateTab={setActiveTab}
           onOpenPos={() => setActiveTab('sell-pos')}
+          onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
         />
 
-        <main className="p-6 ml-64 flex-1">
-          {renderActivePage()}
+        <main className="flex-1 w-full max-w-[1700px] mx-auto p-3 sm:p-5 lg:p-6">
+          <div className="space-y-6">
+            {renderActivePage()}
+          </div>
         </main>
       </div>
     </div>
