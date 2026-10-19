@@ -14,13 +14,39 @@ export async function seedIfEmpty() {
   const now = new Date().toISOString();
 
   // Create admin user
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const adminHash = await bcrypt.hash('admin123', 10);
   await db.insert(users).values({
     id: uuidv4(),
     username: 'admin',
     email: 'admin@finpilot.local',
-    passwordHash,
+    passwordHash: adminHash,
     fullName: 'System Administrator',
+    role: 'admin',
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // Create manager/owner user
+  await db.insert(users).values({
+    id: uuidv4(),
+    username: 'director',
+    email: 'director@dhakasilicon.com',
+    passwordHash: adminHash,
+    fullName: 'MD Nazmul Hasan',
+    role: 'manager',
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // Create salesman user
+  const salesHash = await bcrypt.hash('sales123', 10);
+  await db.insert(users).values({
+    id: uuidv4(),
+    username: 'salesman',
+    email: 'sales@dhakasilicon.com',
+    passwordHash: salesHash,
+    fullName: 'Tanvir Ahmed',
+    role: 'salesman',
     createdAt: now,
     updatedAt: now,
   });

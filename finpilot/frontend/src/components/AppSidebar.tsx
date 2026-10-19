@@ -97,6 +97,28 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
 }) => {
+  const isSalesman = userRole.toLowerCase().includes('sales');
+
+  const visibleSections = navigation
+    .map((section) => {
+      const filteredItems = section.items.filter((item) => {
+        if (isSalesman) {
+          const allowedForSalesman = [
+            'home-dashboard',
+            'agent-copilot',
+            'sell-all',
+            'sell-pos',
+            'products-list',
+            'contacts-customers',
+          ];
+          return allowedForSalesman.includes(item.id);
+        }
+        return true;
+      });
+      return { ...section, items: filteredItems };
+    })
+    .filter((section) => section.items.length > 0);
+
   const navigate = (tabId: string) => {
     setActiveTab(tabId);
     onCloseMobile?.();
@@ -148,7 +170,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
             <div className={`ml-2.5 min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
               <p className="truncate text-xs font-semibold text-content-primary">Dhaka Silicon &amp; Hardware</p>
-              <p className="text-[10px] uppercase tracking-[0.12em] text-content-muted">Business operations</p>
+              <p className="text-[10px] uppercase tracking-[0.12em] text-content-muted">
+                {isSalesman ? 'Salesman Terminal' : 'Executive Console'}
+              </p>
             </div>
           </div>
           {onToggleCollapse && !isCollapsed && (
@@ -166,7 +190,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
 
         <nav className={`flex-1 overflow-y-auto py-4 ${isCollapsed ? 'px-2 lg:px-2' : 'px-3'}`}>
-          {navigation.map((section) => (
+          {visibleSections.map((section) => (
             <section key={section.label} className={`mb-5 last:mb-0 ${isCollapsed ? 'lg:mb-3' : ''}`}>
               <p className={`px-2.5 mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-content-muted ${isCollapsed ? 'lg:hidden' : ''}`}>{section.label}</p>
               <div className="space-y-1">
@@ -201,13 +225,25 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           <div className={`flex items-center rounded-xl border border-boundary-subtle bg-surface shadow-sm ${isCollapsed ? 'justify-center p-1.5 lg:border-transparent lg:bg-transparent lg:shadow-none' : 'gap-2.5 px-2.5 py-2.5'}`}>
             <div
               title={isCollapsed ? `${userName} · ${userRole}` : undefined}
-              className="w-8 h-8 shrink-0 rounded-full bg-brand-sage text-stone-950 flex items-center justify-center text-[11px] font-bold"
+              className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                isSalesman
+                  ? 'bg-brand-sage text-stone-950'
+                  : 'bg-brand-ochre text-stone-950'
+              }`}
             >
               {userName.split(' ').map((name) => name[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div className={`min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
               <p className="text-xs font-semibold text-content-primary truncate">{userName}</p>
-              <p className="text-[10px] text-content-muted truncate">{userRole}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
+                  isSalesman
+                    ? 'bg-brand-sage/30 text-stone-900 dark:text-brand-sage'
+                    : 'bg-brand-ochre/20 text-brand-ochreDeep dark:text-brand-ochre'
+                }`}>
+                  {isSalesman ? 'Sales Staff (POS)' : 'Executive (Full)'}
+                </span>
+              </div>
             </div>
           </div>
         </div>

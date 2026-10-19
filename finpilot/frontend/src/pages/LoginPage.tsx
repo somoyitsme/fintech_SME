@@ -1,214 +1,257 @@
 import React, { useState } from 'react';
-import { Cpu, Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { 
+  Lock, 
+  Mail, 
+  ArrowRight, 
+  ShieldCheck, 
+  AlertCircle, 
+  Eye, 
+  EyeOff, 
+  Building2, 
+  UserCheck, 
+  ShoppingBag,
+  Sparkles
+} from 'lucide-react';
+import { authApi } from '../api';
 
 interface LoginPageProps {
   onLogin: (user: { name: string; role: string; email: string }) => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activePortal, setActivePortal] = useState<'manager' | 'salesman'>('manager');
 
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    const cleanIdentifier = identifier.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanIdentifier || !cleanPassword) {
+      setErrorMessage('Please enter both your corporate email / username and workspace password.');
+      return;
+    }
+
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanPass = password.trim();
+    try {
+      // Authenticate directly against live SQLite database via db-server API
+      const authRes = await authApi.login(cleanIdentifier, cleanPassword);
 
-      // Verify authentic enterprise credentials
-      if (
-        (cleanEmail === 'director@dhakasilicon.com' || cleanEmail === 'admin@dhakasilicon.com' || cleanEmail === 'farhan@dhakasilicon.com') &&
-        (cleanPass === 'admin123' || cleanPass === 'password123' || cleanPass === 'director123')
-      ) {
+      if (authRes && authRes.user) {
         const user = {
-          name: "Farhan Chowdhury",
-          role: "Owner & Managing Director",
-          email: cleanEmail
+          name: authRes.user.fullName || authRes.user.username,
+          role: authRes.user.role === 'salesman' ? 'Salesman Lead' : 'Managing Director',
+          email: authRes.user.email
         };
+
         if (rememberMe) {
+          localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
           localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
+          if (authRes.token) {
+            localStorage.setItem('finpilot_auth_token', authRes.token);
+          }
         }
-        onLogin(user);
-      } else if (
-        (cleanEmail === 'tanvir@dhakasilicon.com' || cleanEmail === 'sales@dhakasilicon.com' || cleanEmail === 'salesman@dhakasilicon.com') &&
-        (cleanPass === 'sales123' || cleanPass === 'password123' || cleanPass === 'tanvir123')
-      ) {
-        const user = {
-          name: "Tanvir Ahmed",
-          role: "Salesman Lead",
-          email: cleanEmail
-        };
-        if (rememberMe) {
-          localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
-        }
+
         onLogin(user);
       } else {
-        setErrorMessage("Invalid corporate email or password. Access denied. Please verify your credentials below.");
+        throw new Error('Authentication returned an empty response.');
       }
-    }, 600);
-  };
-
-  const handleFillDemo = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setErrorMessage(null);
+    } catch (err: any) {
+      console.warn('Login failure:', err);
+      const msg = err.response?.data?.error || err.message || 'Invalid username or password';
+      setErrorMessage(
+        msg === 'Invalid username or password'
+          ? 'Invalid corporate email / username or workspace password. Please verify your credentials and try again.'
+          : `Authentication failed: ${msg}`
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(212,163,115,0.18),_transparent_35%),var(--bg-app)] text-content-primary flex flex-col justify-center items-center p-4 relative overflow-hidden transition-colors duration-200">
       {/* Background ambient lighting */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -top-32 -left-32 w-80 h-80 bg-brand-ochre/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-brand-sage/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="w-full max-w-md z-10">
+      <div className="w-full max-w-[440px] z-10">
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#161b22] border border-[#30363d] flex items-center justify-center text-cyan-400 mx-auto mb-4 shadow-xl shadow-cyan-500/10">
-            <Cpu className="w-8 h-8" />
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-brand-ochre text-stone-950 font-extrabold flex items-center justify-center text-xl mx-auto mb-3.5 shadow-md shadow-brand-ochre/25 tracking-tight">
+            DS
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">Dhaka Silicon ERP</h1>
-          <p className="text-xs text-slate-400 mt-1">Computer Hardware Wholesale & Retail Enterprise Management System</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-content-primary">
+            Dhaka Silicon &amp; Hardware Ltd.
+          </h1>
+          <p className="text-xs text-content-muted mt-1 font-medium">
+            Computer Hardware Wholesale &amp; Retail Enterprise ERP
+          </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-[#161b22] border border-[#30363d] rounded-2xl p-7 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#30363d]/80">
+        <div className="bg-surface border border-boundary-subtle rounded-2xl p-6 sm:p-7 shadow-xl shadow-stone-900/5 backdrop-blur-md transition-colors">
+          {/* Header & Portal Switcher */}
+          <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-boundary-subtle">
             <div>
-              <h2 className="text-base font-bold text-white">Staff & Admin Authentication</h2>
-              <p className="text-[11px] text-slate-400">Sign in to access POS, catalog, and wholesale ledger</p>
+              <h2 className="text-sm font-bold text-content-primary">Enterprise Sign In</h2>
+              <p className="text-[11px] text-content-muted">Access inventory, orders, and real-time ledger</p>
             </div>
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-status-successBg text-status-success flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
           </div>
 
+          {/* Role Portal Selector Tabs */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-surface-secondary rounded-xl mb-4 border border-boundary-subtle text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setActivePortal('manager');
+                setErrorMessage(null);
+              }}
+              className={`py-2 px-3 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                activePortal === 'manager'
+                  ? 'bg-surface text-content-primary shadow-xs border border-boundary-subtle'
+                  : 'text-content-muted hover:text-content-primary'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-brand-ochre" />
+              <span>Manager / Owner</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActivePortal('salesman');
+                setErrorMessage(null);
+              }}
+              className={`py-2 px-3 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                activePortal === 'salesman'
+                  ? 'bg-surface text-content-primary shadow-xs border border-boundary-subtle'
+                  : 'text-content-muted hover:text-content-primary'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-brand-sageDark" />
+              <span>Sales Staff &amp; POS</span>
+            </button>
+          </div>
+
+          {/* Portal Information Banner */}
+          <div className="mb-4 py-2 px-3 rounded-xl bg-surface-secondary/70 border border-boundary-subtle text-[11px] text-content-secondary flex items-start gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-brand-ochre shrink-0 mt-0.5" />
+            {activePortal === 'manager' ? (
+              <span><strong>Manager Portal:</strong> Complete executive access to financial health, P&amp;L reports, cash runway, and inventory.</span>
+            ) : (
+              <span><strong>Salesman Terminal:</strong> Focused access to Point of Sale (POS), customer orders, and live stock inquiries.</span>
+            )}
+          </div>
+
+          {/* Error Message */}
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-950/50 border border-rose-800 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-              <span>{errorMessage}</span>
+            <div className="mb-4 p-3 rounded-xl bg-status-dangerBg border border-status-dangerBorder text-status-danger text-xs flex items-start gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{errorMessage}</span>
             </div>
           )}
 
+          {/* Authentication Form */}
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Corporate Email Address
+              <label className="block text-xs font-semibold text-content-primary mb-1.5">
+                Corporate Email or Username
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Mail className="w-4 h-4 text-content-muted absolute left-3 top-3 pointer-events-none" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  placeholder="e.g. tanvir@dhakasilicon.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#0d1117] border border-[#30363d] focus:border-blue-500 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition font-mono"
+                  autoFocus
+                  placeholder={
+                    activePortal === 'manager'
+                      ? 'e.g. director@dhakasilicon.com'
+                      : 'e.g. sales@dhakasilicon.com'
+                  }
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full bg-surface border border-boundary-subtle focus:border-brand-ochre rounded-xl pl-9 pr-4 py-2.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none transition font-sans"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-content-primary mb-1.5">
                 Workspace Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Lock className="w-4 h-4 text-content-muted absolute left-3 top-3 pointer-events-none" />
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#0d1117] border border-[#30363d] focus:border-blue-500 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition font-mono"
+                  className="w-full bg-surface border border-boundary-subtle focus:border-brand-ochre rounded-xl pl-9 pr-10 py-2.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none transition font-sans"
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-3 text-content-muted hover:text-content-primary transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-400 hover:text-slate-200">
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer text-content-secondary hover:text-content-primary select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded bg-[#0d1117] border-[#30363d] text-blue-600 focus:ring-0"
+                  className="rounded border-boundary-strong text-brand-ochre focus:ring-0"
                 />
-                <span>Remember session</span>
+                <span className="text-[11px]">Keep me signed in</span>
               </label>
-              <span className="text-slate-500 text-[11px] font-mono">Banani Vault Terminal #01</span>
+              <span className="text-content-muted text-[10px] font-mono">
+                Banani Central Vault #01
+              </span>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2 mt-2"
+              className="w-full py-2.5 px-4 bg-brand-ochre hover:bg-brand-ochreDark disabled:opacity-50 text-stone-950 rounded-xl text-xs font-bold shadow-sm shadow-brand-ochre/20 transition flex items-center justify-center gap-2 mt-2"
             >
               {isLoading ? (
-                <span>Authenticating Credentials...</span>
+                <span>Authenticating with Database...</span>
               ) : (
                 <>
-                  <span>Sign In to ERP Terminal</span>
+                  <span>Sign In to {activePortal === 'manager' ? 'Management Console' : 'POS Terminal'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
-
-          {/* Authorized Credentials Helper Guide */}
-          <div className="mt-6 pt-5 border-t border-[#30363d]/70 space-y-2">
-            <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-2">
-              Authorized Corporate Accounts:
-            </div>
-            
-            <button
-              type="button"
-              onClick={() => handleFillDemo('tanvir@dhakasilicon.com', 'sales123')}
-              className="w-full p-2.5 rounded-xl bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] flex items-center justify-between text-left text-xs transition"
-            >
-              <div>
-                <div className="font-bold text-white flex items-center gap-1.5">
-                  <span>Tanvir Ahmed</span>
-                  <span className="text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-1.5 py-0.2 rounded font-mono font-normal">Sales Staff</span>
-                </div>
-                <div className="text-[11px] text-slate-400 font-mono">tanvir@dhakasilicon.com · Pass: sales123</div>
-              </div>
-              <span className="text-[11px] text-blue-400 font-semibold hover:underline">Select</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleFillDemo('director@dhakasilicon.com', 'admin123')}
-              className="w-full p-2.5 rounded-xl bg-[#0d1117] hover:bg-[#21262d] border border-[#30363d] flex items-center justify-between text-left text-xs transition"
-            >
-              <div>
-                <div className="font-bold text-white flex items-center gap-1.5">
-                  <span>Farhan Chowdhury</span>
-                  <span className="text-[10px] bg-blue-950/60 text-blue-400 border border-blue-800/50 px-1.5 py-0.2 rounded font-mono font-normal">Owner / Admin</span>
-                </div>
-                <div className="text-[11px] text-slate-400 font-mono">director@dhakasilicon.com · Pass: admin123</div>
-              </div>
-              <span className="text-[11px] text-blue-400 font-semibold hover:underline">Select</span>
-            </button>
-          </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center text-[11px] text-slate-500 mt-6">
-          © 2026 Dhaka Silicon & Hardware Ltd. · All rights reserved · Multiplan Center & Banani Vault, Dhaka
+        <div className="text-center text-[11px] text-content-muted mt-6">
+          &copy; 2026 Dhaka Silicon &amp; Hardware Ltd. &middot; Multiplan Center &amp; Banani Central Vault, Dhaka
         </div>
       </div>
     </div>
   );
 };
+
+export default LoginPage;

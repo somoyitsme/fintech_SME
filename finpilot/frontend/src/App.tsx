@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ShieldAlert } from 'lucide-react';
+import { Button } from './components/common/Button';
 import { AppSidebar } from './components/AppSidebar';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './pages/LoginPage';
@@ -48,14 +50,27 @@ export function App() {
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return {
-      name: "MD Nazmul Hasan",
-      role: "Managing Director",
-      email: "nazmul@dhakasilicon.com"
-    };
+    return null;
   });
 
-  const [activeTab, setActiveTab] = useState<string>('home-dashboard');
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const savedTab = localStorage.getItem('finpilot_active_tab');
+    if (savedTab) return savedTab;
+    const savedUser = localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        if (u.role?.toLowerCase().includes('sales')) return 'sell-pos';
+      } catch (e) {}
+    }
+    return 'home-dashboard';
+  });
+
+  const setActiveTab = (tab: string) => {
+    localStorage.setItem('finpilot_active_tab', tab);
+    setActiveTabState(tab);
+  };
+
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(
     () => localStorage.getItem('finpilot_sidebar_collapsed') === 'true'
@@ -69,6 +84,8 @@ export function App() {
   const handleLogout = () => {
     localStorage.removeItem('dhaka_silicon_logged_user_v2');
     localStorage.removeItem('dhaka_silicon_logged_user');
+    localStorage.removeItem('finpilot_auth_token');
+    localStorage.removeItem('finpilot_active_tab');
     setCurrentUser(null);
   };
 
@@ -76,20 +93,60 @@ export function App() {
     localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
     localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
     setCurrentUser(user);
-    setActiveTab('home-dashboard');
+    const defaultTab = user.role.toLowerCase().includes('sales') ? 'sell-pos' : 'home-dashboard';
+    setActiveTab(defaultTab);
   };
 
   const handleSwitchUser = (user: { name: string; role: string; email: string }) => {
     localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
     localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
     setCurrentUser(user);
+    const defaultTab = user.role.toLowerCase().includes('sales') ? 'sell-pos' : 'home-dashboard';
+    setActiveTab(defaultTab);
   };
 
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  const isSalesman = currentUser.role.toLowerCase().includes('sales');
+
   const renderActivePage = () => {
+    // Role-Based Route Guard for Sales Staff
+    const isRestrictedForSalesman =
+      activeTab.startsWith('accounts-') ||
+      activeTab.startsWith('expenses-') ||
+      activeTab.startsWith('reports-') ||
+      activeTab.startsWith('purchases-') ||
+      activeTab.startsWith('contacts-suppliers') ||
+      activeTab.startsWith('users-') ||
+      activeTab.startsWith('hrm-') ||
+      activeTab.startsWith('stock-adjustments-') ||
+      activeTab.startsWith('stock-transfers-') ||
+      activeTab.startsWith('settings-') ||
+      activeTab === 'admin-database' ||
+      activeTab === 'essentials-todo';
+
+    if (isSalesman && isRestrictedForSalesman) {
+      return (
+        <div className="p-8 rounded-2xl bg-surface border border-boundary-subtle text-center max-w-md mx-auto mt-16 space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-status-dangerBg text-status-danger flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h2 className="text-base font-bold text-content-primary">Access Restricted</h2>
+          <p className="text-xs text-content-muted leading-relaxed">
+            You are signed in as <strong>{currentUser.name} (Sales Staff)</strong>.
+            This executive management module requires <strong>Managing Director / Owner</strong> privileges.
+          </p>
+          <div className="pt-2">
+            <Button variant="primary" size="sm" onClick={() => setActiveTab('sell-pos')}>
+              Return to Point of Sale (POS)
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       // 1. Home Dashboard
       case 'home-dashboard':

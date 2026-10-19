@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/client.js';
 import { users } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'finpilot-secret-key-change-in-production';
 const SALT_ROUNDS = 10;
@@ -38,8 +38,13 @@ export async function registerUser(username: string, email: string, password: st
   return { user, token };
 }
 
-export async function loginUser(username: string, password: string): Promise<{ user: User; token: string }> {
-  const [userRecord] = await db.select().from(users).where(eq(users.username, username)).limit(1);
+export async function loginUser(identifier: string, password: string): Promise<{ user: User; token: string }> {
+  const clean = identifier.trim().toLowerCase();
+  const [userRecord] = await db
+    .select()
+    .from(users)
+    .where(or(eq(users.username, clean), eq(users.email, clean)))
+    .limit(1);
 
   if (!userRecord) {
     throw new Error('Invalid username or password');
