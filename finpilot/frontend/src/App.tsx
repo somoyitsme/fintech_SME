@@ -18,8 +18,10 @@ import { HrmStaffPage } from './pages/HrmStaffPage';
 import { EssentialsPage } from './pages/EssentialsPage';
 import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { DatabaseAuditPage } from './pages/DatabaseAuditPage';
+import { AgentCopilotPage } from './pages/AgentCopilotPage';
 
 const getPageTitle = (activeTab: string) => {
+  if (activeTab === 'agent-copilot' || activeTab.startsWith('agent-')) return 'FinPilot AI Copilot';
   if (activeTab.startsWith('sell-')) return activeTab === 'sell-pos' ? 'Point of sale' : 'Sales & orders';
   if (activeTab.startsWith('products-')) return 'Products';
   if (activeTab.startsWith('purchases-')) return 'Purchasing';
@@ -100,6 +102,10 @@ export function App() {
             userName={currentUser.name}
           />
         );
+
+      // AI Financial Copilot
+      case 'agent-copilot':
+        return <AgentCopilotPage key="agent-copilot" onNavigateTab={setActiveTab} />;
 
       // 2. User Management & HRM
       case 'users-list':

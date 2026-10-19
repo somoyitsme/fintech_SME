@@ -12,6 +12,7 @@ import {
   Settings,
   ShoppingBag,
   SlidersHorizontal,
+  Sparkles,
   Truck,
   UserCheck,
   Users,
@@ -37,7 +38,13 @@ interface NavigationItem {
 }
 
 const navigation: { label: string; items: NavigationItem[] }[] = [
-  { label: 'Overview', items: [{ id: 'home-dashboard', label: 'Dashboard', icon: Home }] },
+  {
+    label: 'Overview',
+    items: [
+      { id: 'home-dashboard', label: 'Dashboard', icon: Home },
+      { id: 'agent-copilot', label: 'FinPilot AI Copilot', icon: Sparkles, matches: ['agent-'] },
+    ],
+  },
   {
     label: 'Commerce',
     items: [
