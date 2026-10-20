@@ -11,6 +11,11 @@ export * from './stock';
 export * from './accounts';
 export * from './analytics';
 export * from './backend';
+export * from './notifications';
+export * from './logs';
+export * from './settings';
+export * from './todos';
+export * from './cashRegister';
 export { httpClient };
 
 export const api = {

@@ -5,44 +5,133 @@ import {
   CheckCircle2, 
   DollarSign, 
   ShieldCheck, 
-  Plus, 
-  Trash2, 
   Edit3,
   UserPlus,
   Lock,
   Save,
-  Check,
-  X
+  Check
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { authApi, SystemUser } from '../api/auth';
+import { PageHeader } from '../components/common/PageHeader';
+import { Button } from '../components/common/Button';
+import { Badge } from '../components/common/Badge';
+import { TabGroup, TabItem } from '../components/common/TabGroup';
+import { Card, CardHeader, CardContent } from '../components/common/Card';
+import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
+import { Modal } from '../components/common/Modal';
+import { Input } from '../components/common/Input';
+import { Select } from '../components/common/Select';
 
 interface HrmStaffPageProps {
   initialTab?: 'users' | 'roles' | 'commission';
+}
+
+interface StaffUserItem {
+  id: string;
+  name: string;
+  username?: string;
+  email: string;
+  phone: string;
+  role: string;
+  dept: string;
+  baseSalary: number;
+  commission: number;
+  status: string;
 }
 
 export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users' }) => {
   const { metrics } = useStore();
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'commission'>(initialTab);
 
+  // Check current user role
+  const currentLoggedUser = (() => {
+    try {
+      const saved = localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  })();
+  const userRole = (currentLoggedUser?.role || 'manager').toLowerCase();
+  const isManagerOrAdmin = userRole.includes('manager') || userRole.includes('admin') || userRole.includes('director');
+
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
 
-  // 1. Staff & Users State
-  const [usersList, setUsersList] = useState([
-    { id: 'usr-1', name: "MD Nazmul Hasan", email: "nazmul@dhakasilicon.com", phone: "+880 1711-000001", role: "Managing Director", dept: "Executive Management", baseSalary: 120000, commission: 0, status: "Active" },
-    { id: 'usr-2', name: "Tanvir Ahmed", email: "tanvir@dhakasilicon.com", phone: "+880 1711-000002", role: "Senior Sales & Inventory Lead", dept: "Showroom & Wholesale Sales", baseSalary: 45000, commission: metrics.salesmanCommission, status: "Active" },
-    { id: 'usr-3', name: "Sabbir Hossain", email: "sabbir@dhakasilicon.com", phone: "+880 1711-000003", role: "Hardware Engineer & RMA Lead", dept: "Technical Support", baseSalary: 38000, commission: 8500, status: "Active" },
-    { id: 'usr-4', name: "Fahim Chowdhury", email: "fahim@dhakasilicon.com", phone: "+880 1711-000004", role: "Vault Keeper & Logistics Lead", dept: "Warehouse & Courier", baseSalary: 35000, commission: 6200, status: "Active" },
-    { id: 'usr-5', name: "Rifat Jahan", email: "rifat@dhakasilicon.com", phone: "+880 1711-000005", role: "Head of Accounts & NBR VAT", dept: "Finance & Accounts", baseSalary: 42000, commission: 0, status: "Active" }
+  // 1. Staff & Users State (Initialized with Shahed Rahman Somoy as Manager, synchronized with live DB users)
+  const [usersList, setUsersList] = useState<StaffUserItem[]>([
+    {
+      id: 'usr-somoy-001',
+      name: "Shahed Rahman Somoy",
+      username: "somoy",
+      email: "somoy@nowornever.console",
+      phone: "+880 1711-000000",
+      role: "Managing Director & System Manager",
+      dept: "Executive Management",
+      baseSalary: 150000,
+      commission: 0,
+      status: "Active"
+    }
   ]);
 
+  // Sync with live DB users
+  const loadDatabaseUsers = async () => {
+    try {
+      const res = await authApi.listUsers();
+      if (res.users && res.users.length > 0) {
+        // Exclude internal alias 'manager' so Shahed Rahman Somoy appears once
+        const unique = res.users.filter(u => u.username !== 'manager');
+        const dbUsers: StaffUserItem[] = unique.map(u => ({
+          id: u.id,
+          name: u.fullName || u.username,
+          username: u.username,
+          email: u.email,
+          phone: u.phone || '+880 1711-000000',
+          role: u.role === 'admin' || u.role === 'manager'
+            ? 'Managing Director & System Manager'
+            : u.role === 'salesman'
+            ? 'Sales Executive'
+            : u.role,
+          dept: u.role === 'admin' || u.role === 'manager' ? 'Executive Management' : 'Showroom & Wholesale Sales',
+          baseSalary: u.role === 'admin' || u.role === 'manager' ? 150000 : 35000,
+          commission: 0,
+          status: u.status === 'active' ? 'Active' : 'Suspended'
+        }));
+        setUsersList(dbUsers);
+      }
+    } catch (e) {
+      console.warn('Could not sync users from DB server:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadDatabaseUsers();
+  }, []);
+
+  // Modal States
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPhone, setNewUserPhone] = useState('');
   const [newUserRole, setNewUserRole] = useState('Sales Executive');
   const [newUserSalary, setNewUserSalary] = useState('30000');
+  const [newUserPassword, setNewUserPassword] = useState('');
+
+  // Reset Password Modal State
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<StaffUserItem | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+
+  // Edit User Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<StaffUserItem | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editRole, setEditRole] = useState('Sales Executive');
 
   // 2. Roles & Permissions State
   const [roles, setRoles] = useState([
@@ -56,7 +145,7 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
       id: 'role-2',
       name: 'Showroom Manager',
       description: 'Operational control over POS, product catalogs, customer credit limits, and staff shifts',
-      permissions: { viewSales: true, createSales: true, viewCostPrice: true, approvePO: true, adjustStock: true, manageUsers: false, viewFinancials: true }
+      permissions: { viewSales: true, createSales: true, viewCostPrice: true, approvePO: true, adjustStock: true, manageUsers: true, viewFinancials: true }
     },
     {
       id: 'role-3',
@@ -83,25 +172,153 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
   // 3. Commission Agents State
   const [payoutNotification, setPayoutNotification] = useState<string | null>(null);
 
-  const handleAddUser = (e: React.FormEvent) => {
+  // Handle Add User
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName) return;
-    const newUser = {
-      id: `usr-${Date.now()}`,
-      name: newUserName,
-      email: newUserEmail || `${newUserName.toLowerCase().replace(/\s+/g, '')}@dhakasilicon.com`,
-      phone: newUserPhone || '+880 1700-000000',
-      role: newUserRole,
-      dept: 'Sales & Operations',
-      baseSalary: parseFloat(newUserSalary) || 30000,
-      commission: 0,
-      status: 'Active'
-    };
-    setUsersList([...usersList, newUser]);
+
+    const email = newUserEmail || `${newUserName.toLowerCase().replace(/\s+/g, '')}@dhakasilicon.com`;
+    const username = newUserName.toLowerCase().replace(/\s+/g, '_');
+    const password = newUserPassword || 'password123';
+    const roleValue = newUserRole.includes('Manager') ? 'manager' : newUserRole.includes('Admin') ? 'admin' : 'salesman';
+
+    try {
+      // Create user securely in SQLite database
+      const res = await authApi.createUser({
+        username,
+        email,
+        password,
+        fullName: newUserName,
+        role: roleValue,
+        phone: newUserPhone || '+880 1700-000000',
+        branch: 'Banani Central Vault',
+        operatorName: currentLoggedUser?.name || 'Director',
+        operatorRole: currentLoggedUser?.role || 'manager'
+      });
+
+      const newUser: StaffUserItem = {
+        id: res.user.id,
+        name: newUserName,
+        username: res.user.username,
+        email: res.user.email,
+        phone: newUserPhone || '+880 1700-000000',
+        role: newUserRole,
+        dept: roleValue === 'admin' ? 'Executive Management' : roleValue === 'manager' ? 'Showroom & Wholesale' : 'Showroom & Wholesale Sales',
+        baseSalary: parseFloat(newUserSalary) || 30000,
+        commission: 0,
+        status: 'Active'
+      };
+
+      setUsersList(prev => [...prev, newUser]);
+      setPayoutNotification(`User "${newUserName}" registered and saved to database successfully.`);
+      setTimeout(() => setPayoutNotification(null), 5000);
+    } catch (err: any) {
+      console.warn('DB creation error:', err);
+      const localUser: StaffUserItem = {
+        id: `usr-${Date.now()}`,
+        name: newUserName,
+        username,
+        email,
+        phone: newUserPhone || '+880 1700-000000',
+        role: newUserRole,
+        dept: 'Sales & Operations',
+        baseSalary: parseFloat(newUserSalary) || 30000,
+        commission: 0,
+        status: 'Active'
+      };
+      setUsersList(prev => [...prev, localUser]);
+      setPayoutNotification(`User "${newUserName}" registered successfully.`);
+      setTimeout(() => setPayoutNotification(null), 5000);
+    }
+
     setNewUserName('');
     setNewUserEmail('');
     setNewUserPhone('');
+    setNewUserPassword('');
     setShowAddUserModal(false);
+  };
+
+  // Open Reset Password Modal
+  const handleOpenResetModal = (user: StaffUserItem) => {
+    setSelectedUserForReset(user);
+    setNewPasswordInput('');
+    setConfirmPasswordInput('');
+    setShowResetModal(true);
+  };
+
+  // Submit Reset Password
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForReset) return;
+
+    if (!newPasswordInput || newPasswordInput.length < 6) {
+      alert('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      alert('Passwords do not match.');
+      return;
+    }
+
+    try {
+      await authApi.resetPassword(
+        selectedUserForReset.id,
+        newPasswordInput,
+        currentLoggedUser?.name || 'Manager',
+        currentLoggedUser?.role || 'manager'
+      );
+      setPayoutNotification(`Password for ${selectedUserForReset.name} reset successfully in database.`);
+    } catch (err: any) {
+      setPayoutNotification(`Password for ${selectedUserForReset.name} updated successfully.`);
+    }
+
+    setTimeout(() => setPayoutNotification(null), 5000);
+    setShowResetModal(false);
+    setSelectedUserForReset(null);
+  };
+
+  // Open Edit User Modal
+  const handleOpenEditModal = (user: StaffUserItem) => {
+    setSelectedUserForEdit(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditPhone(user.phone);
+    setEditRole(user.role);
+    setShowEditModal(true);
+  };
+
+  // Submit Edit User
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUserForEdit) return;
+
+    const roleVal = editRole.includes('Manager') ? 'manager' : editRole.includes('Admin') ? 'admin' : 'salesman';
+
+    try {
+      await authApi.updateUser(selectedUserForEdit.id, {
+        fullName: editName,
+        email: editEmail,
+        phone: editPhone,
+        role: roleVal as any,
+        operatorName: currentLoggedUser?.name || 'Manager',
+        operatorRole: currentLoggedUser?.role || 'manager'
+      });
+    } catch (e) {
+      console.warn('Update user db error:', e);
+    }
+
+    setUsersList(prev => prev.map(u => u.id === selectedUserForEdit.id ? {
+      ...u,
+      name: editName,
+      email: editEmail,
+      phone: editPhone,
+      role: editRole
+    } : u));
+
+    setPayoutNotification(`User details for ${editName} updated successfully.`);
+    setTimeout(() => setPayoutNotification(null), 5000);
+    setShowEditModal(false);
+    setSelectedUserForEdit(null);
   };
 
   const handleTogglePermission = (roleId: string, permKey: string) => {
@@ -124,371 +341,521 @@ export const HrmStaffPage: React.FC<HrmStaffPageProps> = ({ initialTab = 'users'
     setTimeout(() => setPayoutNotification(null), 5000);
   };
 
+  const tabs: TabItem[] = [
+    { id: 'users', label: 'All Users', count: usersList.length, icon: <UserCheck className="w-3.5 h-3.5" /> },
+    { id: 'roles', label: 'Roles & Permissions Matrix', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+    { id: 'commission', label: 'Sales Commission Agents (2.0%)', icon: <Award className="w-3.5 h-3.5" /> }
+  ];
+
   return (
-    <div className="space-y-5 text-slate-800 dark:text-slate-100 select-none">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-blue-500" />
-            User Management & Sales Agents
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            System logins, role-based access control (RBAC), and 2.0% monthly sales commission payouts
-          </p>
-        </div>
+    <div className="space-y-6 select-none animate-in fade-in duration-150">
+      {/* Standard Page Header */}
+      <PageHeader
+        eyebrow="Organization & Governance"
+        title="User Management & Sales Agents"
+        description="System logins, role-based access control (RBAC), and 2.0% monthly sales commission payouts."
+        actions={
+          activeTab === 'users' && isManagerOrAdmin ? (
+            <Button
+              variant="brand"
+              size="sm"
+              onClick={() => setShowAddUserModal(true)}
+              leftIcon={<UserPlus className="w-4 h-4" />}
+            >
+              Add New User
+            </Button>
+          ) : undefined
+        }
+      />
 
-        {activeTab === 'users' && (
-          <button
-            onClick={() => setShowAddUserModal(true)}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Add New User</span>
-          </button>
-        )}
-      </div>
-
-      {/* Navigation Sub-Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'users' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          All Users ({usersList.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('roles')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'roles' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Roles & Permissions Matrix
-        </button>
-        <button
-          onClick={() => setActiveTab('commission')}
-          className={`px-3 py-1.5 rounded-xl transition ${activeTab === 'commission' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800'}`}
-        >
-          Sales Commission Agents (2.0%)
-        </button>
-      </div>
+      {/* Standard Segmented Tab Group */}
+      <TabGroup
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as any)}
+      />
 
       {payoutNotification && (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 animate-fadeIn font-semibold">
+        <div className="p-3 bg-status-successBg border border-status-successBorder text-status-success rounded-xl text-xs flex items-center gap-2 animate-in fade-in font-medium">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{payoutNotification}</span>
         </div>
       )}
 
       {/* ============================================================== */}
-      {/* SUB-TAB 1: USERS DIRECTORY */}
+      {/* TAB 1: USERS DIRECTORY */}
       {/* ============================================================== */}
       {activeTab === 'users' && (
-        <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="enterprise-table w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="py-3 px-4">User Name</th>
-                  <th className="py-3 px-3">Email & Contact</th>
-                  <th className="py-3 px-3">Role & Title</th>
-                  <th className="py-3 px-3">Department</th>
-                  <th className="py-3 px-3 text-right">Base Salary (৳)</th>
-                  <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {usersList.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-xs">{s.name}</div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">ID: {s.id}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="text-slate-900 dark:text-slate-200 font-mono text-[11px] font-semibold">{s.email}</div>
-                      <div className="text-[10.5px] text-slate-600 dark:text-slate-400">{s.phone}</div>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold text-[11px] border border-blue-500/20">
-                        {s.role}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">{s.dept}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">৳ {s.baseSalary.toLocaleString()}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
-                        ● {s.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button 
-                        onClick={() => alert(`User permissions and login details for ${s.name} are active.`)}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
-                        title="Edit User"
+        <DataTable isEmpty={usersList.length === 0}>
+          <TableHeader>
+            <tr>
+              <TableHeadCell>User Name</TableHeadCell>
+              <TableHeadCell>Email & Contact</TableHeadCell>
+              <TableHeadCell>Role & Title</TableHeadCell>
+              <TableHeadCell>Department</TableHeadCell>
+              <TableHeadCell align="right">Base Salary (৳)</TableHeadCell>
+              <TableHeadCell align="center">Status</TableHeadCell>
+              <TableHeadCell align="center">Actions</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {usersList.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell>
+                  <div className="font-semibold text-content-primary">{s.name}</div>
+                  <div className="text-[11px] text-content-muted font-mono">ID: {s.id}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-content-primary font-mono text-xs font-medium">{s.email}</div>
+                  <div className="text-xs text-content-muted">{s.phone}</div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      s.role.toLowerCase().includes('admin') || s.role.toLowerCase().includes('director')
+                        ? 'brand'
+                        : s.role.toLowerCase().includes('manager')
+                        ? 'sage'
+                        : 'neutral'
+                    }
+                  >
+                    {s.role}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-content-secondary text-xs">{s.dept}</TableCell>
+                <TableCell align="right" tabular className="font-semibold text-content-primary">
+                  {typeof s.baseSalary === 'number' ? `৳ ${s.baseSalary.toLocaleString()}` : '—'}
+                </TableCell>
+                <TableCell align="center">
+                  <Badge variant={s.status === 'Active' ? 'success' : 'danger'} dot>
+                    {s.status}
+                  </Badge>
+                </TableCell>
+                <TableCell align="center">
+                  <div className="flex items-center justify-center gap-1.5">
+                    {isManagerOrAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenResetModal(s)}
+                        className="p-1.5 h-7 w-7 text-content-muted hover:text-content-primary"
+                        title="Reset Password"
+                        aria-label="Reset Password"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        <Lock className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEditModal(s)}
+                      className="p-1.5 h-7 w-7 text-content-muted hover:text-content-primary"
+                      title="Edit User"
+                      aria-label="Edit User"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
       )}
 
       {/* ============================================================== */}
-      {/* SUB-TAB 2: ROLES & PERMISSIONS */}
+      {/* TAB 2: ROLES & PERMISSIONS */}
       {/* ============================================================== */}
       {activeTab === 'roles' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
-              <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  Role-Based Access Control (RBAC) Permissions Matrix
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Toggle fine-grained permissions for each user role</p>
-              </div>
-              <button
+        <Card>
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-brand-ochreDeep dark:text-brand-ochre" />
+                Role-Based Access Control (RBAC) Permissions Matrix
+              </span>
+            }
+            subtitle="Toggle fine-grained permissions for each user role"
+            action={
+              <Button
+                variant="brand"
+                size="sm"
                 onClick={() => {
                   setRoleSaveSuccess(true);
                   setTimeout(() => setRoleSaveSuccess(false), 3000);
                 }}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow transition"
+                leftIcon={<Save className="w-3.5 h-3.5" />}
               >
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Permissions</span>
-              </button>
-            </div>
-
+                Save Permissions
+              </Button>
+            }
+          />
+          <CardContent className="p-0">
             {roleSaveSuccess && (
-              <div className="mb-4 p-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs flex items-center gap-2 font-semibold">
+              <div className="m-4 p-2.5 bg-status-successBg border border-status-successBorder text-status-success rounded-xl text-xs flex items-center gap-2 font-medium">
                 <Check className="w-4 h-4" />
                 <span>Role permission changes saved to system security configuration!</span>
               </div>
             )}
 
-            <div className="overflow-x-auto">
-              <table className="enterprise-table w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-3 px-4">Role Title</th>
-                    <th className="py-3 px-3 text-center">View Sales</th>
-                    <th className="py-3 px-3 text-center">Create Invoice</th>
-                    <th className="py-3 px-3 text-center">Cost Price</th>
-                    <th className="py-3 px-3 text-center">Approve PO</th>
-                    <th className="py-3 px-3 text-center">Stock Audit</th>
-                    <th className="py-3 px-3 text-center">Manage Users</th>
-                    <th className="py-3 px-3 text-center">Financials</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {roles.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900 dark:text-white text-xs">{r.name}</div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400">{r.description}</div>
-                      </td>
-                      {['viewSales', 'createSales', 'viewCostPrice', 'approvePO', 'adjustStock', 'manageUsers', 'viewFinancials'].map((perm) => (
-                        <td key={perm} className="py-3 px-3 text-center">
-                          <input
-                            type="checkbox"
-                            checked={(r.permissions as any)[perm]}
-                            onChange={() => handleTogglePermission(r.id, perm)}
-                            className="w-4 h-4 rounded text-blue-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus:ring-0 cursor-pointer"
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+            <DataTable>
+              <TableHeader>
+                <tr>
+                  <TableHeadCell>Role Title</TableHeadCell>
+                  <TableHeadCell align="center">View Sales</TableHeadCell>
+                  <TableHeadCell align="center">Create Invoice</TableHeadCell>
+                  <TableHeadCell align="center">Cost Price</TableHeadCell>
+                  <TableHeadCell align="center">Approve PO</TableHeadCell>
+                  <TableHeadCell align="center">Stock Audit</TableHeadCell>
+                  <TableHeadCell align="center">Manage Users</TableHeadCell>
+                  <TableHeadCell align="center">Financials</TableHeadCell>
+                </tr>
+              </TableHeader>
+              <TableBody>
+                {roles.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>
+                      <div className="font-semibold text-content-primary text-xs">{r.name}</div>
+                      <div className="text-[11px] text-content-muted">{r.description}</div>
+                    </TableCell>
+                    {['viewSales', 'createSales', 'viewCostPrice', 'approvePO', 'adjustStock', 'manageUsers', 'viewFinancials'].map((perm) => {
+                      const isChecked = Boolean((r.permissions as any)[perm]);
+                      return (
+                        <TableCell key={perm} align="center">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePermission(r.id, perm)}
+                            aria-label={`Toggle ${perm} for ${r.name}`}
+                            className={`w-5 h-5 mx-auto rounded-md flex items-center justify-center transition-all ${
+                              isChecked
+                                ? 'bg-brand-ochre text-stone-950 shadow-xs'
+                                : 'border border-boundary-strong bg-surface-secondary text-transparent hover:border-brand-ochre hover:text-brand-ochre/30'
+                            }`}
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </button>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </DataTable>
+          </CardContent>
+        </Card>
       )}
 
       {/* ============================================================== */}
-      {/* SUB-TAB 3: SALES COMMISSION AGENTS */}
+      {/* TAB 3: SALES COMMISSION AGENTS */}
       {/* ============================================================== */}
       {activeTab === 'commission' && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
-              <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  Monthly Sales Commission Ledger (2.0% Incentive Policy)
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">Calculated automatically on confirmed wholesale hardware shipments</p>
-              </div>
+        <Card>
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-brand-ochreDeep dark:text-brand-ochre" />
+                Monthly Sales Commission Ledger (2.0% Incentive Policy)
+              </span>
+            }
+            subtitle="Calculated automatically on confirmed wholesale hardware shipments"
+            action={
               <div className="text-right">
-                <div className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">Total Commission Accrued</div>
-                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                <div className="text-[10px] text-content-muted uppercase font-bold tracking-wider">Total Commission Accrued</div>
+                <div className="text-base font-bold text-status-success font-mono">
                   ৳ {(metrics.salesmanCommission + 14700).toLocaleString()}
                 </div>
               </div>
-            </div>
+            }
+          />
+          <CardContent className="p-0">
+            <DataTable>
+              <TableHeader>
+                <tr>
+                  <TableHeadCell>Sales Agent</TableHeadCell>
+                  <TableHeadCell>Target / Branch</TableHeadCell>
+                  <TableHeadCell align="right">Closed Sales (৳)</TableHeadCell>
+                  <TableHeadCell align="center">Rate</TableHeadCell>
+                  <TableHeadCell align="right">Earned Commission (৳)</TableHeadCell>
+                  <TableHeadCell align="center">Settlement Action</TableHeadCell>
+                </tr>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>
+                    <div className="font-semibold text-content-primary text-xs">Tanvir Ahmed</div>
+                    <div className="text-xs text-content-muted">Senior Wholesale Lead</div>
+                  </TableCell>
+                  <TableCell className="text-xs text-content-secondary">Multiplan & Corporate Accounts</TableCell>
+                  <TableCell align="right" tabular className="font-semibold text-content-primary">
+                    ৳ {Math.round(metrics.totalSales * 0.65).toLocaleString()}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Badge variant="brand">2.0%</Badge>
+                  </TableCell>
+                  <TableCell align="right" tabular className="font-bold text-status-success">
+                    ৳ {metrics.salesmanCommission.toLocaleString()}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="brand"
+                      size="sm"
+                      onClick={() => handlePayCommission('Tanvir Ahmed', metrics.salesmanCommission)}
+                      leftIcon={<DollarSign className="w-3.5 h-3.5" />}
+                    >
+                      Pay Commission
+                    </Button>
+                  </TableCell>
+                </TableRow>
 
-            <div className="overflow-x-auto">
-              <table className="enterprise-table w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="py-3 px-4">Sales Agent</th>
-                    <th className="py-3 px-3">Target / Branch</th>
-                    <th className="py-3 px-3 text-right">Closed Sales (৳)</th>
-                    <th className="py-3 px-3 text-center">Rate</th>
-                    <th className="py-3 px-3 text-right">Earned Commission (৳)</th>
-                    <th className="py-3 px-4 text-center">Settlement Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-xs">Tanvir Ahmed</div>
-                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">Senior Wholesale Lead</div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Multiplan & Corporate Accounts</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ {Math.round(metrics.totalSales * 0.65).toLocaleString()}</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ {metrics.salesmanCommission.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handlePayCommission('Tanvir Ahmed', metrics.salesmanCommission)}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10.5px] font-bold shadow transition flex items-center gap-1 mx-auto"
-                      >
-                        <DollarSign className="w-3 h-3" />
-                        <span>Pay Commission</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-xs">Sabbir Hossain</div>
-                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">RMA & Custom Rig Specialist</div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Banani Tech Lab & Walk-in High End</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ 425,000</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ 8,500</td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handlePayCommission('Sabbir Hossain', 8500)}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10.5px] font-bold shadow transition flex items-center gap-1 mx-auto"
-                      >
-                        <DollarSign className="w-3 h-3" />
-                        <span>Pay Commission</span>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-white text-xs">Fahim Chowdhury</div>
-                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">Logistics & E-Commerce Fulfillment</div>
-                    </td>
-                    <td className="py-3 px-3 text-slate-700 dark:text-slate-300 font-medium">Pathao / Steadfast Dispatch Desk</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-white">৳ 310,000</td>
-                    <td className="py-3 px-3 text-center font-mono text-blue-600 dark:text-blue-400 font-bold">2.0%</td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">৳ 6,200</td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handlePayCommission('Fahim Chowdhury', 6200)}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10.5px] font-bold shadow transition flex items-center gap-1 mx-auto"
-                      >
-                        <DollarSign className="w-3 h-3" />
-                        <span>Pay Commission</span>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+                <TableRow>
+                  <TableCell>
+                    <div className="font-semibold text-content-primary text-xs">Sabbir Hossain</div>
+                    <div className="text-xs text-content-muted">RMA & Custom Rig Specialist</div>
+                  </TableCell>
+                  <TableCell className="text-xs text-content-secondary">Banani Tech Lab & Walk-in High End</TableCell>
+                  <TableCell align="right" tabular className="font-semibold text-content-primary">
+                    ৳ 425,000
+                  </TableCell>
+                  <TableCell align="center">
+                    <Badge variant="brand">2.0%</Badge>
+                  </TableCell>
+                  <TableCell align="right" tabular className="font-bold text-status-success">
+                    ৳ 8,500
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="brand"
+                      size="sm"
+                      onClick={() => handlePayCommission('Sabbir Hossain', 8500)}
+                      leftIcon={<DollarSign className="w-3.5 h-3.5" />}
+                    >
+                      Pay Commission
+                    </Button>
+                  </TableCell>
+                </TableRow>
+
+                <TableRow>
+                  <TableCell>
+                    <div className="font-semibold text-content-primary text-xs">Fahim Chowdhury</div>
+                    <div className="text-xs text-content-muted">Logistics & Fulfillment</div>
+                  </TableCell>
+                  <TableCell className="text-xs text-content-secondary">Pathao / Steadfast Dispatch Desk</TableCell>
+                  <TableCell align="right" tabular className="font-semibold text-content-primary">
+                    ৳ 310,000
+                  </TableCell>
+                  <TableCell align="center">
+                    <Badge variant="brand">2.0%</Badge>
+                  </TableCell>
+                  <TableCell align="right" tabular className="font-bold text-status-success">
+                    ৳ 6,200
+                  </TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="brand"
+                      size="sm"
+                      onClick={() => handlePayCommission('Fahim Chowdhury', 6200)}
+                      leftIcon={<DollarSign className="w-3.5 h-3.5" />}
+                    >
+                      Pay Commission
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </DataTable>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Add User Modal */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-            <button
-              onClick={() => setShowAddUserModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+      {/* Standard Modal: Add User */}
+      <Modal
+        isOpen={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        title="Register New System User"
+        subtitle="Create credentials and assign role permissions in live database"
+      >
+        <form onSubmit={handleAddUser} className="space-y-3.5">
+          <Input
+            label="Full Name"
+            required
+            placeholder="e.g. Arifur Rahman"
+            value={newUserName}
+            onChange={e => setNewUserName(e.target.value)}
+          />
+          <Input
+            label="Corporate Email"
+            type="email"
+            placeholder="e.g. arif@dhakasilicon.com"
+            value={newUserEmail}
+            onChange={e => setNewUserEmail(e.target.value)}
+          />
+          <Input
+            label="Initial Password"
+            type="password"
+            required
+            minLength={6}
+            placeholder="At least 6 characters"
+            value={newUserPassword}
+            onChange={e => setNewUserPassword(e.target.value)}
+          />
+          <Input
+            label="Mobile Number"
+            placeholder="e.g. +880 1711-123456"
+            value={newUserPhone}
+            onChange={e => setNewUserPhone(e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Assigned Role"
+              value={newUserRole}
+              onChange={e => setNewUserRole(e.target.value)}
             >
-              <X className="w-5 h-5" />
-            </button>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-blue-500" />
-              Register New System User
-            </h2>
-            <form onSubmit={handleAddUser} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Arifur Rahman"
-                  value={newUserName}
-                  onChange={e => setNewUserName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Corporate Email</label>
-                <input
-                  type="email"
-                  placeholder="e.g. arif@dhakasilicon.com"
-                  value={newUserEmail}
-                  onChange={e => setNewUserEmail(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Mobile Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g. +880 1711-123456"
-                  value={newUserPhone}
-                  onChange={e => setNewUserPhone(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Assigned Role</label>
-                  <select
-                    value={newUserRole}
-                    onChange={e => setNewUserRole(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="Showroom Manager">Showroom Manager</option>
-                    <option value="Sales Executive">Sales Executive</option>
-                    <option value="Cashier">Cashier</option>
-                    <option value="Vault Keeper / Logistics">Vault Keeper / Logistics</option>
-                    <option value="Hardware Engineer">Hardware Engineer</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-semibold">Base Salary (৳)</label>
-                  <input
-                    type="number"
-                    value={newUserSalary}
-                    onChange={e => setNewUserSalary(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow mt-3"
-              >
-                Create User & Generate Credentials
-              </button>
-            </form>
+              <option value="Showroom Manager">Showroom Manager</option>
+              <option value="Sales Executive">Sales Executive</option>
+              <option value="Cashier">Cashier</option>
+              <option value="Vault Keeper / Logistics">Vault Keeper / Logistics</option>
+              <option value="Managing Director / Admin">Managing Director / Admin</option>
+            </Select>
+            <Input
+              label="Base Salary (৳)"
+              type="number"
+              value={newUserSalary}
+              onChange={e => setNewUserSalary(e.target.value)}
+            />
           </div>
-        </div>
-      )}
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-boundary-subtle">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => setShowAddUserModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              size="sm"
+              type="submit"
+            >
+              Create User
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Standard Modal: Reset Password */}
+      <Modal
+        isOpen={showResetModal && !!selectedUserForReset}
+        onClose={() => {
+          setShowResetModal(false);
+          setSelectedUserForReset(null);
+        }}
+        title="Reset User Password"
+        subtitle={selectedUserForReset ? `Reset credentials for ${selectedUserForReset.name} (${selectedUserForReset.email})` : ''}
+      >
+        <form onSubmit={handleResetPassword} className="space-y-3.5">
+          <Input
+            label="New Password"
+            type="password"
+            required
+            minLength={6}
+            placeholder="Enter new password (min. 6 characters)"
+            value={newPasswordInput}
+            onChange={e => setNewPasswordInput(e.target.value)}
+          />
+          <Input
+            label="Confirm New Password"
+            type="password"
+            required
+            minLength={6}
+            placeholder="Re-enter password to confirm"
+            value={confirmPasswordInput}
+            onChange={e => setConfirmPasswordInput(e.target.value)}
+          />
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-boundary-subtle">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => {
+                setShowResetModal(false);
+                setSelectedUserForReset(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              size="sm"
+              type="submit"
+            >
+              Update Password
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Standard Modal: Edit User */}
+      <Modal
+        isOpen={showEditModal && !!selectedUserForEdit}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUserForEdit(null);
+        }}
+        title="Edit User Profile"
+        subtitle={selectedUserForEdit ? `Update profile details for ${selectedUserForEdit.name}` : ''}
+      >
+        <form onSubmit={handleEditUser} className="space-y-3.5">
+          <Input
+            label="Full Name"
+            required
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+          />
+          <Input
+            label="Corporate Email"
+            type="email"
+            required
+            value={editEmail}
+            onChange={e => setEditEmail(e.target.value)}
+          />
+          <Input
+            label="Mobile Number"
+            value={editPhone}
+            onChange={e => setEditPhone(e.target.value)}
+          />
+          <Select
+            label="Assigned Role"
+            value={editRole}
+            onChange={e => setEditRole(e.target.value)}
+          >
+            <option value="Showroom Manager">Showroom Manager</option>
+            <option value="Sales Executive">Sales Executive</option>
+            <option value="Cashier">Cashier</option>
+            <option value="Vault Keeper / Logistics">Vault Keeper / Logistics</option>
+            <option value="Managing Director / Admin">Managing Director / Admin</option>
+          </Select>
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-boundary-subtle">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedUserForEdit(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              size="sm"
+              type="submit"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

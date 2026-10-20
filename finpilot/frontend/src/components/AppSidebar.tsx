@@ -101,20 +101,36 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
 
   const visibleSections = navigation
     .map((section) => {
-      const filteredItems = section.items.filter((item) => {
-        if (isSalesman) {
-          const allowedForSalesman = [
-            'home-dashboard',
-            'agent-copilot',
-            'sell-all',
-            'sell-pos',
-            'products-list',
-            'contacts-customers',
-          ];
-          return allowedForSalesman.includes(item.id);
-        }
-        return true;
-      });
+      const filteredItems = section.items
+        .map((item) => {
+          if (isSalesman && item.id === 'home-dashboard') {
+            return {
+              ...item,
+              id: 'sales-dashboard',
+              label: 'Sales Dashboard',
+              matches: ['sales-dashboard', 'home-dashboard']
+            };
+          }
+          return item;
+        })
+        .filter((item) => {
+          if (isSalesman) {
+            const allowedForSalesman = [
+              'sales-dashboard',
+              'home-dashboard',
+              'agent-copilot',
+              'sell-all',
+              'sell-pos',
+              'products-list',
+              'stock-transfers-list',
+              'stock-adjustments-list',
+              'contacts-customers',
+              'essentials-todo',
+            ];
+            return allowedForSalesman.includes(item.id);
+          }
+          return true;
+        });
       return { ...section, items: filteredItems };
     })
     .filter((section) => section.items.length > 0);
@@ -148,12 +164,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           <div className={`flex min-w-0 items-center ${isCollapsed ? 'lg:justify-center' : ''}`}>
             <div className="group/brand relative h-9 w-9 shrink-0">
               <div
-                title={isCollapsed ? 'Dhaka Silicon & Hardware · Business operations' : undefined}
+                title={isCollapsed ? 'Now_or_Never Console · Business operations' : undefined}
                 className={`flex h-9 w-9 items-center justify-center rounded-xl bg-brand-ochre text-xs font-extrabold tracking-tight text-stone-950 shadow-sm transition-opacity ${
                   isCollapsed ? 'lg:group-hover/brand:opacity-0 lg:group-focus-within/brand:opacity-0' : ''
                 }`}
               >
-                DS
+                NON
               </div>
               {isCollapsed && onToggleCollapse && (
                 <button
@@ -169,7 +185,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               )}
             </div>
             <div className={`ml-2.5 min-w-0 ${isCollapsed ? 'lg:hidden' : ''}`}>
-              <p className="truncate text-xs font-semibold text-content-primary">Dhaka Silicon &amp; Hardware</p>
+              <p className="truncate text-xs font-semibold text-content-primary">Now_or_Never Console</p>
               <p className="text-[10px] uppercase tracking-[0.12em] text-content-muted">
                 {isSalesman ? 'Salesman Terminal' : 'Executive Console'}
               </p>

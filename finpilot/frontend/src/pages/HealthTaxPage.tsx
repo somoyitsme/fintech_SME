@@ -60,7 +60,7 @@ export const HealthTaxPage: React.FC = () => {
 
   const handleExportVatPack = () => {
     const payload = {
-      tenant: "Dhaka Silicon & Hardware Ltd.",
+      tenant: "Now_or_Never Console",
       bin: tax?.tax_id || "BIN-0029481729-01",
       currency: "BDT",
       mushak_form: "Mushak 9.1 (Value Added Tax Return)",
@@ -80,7 +80,7 @@ export const HealthTaxPage: React.FC = () => {
 
   const handleExportAuditDossier = () => {
     const lines = [
-      "DHAKA SILICON & HARDWARE LTD. — NBR REGULATORY AUDIT DOSSIER",
+      "NOW_OR_NEVER CONSOLE — NBR REGULATORY AUDIT DOSSIER",
       `Generated: ${new Date().toLocaleString()}`,
       `BIN (VAT Registration): ${tax?.tax_id || "BIN-0029481729-01"}`,
       `Financial Health Score: ${health?.health_score || 84}/100 (Grade ${health?.grade || "A-"})`,

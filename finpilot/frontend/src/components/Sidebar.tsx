@@ -266,14 +266,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-15 flex items-center justify-between px-4 border-b border-boundary-subtle bg-surface/80 dark:bg-[#181C18]/80 backdrop-blur-xs sticky top-0 z-10">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-brand-ochre flex items-center justify-center text-stone-950 font-black text-xs shadow-xs tracking-wider">
-                DS
+                NON
               </div>
               <div className="leading-tight">
                 <div className="font-bold text-content-primary text-xs tracking-tight">
-                  Dhaka Silicon Ltd.
+                  Now_or_Never Console
                 </div>
                 <div className="text-[10px] text-content-muted font-mono">
-                  Hardware Wholesale ERP
+                  Enterprise Operations ERP
                 </div>
               </div>
             </div>

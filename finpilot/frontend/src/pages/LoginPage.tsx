@@ -6,11 +6,7 @@ import {
   ShieldCheck, 
   AlertCircle, 
   Eye, 
-  EyeOff, 
-  Building2, 
-  UserCheck, 
-  ShoppingBag,
-  Sparkles
+  EyeOff
 } from 'lucide-react';
 import { authApi } from '../api';
 
@@ -25,7 +21,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [rememberMe, setRememberMe] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activePortal, setActivePortal] = useState<'manager' | 'salesman'>('manager');
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,14 +30,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const cleanPassword = password.trim();
 
     if (!cleanIdentifier || !cleanPassword) {
-      setErrorMessage('Please enter both your corporate email / username and workspace password.');
+      setErrorMessage('Please enter both your corporate email or username and workspace password.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Authenticate directly against live SQLite database via db-server API
+      // Authenticate directly against live SQLite database via db-server
       const authRes = await authApi.login(cleanIdentifier, cleanPassword);
 
       if (authRes && authRes.user) {
@@ -83,79 +78,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       <div className="absolute -top-32 -left-32 w-80 h-80 bg-brand-ochre/15 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-brand-sage/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="w-full max-w-[440px] z-10">
+      <div className="w-full max-w-[420px] z-10">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-brand-ochre text-stone-950 font-extrabold flex items-center justify-center text-xl mx-auto mb-3.5 shadow-md shadow-brand-ochre/25 tracking-tight">
-            DS
+          <div className="w-14 h-14 rounded-2xl bg-brand-ochre text-stone-950 font-extrabold flex items-center justify-center text-lg mx-auto mb-3.5 shadow-md shadow-brand-ochre/25 tracking-tight">
+            NON
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-content-primary">
-            Dhaka Silicon &amp; Hardware Ltd.
+            Now_or_Never Console
           </h1>
           <p className="text-xs text-content-muted mt-1 font-medium">
-            Computer Hardware Wholesale &amp; Retail Enterprise ERP
+            Enterprise Operations, Wholesale &amp; Financial Management
           </p>
         </div>
 
         {/* Login Card */}
         <div className="bg-surface border border-boundary-subtle rounded-2xl p-6 sm:p-7 shadow-xl shadow-stone-900/5 backdrop-blur-md transition-colors">
-          {/* Header & Portal Switcher */}
-          <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-boundary-subtle">
+          <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-boundary-subtle">
             <div>
               <h2 className="text-sm font-bold text-content-primary">Enterprise Sign In</h2>
-              <p className="text-[11px] text-content-muted">Access inventory, orders, and real-time ledger</p>
+              <p className="text-[11px] text-content-muted">Enter manager or authorized staff credentials</p>
             </div>
             <div className="w-8 h-8 rounded-lg bg-status-successBg text-status-success flex items-center justify-center">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Role Portal Selector Tabs */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-surface-secondary rounded-xl mb-4 border border-boundary-subtle text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setActivePortal('manager');
-                setErrorMessage(null);
-              }}
-              className={`py-2 px-3 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                activePortal === 'manager'
-                  ? 'bg-surface text-content-primary shadow-xs border border-boundary-subtle'
-                  : 'text-content-muted hover:text-content-primary'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5 text-brand-ochre" />
-              <span>Manager / Owner</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActivePortal('salesman');
-                setErrorMessage(null);
-              }}
-              className={`py-2 px-3 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                activePortal === 'salesman'
-                  ? 'bg-surface text-content-primary shadow-xs border border-boundary-subtle'
-                  : 'text-content-muted hover:text-content-primary'
-              }`}
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-brand-sageDark" />
-              <span>Sales Staff &amp; POS</span>
-            </button>
-          </div>
-
-          {/* Portal Information Banner */}
-          <div className="mb-4 py-2 px-3 rounded-xl bg-surface-secondary/70 border border-boundary-subtle text-[11px] text-content-secondary flex items-start gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-brand-ochre shrink-0 mt-0.5" />
-            {activePortal === 'manager' ? (
-              <span><strong>Manager Portal:</strong> Complete executive access to financial health, P&amp;L reports, cash runway, and inventory.</span>
-            ) : (
-              <span><strong>Salesman Terminal:</strong> Focused access to Point of Sale (POS), customer orders, and live stock inquiries.</span>
-            )}
-          </div>
-
-          {/* Error Message */}
+          {/* Error Alert */}
           {errorMessage && (
             <div className="mb-4 p-3 rounded-xl bg-status-dangerBg border border-status-dangerBorder text-status-danger text-xs flex items-start gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -163,7 +112,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             </div>
           )}
 
-          {/* Authentication Form */}
+          {/* Single Universal Authentication Form */}
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-content-primary mb-1.5">
@@ -175,11 +124,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   type="text"
                   required
                   autoFocus
-                  placeholder={
-                    activePortal === 'manager'
-                      ? 'e.g. director@dhakasilicon.com'
-                      : 'e.g. sales@dhakasilicon.com'
-                  }
+                  placeholder="e.g. somoy or somoy@nowornever.console"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full bg-surface border border-boundary-subtle focus:border-brand-ochre rounded-xl pl-9 pr-4 py-2.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none transition font-sans"
@@ -196,7 +141,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter your password"
+                  placeholder="Enter your workspace password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-surface border border-boundary-subtle focus:border-brand-ochre rounded-xl pl-9 pr-10 py-2.5 text-xs text-content-primary placeholder:text-content-muted focus:outline-none transition font-sans"
@@ -237,7 +182,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 <span>Authenticating with Database...</span>
               ) : (
                 <>
-                  <span>Sign In to {activePortal === 'manager' ? 'Management Console' : 'POS Terminal'}</span>
+                  <span>Sign In to ERP Terminal</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -247,7 +192,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
         {/* Footer */}
         <div className="text-center text-[11px] text-content-muted mt-6">
-          &copy; 2026 Dhaka Silicon &amp; Hardware Ltd. &middot; Multiplan Center &amp; Banani Central Vault, Dhaka
+          &copy; 2026 Now_or_Never Console &middot; Enterprise Operations Vault &middot; Dhaka
         </div>
       </div>
     </div>

@@ -239,3 +239,69 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #4E604E;
 }
+
+/* Clean Enterprise Print Styles for Invoices, Receipts, Challans & Reports in BDT */
+@media screen {
+  #finpilot-print-zone {
+    display: none !important;
+  }
+}
+
+@media print {
+  /* When #finpilot-print-zone has an invoice to print, hide #root completely */
+  body:has(#finpilot-print-zone:not(:empty)) #root {
+    display: none !important;
+  }
+
+  /* When #finpilot-print-zone has content, make it the sole printable document */
+  #finpilot-print-zone:not(:empty) {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 4mm !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-sizing: border-box !important;
+  }
+
+  #finpilot-print-zone:not(:empty) * {
+    visibility: visible !important;
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* If #finpilot-print-zone is empty, user is printing an audit report or analytics:
+     Hide sidebars, navbars, and buttons so only report prints cleanly */
+  #finpilot-print-zone:empty {
+    display: none !important;
+  }
+
+  aside,
+  nav,
+  header,
+  .no-print,
+  button,
+  .modal-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 8mm 6mm;
+  }
+}

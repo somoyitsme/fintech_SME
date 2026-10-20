@@ -16,13 +16,13 @@ import {
   Package,
   Store as StoreIcon,
   Globe,
-  Check,
-  Barcode
+  Check
 } from 'lucide-react';
 import { useStore, Order } from '../context/StoreContext';
+import { printTaxInvoice } from '../utils/printInvoice';
 
 export const SalesmanOrdersPage: React.FC = () => {
-  const { orders, updateOrderStatus, dispatchWithCourier } = useStore();
+  const { orders, customers, updateOrderStatus, dispatchWithCourier } = useStore();
   const [filterType, setFilterType] = useState<'all' | 'online' | 'offline'>('all');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -56,7 +56,7 @@ export const SalesmanOrdersPage: React.FC = () => {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleQuickDispatch = (orderId: string, provider: 'Pathao' | 'Steadfast') => {
+  const handleQuickDispatch = (orderId: string, provider: 'Pathao' | 'Steadfast' | 'RedX') => {
     dispatchWithCourier(orderId, provider);
     showToast(`Order dispatched to ${provider} Courier successfully! Live consignment ID generated.`);
   };
@@ -174,9 +174,10 @@ export const SalesmanOrdersPage: React.FC = () => {
             <thead className="bg-slate-50 dark:bg-[#21262d] text-slate-500 dark:text-[#8b949e] font-semibold border-b border-slate-200 dark:border-[#30363d]">
               <tr>
                 <th className="py-3 px-4">Order # & Type</th>
-                <th className="py-3 px-4">Customer & Destination</th>
+                <th className="py-3 px-4">Customer & Branch</th>
                 <th className="py-3 px-4">Products Manifest</th>
                 <th className="py-3 px-4">Total & Payment</th>
+                <th className="py-3 px-4">Gross Profit</th>
                 <th className="py-3 px-4">Courier / Delivery</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -184,7 +185,7 @@ export const SalesmanOrdersPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-[#30363d]">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     No orders found matching the filter criteria.
                   </td>
@@ -193,12 +194,17 @@ export const SalesmanOrdersPage: React.FC = () => {
                 filteredOrders.map((order) => {
                   const isOnline = order.orderType === 'online';
                   const isCourierDispatched = !!order.courier;
+                  const profitMargin = order.totalAmount > 0 ? Math.round(((order.profit || 0) / order.totalAmount) * 100) : 0;
 
                   return (
-                    <tr key={order.id} className="hover:bg-slate-50/70 dark:hover:bg-[#21262d]/50 transition">
+                    <tr 
+                      key={order.id} 
+                      onClick={() => setSelectedOrder(order)}
+                      className="hover:bg-slate-50/70 dark:hover:bg-[#21262d]/50 transition cursor-pointer group"
+                    >
                       {/* Order # and Type */}
                       <td className="py-3.5 px-4 align-top">
-                        <div className="font-mono font-bold text-blue-600 dark:text-blue-400">{order.orderNumber}</div>
+                        <div className="font-mono font-bold text-blue-600 dark:text-blue-400 group-hover:underline">{order.orderNumber}</div>
                         <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
                           <Calendar className="w-3 h-3" /> {order.orderDate}
                         </div>
@@ -218,12 +224,15 @@ export const SalesmanOrdersPage: React.FC = () => {
                       {/* Customer & Location */}
                       <td className="py-3.5 px-4 max-w-xs align-top">
                         <div className="font-semibold text-slate-900 dark:text-[#f0f6fc]">{order.customerName}</div>
+                        <div className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                          {order.branch ? order.branch.split(' ')[0] : 'Banani'} Vault
+                        </div>
                         <div className="text-[11px] text-slate-500 dark:text-[#8b949e] flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3 text-slate-400 shrink-0" /> {order.contactNumber}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-[#8b949e] flex items-start gap-1 mt-0.5">
                           <MapPin className="w-3 h-3 shrink-0 text-slate-400 mt-0.5" /> 
-                          <span className="line-clamp-2">{order.deliveryAddress}</span>
+                          <span className="line-clamp-1">{order.deliveryAddress}</span>
                         </div>
                       </td>
 
@@ -231,7 +240,7 @@ export const SalesmanOrdersPage: React.FC = () => {
                       <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-medium max-w-xs align-top">
                         <div className="line-clamp-2">{order.itemsSummary}</div>
                         <div className="text-[11px] text-slate-400 mt-1">
-                          Sales rep: <span className="font-medium text-slate-600 dark:text-slate-300">{order.salesman}</span>
+                          Rep: <span className="font-medium text-slate-600 dark:text-slate-300">{order.salesman}</span>
                         </div>
                       </td>
 
@@ -242,7 +251,7 @@ export const SalesmanOrdersPage: React.FC = () => {
                         </div>
                         {order.discountAmount > 0 && (
                           <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                            -৳{order.discountAmount.toLocaleString()} disc ({order.discountPercent}%)
+                            -৳{order.discountAmount.toLocaleString()} ({order.discountPercent}%)
                           </div>
                         )}
                         <div className="text-[10px] text-slate-400 font-normal uppercase mt-0.5">
@@ -253,10 +262,25 @@ export const SalesmanOrdersPage: React.FC = () => {
                             {order.paymentStatus}
                           </span>
                         </div>
+                        {order.dueAmount !== undefined && order.dueAmount > 0 && (
+                          <div className="text-[10.5px] font-bold text-rose-600 dark:text-rose-400 font-mono mt-0.5">
+                            Due: ৳{order.dueAmount.toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Gross Profit Column */}
+                      <td className="py-3.5 px-4 font-mono align-top">
+                        <div className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                          +৳{(order.profit || 0).toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          {profitMargin}% margin
+                        </div>
                       </td>
 
                       {/* Courier & Delivery Status */}
-                      <td className="py-3.5 px-4 align-top">
+                      <td className="py-3.5 px-4 align-top" onClick={(e) => e.stopPropagation()}>
                         {isOnline ? (
                           isCourierDispatched ? (
                             <div className="space-y-1.5">
@@ -264,7 +288,9 @@ export const SalesmanOrdersPage: React.FC = () => {
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                   order.courier?.provider === 'Pathao'
                                     ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
-                                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                                    : order.courier?.provider === 'Steadfast'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                                    : 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-300 dark:border-red-800'
                                 }`}>
                                   {order.courier?.provider}
                                 </span>
@@ -284,20 +310,27 @@ export const SalesmanOrdersPage: React.FC = () => {
                               <div className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                                 <AlertCircle className="w-3.5 h-3.5" /> Awaiting Courier
                               </div>
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleQuickDispatch(order.id, 'Pathao')}
-                                  className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-semibold text-[10.5px] transition flex items-center gap-1"
+                                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800 font-semibold text-[10px] transition flex items-center gap-0.5"
                                   title="1-Click Dispatch to Pathao Courier"
                                 >
-                                  <Zap className="w-3 h-3 text-rose-600" /> Pathao
+                                  <Zap className="w-2.5 h-2.5 text-rose-600" /> Pathao
                                 </button>
                                 <button
                                   onClick={() => handleQuickDispatch(order.id, 'Steadfast')}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold text-[10.5px] transition flex items-center gap-1"
+                                  className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-semibold text-[10px] transition flex items-center gap-0.5"
                                   title="1-Click Dispatch to Steadfast Courier"
                                 >
-                                  <Zap className="w-3 h-3 text-emerald-600" /> Steadfast
+                                  <Zap className="w-2.5 h-2.5 text-emerald-600" /> Steadfast
+                                </button>
+                                <button
+                                  onClick={() => handleQuickDispatch(order.id, 'RedX')}
+                                  className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800 font-semibold text-[10px] transition flex items-center gap-0.5"
+                                  title="1-Click Dispatch to RedX Courier"
+                                >
+                                  <Zap className="w-2.5 h-2.5 text-red-600" /> RedX
                                 </button>
                               </div>
                             </div>
@@ -313,7 +346,7 @@ export const SalesmanOrdersPage: React.FC = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right align-top">
+                      <td className="py-3.5 px-4 text-right align-top" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedOrder(order)}
@@ -349,7 +382,7 @@ export const SalesmanOrdersPage: React.FC = () => {
                   <h3 className="text-base font-bold">
                     {selectedOrder.orderType === 'online' ? 'Courier Shipping Challan' : 'Counter Sale Delivery Receipt'}
                   </h3>
-                  <p className="text-[11px] text-slate-400">Dhaka Silicon ERP & Logistics Division</p>
+                  <p className="text-[11px] text-slate-400">Now_or_Never Console ERP & Logistics Division</p>
                 </div>
               </div>
               <span className="font-mono text-xs font-bold bg-slate-100 dark:bg-[#21262d] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-[#30363d]">
@@ -378,79 +411,124 @@ export const SalesmanOrdersPage: React.FC = () => {
               </div>
             )}
 
-            {/* Manifest Card */}
-            <div className="my-4 p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl space-y-3.5 text-xs">
-              {/* Recipient Details */}
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100 dark:border-[#30363d]">
-                <div>
-                  <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Deliver To</span>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm">{selectedOrder.customerName}</div>
-                  <div className="text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                    <Phone className="w-3 h-3" /> {selectedOrder.contactNumber}
+            {/* Manifest Card & Customer Intelligence */}
+            {(() => {
+              const cust = customers.find(c => 
+                c.name.toLowerCase() === selectedOrder.customerName.toLowerCase() || 
+                (selectedOrder.contactNumber && c.contactNumber.replace(/\D/g, '') === selectedOrder.contactNumber.replace(/\D/g, ''))
+              ) || selectedOrder.customerDetails;
+              const netProfit = selectedOrder.profit || 0;
+              const margin = selectedOrder.totalAmount > 0 ? Math.round((netProfit / selectedOrder.totalAmount) * 100) : 0;
+
+              return (
+                <div className="my-4 p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl space-y-3.5 text-xs">
+                  {/* Recipient Details & Profile */}
+                  <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100 dark:border-[#30363d]">
+                    <div>
+                      <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Deliver To (Customer)</span>
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">{selectedOrder.customerName}</div>
+                      <div className="text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" /> {selectedOrder.contactNumber}
+                      </div>
+                      <div className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5">
+                        Account: {cust?.customerType || 'Wholesale / Retail'}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Dispatched By & Branch</span>
+                      <div className="font-semibold text-slate-800 dark:text-slate-200">{selectedOrder.branch || 'Banani Central Vault & Warehouse'}</div>
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">Rep: {selectedOrder.salesman}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        Customer Lifetime: ৳{(cust?.totalPurchases || selectedOrder.totalAmount).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Dispatched By</span>
-                  <div className="font-semibold text-slate-800 dark:text-slate-200">Dhaka Silicon Central Vault</div>
-                  <div className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">Banani Showroom, Dhaka · Rep: {selectedOrder.salesman}</div>
-                </div>
-              </div>
 
-              {/* Delivery Address */}
-              <div>
-                <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Destination Address</span>
-                <div className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed bg-slate-50 dark:bg-[#21262d] p-2.5 rounded-xl border border-slate-100 dark:border-[#30363d]">
-                  {selectedOrder.deliveryAddress}
-                </div>
-              </div>
-
-              {/* Items Manifest */}
-              <div>
-                <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Hardware Items Summary</span>
-                <div className="text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-50 dark:bg-[#21262d] p-2 rounded-xl">
-                  {selectedOrder.itemsSummary}
-                </div>
-              </div>
-
-              {/* COD & Totals */}
-              <div className="pt-2 border-t border-slate-200 dark:border-[#30363d] flex justify-between items-center">
-                <div>
-                  <span className="text-[10px] uppercase font-mono text-slate-400 block">Payment Method</span>
-                  <div className="font-semibold uppercase text-slate-700 dark:text-slate-200">{selectedOrder.paymentMethod} ({selectedOrder.paymentStatus})</div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] uppercase font-mono text-slate-400 block">
-                    {selectedOrder.orderType === 'online' ? 'COD Collectible' : 'Total Amount'}
-                  </span>
-                  <div className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-base">
-                    ৳ {selectedOrder.totalAmount.toLocaleString()}
+                  {/* Destination Address */}
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Destination Address</span>
+                    <div className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed bg-slate-50 dark:bg-[#21262d] p-2.5 rounded-xl border border-slate-100 dark:border-[#30363d]">
+                      {selectedOrder.deliveryAddress}
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Simulated Barcode */}
-              <div className="pt-2 text-center">
-                <div className="h-8 bg-slate-800 dark:bg-slate-200 rounded flex items-center justify-around px-4 py-1">
-                  {[...Array(32)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={`h-full ${i % 3 === 0 ? 'w-1 bg-white dark:bg-slate-900' : 'w-0.5 bg-slate-400 dark:bg-slate-600'}`} 
-                    />
-                  ))}
+                  {/* Items Manifest */}
+                  <div>
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block mb-0.5">Hardware Items Summary</span>
+                    <div className="text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-50 dark:bg-[#21262d] p-2 rounded-xl">
+                      {selectedOrder.itemsSummary}
+                    </div>
+                  </div>
+
+                  {/* Financial & Due Breakdown */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-[#30363d] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] uppercase font-mono text-slate-400 block">Payment Method</span>
+                        <div className="font-semibold uppercase text-slate-700 dark:text-slate-200">{selectedOrder.paymentMethod} ({selectedOrder.paymentStatus})</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-mono text-slate-400 block">Total Amount</span>
+                        <div className="font-mono font-bold text-slate-900 dark:text-white text-base">
+                          ৳ {selectedOrder.totalAmount.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Paid & Due Split */}
+                    <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                      <div className="p-2 bg-slate-50 dark:bg-[#21262d] rounded-lg border border-slate-200/50 dark:border-[#30363d] flex justify-between">
+                        <span className="text-slate-400">Paid Now:</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                          ৳ {(selectedOrder.paidAmount !== undefined ? selectedOrder.paidAmount : selectedOrder.totalAmount).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="p-2 bg-slate-50 dark:bg-[#21262d] rounded-lg border border-slate-200/50 dark:border-[#30363d] flex justify-between">
+                        <span className="text-slate-400">Due Balance:</span>
+                        <span className={`font-mono font-bold ${(selectedOrder.dueAmount || 0) > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                          ৳ {(selectedOrder.dueAmount || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Gross Profit from Sale */}
+                    <div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-emerald-800 dark:text-emerald-300">Gross Profit Realized:</span>
+                        <span className="text-[10.5px] text-emerald-600 dark:text-emerald-400 ml-1">({margin}% Margin)</span>
+                      </div>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm">
+                        +৳ {netProfit.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Courier Tracking Link if available */}
+                    {selectedOrder.courier?.trackingUrl && (
+                      <div className="pt-1 flex justify-between items-center text-[11px] text-blue-600 dark:text-blue-400 font-semibold">
+                        <span>Courier Consignment: {selectedOrder.courier.consignmentId}</span>
+                        <a
+                          href={selectedOrder.courier.trackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline flex items-center gap-1"
+                        >
+                          Live Tracking Link <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
-                <div className="font-mono text-[10px] text-slate-400 tracking-widest mt-1">
-                  *{selectedOrder.orderNumber}*
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Actions */}
             <div className="flex gap-2.5">
               <button
-                onClick={() => window.print()}
-                className="flex-1 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition"
+                onClick={() => printTaxInvoice(selectedOrder, selectedOrder.customerDetails || customers.find(c => c.name.toLowerCase() === selectedOrder.customerName.toLowerCase()))}
+                className="flex-1 py-3 rounded-2xl bg-[#D4A373] hover:bg-[#C29263] text-stone-950 text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#D4A373]/20 transition"
               >
-                <Printer className="w-4 h-4" /> Print Label & Challan
+                <Printer className="w-4 h-4" /> Print / Download Invoice (PDF)
               </button>
               <button
                 onClick={() => setSelectedOrder(null)}

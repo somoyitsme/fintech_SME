@@ -41,12 +41,13 @@ interface DashboardPageProps {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ 
   onNavigateTab,
-  userRole: _userRole = "Managing Director",
+  userRole = "Managing Director",
   userName = "MD Nazmul Hasan"
 }) => {
   const { orders, customers, metrics, selectedLocation, setSelectedLocation, dateFilter, setDateFilter } = useStore();
   const { resolvedTheme } = useTheme();
   const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const isSalesman = (userRole || '').toLowerCase().includes('sales');
 
   // Top 5 Products data calibrated for Golden Summer Fields
   const topProductsPie = [
@@ -91,11 +92,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-content-primary">
               Welcome back, {userName}
             </h1>
-            <Badge variant="brand" size="sm">Executive View</Badge>
+            <Badge variant="brand" size="sm">{isSalesman ? 'Salesman Dashboard' : 'Executive View'}</Badge>
           </div>
           <p className="text-xs text-content-muted mt-1 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-brand-ochreDeep dark:text-brand-ochre" />
-            <span>Multi-location wholesale inventory, POS registers & cash flows</span>
+            <span>{isSalesman ? 'Store sales performance, counter POS registers & customer orders' : 'Multi-location wholesale inventory, POS registers & cash flows'}</span>
           </p>
         </div>
 

@@ -8,7 +8,21 @@ export interface OrderItem {
   sku: string;
   quantity: number;
   unitPrice: number;
+  costPrice?: number;
+  profit?: number;
   total: number;
+}
+
+export interface CustomerDetails {
+  id: string;
+  name: string;
+  contactNumber: string;
+  email: string;
+  deliveryAddress: string;
+  customerType: string;
+  binNumber?: string;
+  totalPurchases?: number;
+  totalDue?: number;
 }
 
 export interface Order {
@@ -16,6 +30,7 @@ export interface Order {
   orderNumber: string;
   orderType: string;
   customerName: string;
+  customerId?: string | null;
   contactNumber: string;
   deliveryAddress: string;
   itemsSummary: string;
@@ -24,9 +39,14 @@ export interface Order {
   discountPercent: number;
   vatAmount: number;
   totalAmount: number;
+  paidAmount?: number;
+  dueAmount?: number;
+  profit?: number;
+  branch?: string;
   paymentMethod: string;
   paymentStatus: string;
   status: string;
+  customerDetails?: CustomerDetails;
   courierProvider?: string | null;
   courierConsignmentId?: string | null;
   courierTrackingUrl?: string | null;
@@ -46,6 +66,7 @@ export interface CreateOrderInput {
   orderNumber?: string;
   orderType?: string;
   customerName: string;
+  customerId?: string;
   contactNumber?: string;
   deliveryAddress?: string;
   itemsSummary?: string;
@@ -54,6 +75,9 @@ export interface CreateOrderInput {
   discountPercent?: number;
   vatAmount?: number;
   totalAmount: number;
+  paidAmount?: number;
+  dueAmount?: number;
+  branch?: string;
   paymentMethod?: string;
   paymentStatus?: string;
   status?: string;
@@ -83,6 +107,7 @@ export const ordersApi = {
   getAll: (): Promise<Order[]> => api.get('/orders'),
   getById: (id: string): Promise<Order> => api.get(`/orders/${id}`),
   create: (data: CreateOrderInput): Promise<Order> => api.post('/orders', data),
+  dispatchCourier: (id: string, courier: any): Promise<Order> => api.patch(`/orders/${id}/courier`, courier),
   update: (id: string, data: Partial<Order>): Promise<Order> => api.put(`/orders/${id}`, data),
   delete: (id: string): Promise<void> => api.delete(`/orders/${id}`),
 };

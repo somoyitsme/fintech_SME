@@ -431,7 +431,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
                 {Array.from({ length: labelQty }).map((_, i) => (
                   <div key={i} className="p-3 bg-white text-stone-900 rounded-lg border border-stone-300 shadow-xs text-center flex flex-col justify-between h-32">
                     <div className="text-[10px] font-black uppercase tracking-tight text-stone-950">
-                      DHAKA SILICON LTD
+                      NOW_OR_NEVER CONSOLE
                     </div>
                     <div className="text-[10.5px] font-semibold line-clamp-2 text-stone-800 leading-tight">
                       {selectedForLabel?.name}

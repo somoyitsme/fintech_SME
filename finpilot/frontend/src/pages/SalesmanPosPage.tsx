@@ -29,6 +29,7 @@ import {
   BadgePercent
 } from 'lucide-react';
 import { useStore, Product, Customer } from '../context/StoreContext';
+import { printTaxInvoice } from '../utils/printInvoice';
 
 interface CartItem {
   product: Product;
@@ -37,7 +38,7 @@ interface CartItem {
 }
 
 export const SalesmanPosPage: React.FC = () => {
-  const { products, customers, addNewCustomer, addStock, createSaleOrder, dispatchWithCourier } = useStore();
+  const { products, customers, addNewCustomer, addStock, createSaleOrder, dispatchWithCourier, selectedLocation } = useStore();
   
   // Search & filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +49,8 @@ export const SalesmanPosPage: React.FC = () => {
   const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [discountFlat, setDiscountFlat] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'bank_transfer' | 'credit_30d'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'bank_transfer' | 'credit_30d' | 'due'>('cash');
+  const [paidNowAmount, setPaidNowAmount] = useState<number>(0);
   
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -195,6 +197,11 @@ export const SalesmanPosPage: React.FC = () => {
   const vatAmount = Math.round(taxableAmount * 0.05); // 5% NBR VAT
   const grandTotal = taxableAmount + vatAmount;
 
+  // Real Cost & Gross Profit Calculations
+  const totalCost = cart.reduce((sum, item) => sum + (item.product.costPrice || 0) * item.quantity, 0);
+  const estimatedProfit = Math.max(0, taxableAmount - totalCost);
+  const profitMarginPct = taxableAmount > 0 ? ((estimatedProfit / taxableAmount) * 100).toFixed(1) : '0';
+
   // Process the order
   const handleProcessOrder = () => {
     if (cart.length === 0) return;
@@ -218,6 +225,12 @@ export const SalesmanPosPage: React.FC = () => {
       }
     }
 
+    const finalPaid = paymentMethod === 'due' ? Number(paidNowAmount) : grandTotal;
+    const finalDue = paymentMethod === 'due' ? Math.max(0, grandTotal - finalPaid) : 0;
+    const activeBranch = selectedLocation && selectedLocation !== 'All Locations'
+      ? selectedLocation
+      : 'Banani Central Vault & Warehouse';
+
     const newOrder = createSaleOrder({
       customerName: finalCustomerName,
       contactNumber: finalContact,
@@ -231,12 +244,16 @@ export const SalesmanPosPage: React.FC = () => {
       discountAmountFlat: discountType === 'flat' ? discountFlat : undefined,
       orderType,
       paymentMethod,
+      paidAmount: finalPaid,
+      dueAmount: finalDue,
+      branch: activeBranch,
       salesman: 'Tanvir Ahmed (Salesman Lead)'
     });
 
     setOrderProcessed(newOrder);
     setDispatchedCourier(null);
     setCart([]);
+    setPaidNowAmount(0);
   };
 
   // One-click dispatch via courier for online order
@@ -732,17 +749,30 @@ export const SalesmanPosPage: React.FC = () => {
                   ৳ {grandTotal.toLocaleString()}
                 </span>
               </div>
+
+              {/* Live Profit Transparency Badge */}
+              <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs">
+                <span className="font-semibold text-emerald-800 dark:text-emerald-300">
+                  Gross Profit from this Sale:
+                </span>
+                <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                  +৳ {estimatedProfit.toLocaleString()} ({profitMarginPct}%)
+                </span>
+              </div>
             </div>
 
             {/* Payment Method Selector */}
-            <div className="pt-2 border-t border-slate-100 dark:border-[#30363d]">
-              <label className="text-[11px] font-semibold text-slate-500 dark:text-[#8b949e] uppercase block mb-1.5">
-                Payment Method
+            <div className="pt-2 border-t border-slate-100 dark:border-[#30363d] space-y-2">
+              <label className="text-[11px] font-semibold text-slate-500 dark:text-[#8b949e] uppercase block mb-1">
+                Payment Method & Due / Credit Settlement
               </label>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('cash')}
+                  onClick={() => {
+                    setPaymentMethod('cash');
+                    setPaidNowAmount(0);
+                  }}
                   className={`py-2 px-3 rounded-xl border font-semibold flex items-center justify-center gap-1.5 transition ${
                     paymentMethod === 'cash'
                       ? 'bg-emerald-50 border-emerald-400 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
@@ -753,7 +783,10 @@ export const SalesmanPosPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('bkash')}
+                  onClick={() => {
+                    setPaymentMethod('bkash');
+                    setPaidNowAmount(0);
+                  }}
                   className={`py-2 px-3 rounded-xl border font-semibold flex items-center justify-center gap-1.5 transition ${
                     paymentMethod === 'bkash'
                       ? 'bg-rose-50 border-rose-400 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
@@ -764,7 +797,10 @@ export const SalesmanPosPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('bank_transfer')}
+                  onClick={() => {
+                    setPaymentMethod('bank_transfer');
+                    setPaidNowAmount(0);
+                  }}
                   className={`py-2 px-3 rounded-xl border font-semibold flex items-center justify-center gap-1.5 transition ${
                     paymentMethod === 'bank_transfer'
                       ? 'bg-blue-50 border-blue-400 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
@@ -775,7 +811,10 @@ export const SalesmanPosPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('credit_30d')}
+                  onClick={() => {
+                    setPaymentMethod('credit_30d');
+                    setPaidNowAmount(0);
+                  }}
                   className={`py-2 px-3 rounded-xl border font-semibold flex items-center justify-center gap-1.5 transition ${
                     paymentMethod === 'credit_30d'
                       ? 'bg-purple-50 border-purple-400 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
@@ -784,7 +823,55 @@ export const SalesmanPosPage: React.FC = () => {
                 >
                   30-Day Credit (AR)
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentMethod('due');
+                    setPaidNowAmount(0);
+                  }}
+                  className={`py-2.5 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition col-span-2 ${
+                    paymentMethod === 'due'
+                      ? 'bg-amber-100 border-amber-500 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200 ring-2 ring-amber-400'
+                      : 'bg-amber-50/60 dark:bg-[#21262d] border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                  }`}
+                >
+                  <span>Due / Customer Credit Sale</span>
+                </button>
               </div>
+
+              {/* Due / Partial Payment Box */}
+              {paymentMethod === 'due' && (
+                <div className="p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-amber-900 dark:text-amber-200">
+                      Paid Now (Advance / Partial BDT):
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-mono text-slate-500">৳</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={grandTotal}
+                        value={paidNowAmount}
+                        onChange={(e) => setPaidNowAmount(Math.max(0, Math.min(grandTotal, Number(e.target.value) || 0)))}
+                        placeholder="0"
+                        className="w-28 px-2 py-1 bg-white dark:bg-[#161b22] border border-amber-400 rounded-lg text-right font-mono font-bold text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-1.5 border-t border-amber-200 dark:border-amber-800">
+                    <span className="font-bold text-amber-900 dark:text-amber-200">
+                      Remaining Due (Customer Debt):
+                    </span>
+                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-sm">
+                      ৳ {Math.max(0, grandTotal - paidNowAmount).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                    * Saved directly into SQLite. Customer ledger total due increases immediately.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Action Button */}
@@ -877,6 +964,10 @@ export const SalesmanPosPage: React.FC = () => {
                 <span className="font-bold text-slate-800 dark:text-slate-200">{orderProcessed.customerName}</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-slate-400">Branch Location:</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">{orderProcessed.branch || 'Banani Central Vault & Warehouse'}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-slate-400">Delivery Address:</span>
                 <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[240px]">{orderProcessed.deliveryAddress}</span>
               </div>
@@ -888,6 +979,18 @@ export const SalesmanPosPage: React.FC = () => {
                 <span>Invoiced Amount:</span>
                 <span className="font-mono text-emerald-600 dark:text-emerald-400 text-sm">৳ {orderProcessed.totalAmount.toLocaleString()}</span>
               </div>
+              <div className="flex justify-between text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                <span>Gross Profit from Sale:</span>
+                <span className="font-mono font-bold">+৳ {(orderProcessed.profit || 0).toLocaleString()}</span>
+              </div>
+              {orderProcessed.dueAmount > 0 && (
+                <div className="flex justify-between pt-1 border-t border-amber-200 dark:border-amber-900 text-xs">
+                  <span className="text-slate-500">Paid Now: ৳{orderProcessed.paidAmount?.toLocaleString()}</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400 font-mono">
+                    Due Balance: ৳{orderProcessed.dueAmount?.toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* IF ONLINE ORDER: Courier 1-Click Request Box */}
@@ -919,25 +1022,35 @@ export const SalesmanPosPage: React.FC = () => {
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2.5">
                       Select courier partner to automatically create consignment, print shipping label, and request rider pickup:
                     </p>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="grid grid-cols-3 gap-2 text-xs">
                       {/* Pathao */}
                       <button
                         type="button"
                         onClick={() => handleOneClickDispatch('Pathao')}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#161b22] border border-rose-300 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-300 font-bold flex items-center justify-center gap-2 shadow-sm transition"
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#161b22] border border-rose-300 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-300 font-bold flex flex-col items-center justify-center gap-1 shadow-sm transition"
                       >
                         <span className="w-2 h-2 rounded-full bg-rose-600"></span>
-                        Pathao Courier
+                        Pathao
                       </button>
 
                       {/* Steadfast */}
                       <button
                         type="button"
                         onClick={() => handleOneClickDispatch('Steadfast')}
-                        className="p-2.5 rounded-xl bg-white dark:bg-[#161b22] border border-emerald-300 dark:border-emerald-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center gap-2 shadow-sm transition"
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#161b22] border border-emerald-300 dark:border-emerald-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold flex flex-col items-center justify-center gap-1 shadow-sm transition"
                       >
                         <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                        Steadfast Courier
+                        Steadfast
+                      </button>
+
+                      {/* RedX */}
+                      <button
+                        type="button"
+                        onClick={() => handleOneClickDispatch('RedX')}
+                        className="p-2.5 rounded-xl bg-white dark:bg-[#161b22] border border-red-300 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-700 dark:text-red-300 font-bold flex flex-col items-center justify-center gap-1 shadow-sm transition"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                        RedX
                       </button>
                     </div>
                   </div>
@@ -945,20 +1058,21 @@ export const SalesmanPosPage: React.FC = () => {
               </div>
             )}
 
+
             {/* Actions */}
             <div className="flex gap-2 pt-1">
               <button
-                onClick={() => window.print()}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#21262d] dark:hover:bg-[#30363d] text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                onClick={() => printTaxInvoice(orderProcessed, orderProcessed.customerDetails)}
+                className="flex-1 py-2.5 rounded-xl bg-[#D4A373] hover:bg-[#C29263] text-stone-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-[#D4A373]/20 transition"
               >
-                <Printer className="w-4 h-4" /> Print Invoice & Challan
+                <Printer className="w-4 h-4" /> Print / Download Receipt (PDF)
               </button>
               <button
                 onClick={() => {
                   setOrderProcessed(null);
                   resetToRegularCustomer();
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition"
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#21262d] dark:hover:bg-[#30363d] text-xs font-semibold transition"
               >
                 Done / Next Sale
               </button>

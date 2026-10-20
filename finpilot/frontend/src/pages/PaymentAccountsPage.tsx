@@ -8,9 +8,11 @@ import {
   CheckCircle2,
   TrendingUp,
   Receipt,
-  Scale
+  Scale,
+  Plus
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { accountsApi } from '../api';
 import { Card } from '../components/common/Card';
 import { MetricCard } from '../components/common/MetricCard';
 import { Button } from '../components/common/Button';
@@ -42,6 +44,14 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
   const [transferAmt, setTransferAmt] = useState('');
   const [transferSuccess, setTransferSuccess] = useState<string | null>(null);
 
+  // Add Demo Account Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [accName, setAccName] = useState('');
+  const [accType, setAccType] = useState<'Bank Account' | 'Cash Drawer' | 'MFS (bKash/Nagad)'>('Bank Account');
+  const [accNumber, setAccNumber] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [initialBalance, setInitialBalance] = useState('500000');
+
   const totalLiquidity = accounts.reduce((sum, a) => sum + a.balance, 0);
 
   const handleTransfer = (e: React.FormEvent) => {
@@ -51,6 +61,31 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
     setShowTransferModal(false);
     setTransferAmt('');
     setTimeout(() => setTransferSuccess(null), 5000);
+  };
+
+  const handleAddAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!accName.trim()) return;
+
+    try {
+      await accountsApi.createAccount({
+        accountName: accName.trim(),
+        accountType: accType,
+        accountNumber: accNumber.trim() || `ACC-${Date.now().toString().slice(-6)}`,
+        bankName: accType === 'Bank Account' ? (bankName.trim() || 'Commercial Bank PLC') : null,
+        balance: parseFloat(initialBalance) || 0
+      });
+
+      setTransferSuccess(`Account "${accName}" registered successfully in local database.`);
+      setShowAddModal(false);
+      setAccName('');
+      setAccNumber('');
+      setBankName('');
+      setTimeout(() => setTransferSuccess(null), 5000);
+      window.location.reload();
+    } catch (err: any) {
+      console.warn('Create account error:', err);
+    }
   };
 
   const tabs = [
@@ -66,14 +101,26 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
         eyebrow="Finance"
         title="Accounts"
         description="Review cash and bank balances, then move into formal financial statements when needed."
-        actions={<Button
-          variant="brand"
-          size="sm"
-          onClick={() => setShowTransferModal(true)}
-        >
-          <ArrowUpRight className="w-4 h-4 mr-1.5" />
-          Transfer Liquidity
-        </Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTransferModal(true)}
+              leftIcon={<ArrowUpRight className="w-4 h-4" />}
+            >
+              Transfer Liquidity
+            </Button>
+            <Button
+              variant="brand"
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Add Demo Account
+            </Button>
+          </div>
+        }
       />
 
       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-content-secondary">
@@ -153,7 +200,7 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
       {activeTab === 'balancesheet' && (
         <Card className="p-6 max-w-3xl mx-auto space-y-6">
           <div className="text-center pb-4 border-b border-boundary-subtle">
-            <h2 className="text-base font-bold text-content-primary tracking-wide">DHAKA SILICON & HARDWARE LTD.</h2>
+            <h2 className="text-base font-bold text-content-primary tracking-wide">NOW_OR_NEVER CONSOLE</h2>
             <div className="text-xs font-bold text-brand-ochre uppercase tracking-widest mt-0.5">BALANCE SHEET STATEMENT</div>
             <div className="text-xs text-content-muted mt-1">As of October 17, 2026 (Currency: BDT ৳)</div>
           </div>
@@ -399,6 +446,71 @@ export const PaymentAccountsPage: React.FC<PaymentAccountsPageProps> = ({
               </Button>
               <Button variant="primary" size="md" type="submit">
                 Execute Transfer
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Add Demo Account Modal */}
+      {showAddModal && (
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          title="Add Demo Payment Account"
+          subtitle="Create a new bank, cash vault, or MFS account directly in local development database"
+        >
+          <form onSubmit={handleAddAccount} className="space-y-3.5">
+            <Input
+              label="Account Name"
+              required
+              placeholder="e.g. Standard Chartered Corporate Treasury A/C"
+              value={accName}
+              onChange={e => setAccName(e.target.value)}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Account Classification"
+                value={accType}
+                onChange={e => setAccType(e.target.value as any)}
+              >
+                <option value="Bank Account">Bank Account</option>
+                <option value="Cash Drawer">Cash Drawer / Vault</option>
+                <option value="MFS (bKash/Nagad)">MFS (bKash/Nagad)</option>
+              </Select>
+
+              <Input
+                label="Initial Balance (৳)"
+                type="number"
+                min="0"
+                value={initialBalance}
+                onChange={e => setInitialBalance(e.target.value)}
+              />
+            </div>
+
+            <Input
+              label="Account / Wallet Number"
+              placeholder="e.g. 1102948192001 or 01711-XXXXXX"
+              value={accNumber}
+              onChange={e => setAccNumber(e.target.value)}
+            />
+
+            {accType === 'Bank Account' && (
+              <Input
+                label="Bank Name & Branch"
+                placeholder="e.g. Standard Chartered Bank (Gulshan Branch)"
+                value={bankName}
+                onChange={e => setBankName(e.target.value)}
+              />
+            )}
+
+            <div className="pt-3 flex justify-end gap-2 border-t border-boundary-subtle">
+              <Button variant="outline" size="sm" type="button" onClick={() => setShowAddModal(false)}>
+                Cancel
+              </Button>
+              <Button variant="brand" size="sm" type="submit" leftIcon={<Plus className="w-3.5 h-3.5" />}>
+                Create Account in Database
               </Button>
             </div>
           </form>

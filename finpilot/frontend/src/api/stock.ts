@@ -63,4 +63,6 @@ export const stockApi = {
     api.post('/stock/pos', data),
   updatePOStatus: (id: string, status: string): Promise<SupplierPO> =>
     api.patch(`/stock/pos/${id}/status`, { status }),
+  receivePO: (id: string): Promise<SupplierPO> =>
+    api.patch(`/stock/pos/${id}/status`, { status: 'Received' }),
 };

@@ -56,8 +56,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onLogin }) => {
           <div className="w-12 h-12 rounded-xl bg-[#21262d] border border-[#30363d] flex items-center justify-center text-cyan-400 mx-auto mb-3 shadow-lg">
             <Cpu className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold text-white tracking-tight">Dhaka Silicon & Hardware Ltd.</h2>
-          <p className="text-xs text-slate-400 mt-1">Computer Components & Hardware Wholesale ERP</p>
+          <h2 className="text-lg font-bold text-white tracking-tight">Now_or_Never Console</h2>
+          <p className="text-xs text-slate-400 mt-1">Enterprise Operations &amp; Financial Management</p>
         </div>
 
         {/* Credentials Form */}

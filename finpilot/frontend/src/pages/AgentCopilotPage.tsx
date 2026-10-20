@@ -17,30 +17,21 @@ import {
   CircleDollarSign,
   Package,
   Clock,
-  ChevronRight
+  ChevronRight,
+  Plus,
+  MessageSquare,
+  Trash2,
+  PanelLeft
 } from 'lucide-react';
 import { PageHeader } from '../components/common/PageHeader';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  status?: string;
-  toolsUsed?: string[];
-  isStreaming?: boolean;
-}
+import { useTanStackAIChat, Message, ChatSession } from '../hooks/useTanStackAIChat';
 
 interface AgentCopilotPageProps {
   onNavigateTab?: (tab: string) => void;
 }
-
-const AGENT_API_BASE = 'http://localhost:8100';
-const AGENT_API_KEY = 'fp_live_f407b24b5fcf1fc17c717429793a9ca4';
-const TENANT_ID = '28434594-e04c-4aae-aa17-d4612114e348';
 
 const QUICK_PROMPTS = [
   {
@@ -183,8 +174,9 @@ function renderMarkdownContent(text: string) {
     }
     // Numbered lists
     else if (/^\d+\.\s/.test(line.trim())) {
-      const num = line.trim().match(/^(\d+)\.\s/)?.[1];
-      const content = line.trim().replace(/^\d+\.\s+/, '');
+      const match = line.trim().match(/^(\d+)\.\s(.*)/);
+      const num = match ? match[1] : '1';
+      const content = match ? match[2] : line.trim();
       elements.push(
         <div key={`num-${keyIndex++}`} className="flex items-start gap-2 text-xs text-content-primary my-1 pl-1">
           <span className="font-semibold text-brand-ochre text-[11px] min-w-[14px]">{num}.</span>
@@ -235,18 +227,23 @@ function formatInlineMarkdown(text: string): React.ReactNode {
 }
 
 export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTab }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome-msg',
-      role: 'assistant',
-      content: `### Welcome to FinPilot Autonomous Financial Copilot 👋\n\nI am connected directly to **Dhaka Silicon & Hardware Ltd.**'s live SQLite database across **12 tables** (payment accounts, sales orders, expenses, inventory, suppliers, and staff).\n\n**What I can do for you:**\n- **Live Cash Runway & Burn**: Deterministic calculation using exact account balances and OPEX trends.\n- **Inventory Valuation**: Real-time stock valuation at cost, retail projection, and reorder warnings.\n- **Accounts Receivable Aging**: Track overdue invoices and customer credit risk.\n- **Financial Stress Testing**: Simulate revenue shocks and supply chain price surges.\n\nSelect a prompt below or ask any custom question:`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      toolsUsed: ['catalog_introspection']
-    }
-  ]);
+  // Session & TanStack AI Chat state
+  const {
+    sessions,
+    activeSession,
+    activeSessionId,
+    setActiveSessionId,
+    createNewSession,
+    deleteSession,
+    clearCurrentSession,
+    stopStreaming,
+    messages,
+    isStreaming,
+    sendMessage
+  } = useTanStackAIChat();
 
+  const [showSidebar, setShowSidebar] = useState(true);
   const [inputQuery, setInputQuery] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -267,21 +264,8 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Clear chat history
-  const handleClearChat = () => {
-    setMessages([
-      {
-        id: 'welcome-msg-reset',
-        role: 'assistant',
-        content: `### Session Reset 🔄\n\nReady for new queries. All 12 tables and deterministic math tools are online. Ask anything regarding cash runway, inventory valuation, or stress tests.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        toolsUsed: []
-      }
-    ]);
-  };
-
   // Submit Query
-  const handleSendMessage = async (queryText?: string) => {
+  const handleSendMessage = (queryText?: string) => {
     const query = (queryText || inputQuery).trim();
     if (!query || isStreaming) return;
 
@@ -290,183 +274,7 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
       textareaRef.current.style.height = 'auto';
     }
 
-    const userMessageId = `user-${Date.now()}`;
-    const assistantMessageId = `asst-${Date.now()}`;
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // Append user message
-    const newMessages: Message[] = [
-      ...messages,
-      {
-        id: userMessageId,
-        role: 'user',
-        content: query,
-        timestamp: timeStr
-      },
-      {
-        id: assistantMessageId,
-        role: 'assistant',
-        content: '',
-        timestamp: timeStr,
-        status: 'Analyzing financial intent...',
-        toolsUsed: [],
-        isStreaming: true
-      }
-    ];
-
-    setMessages(newMessages);
-    setIsStreaming(true);
-
-    try {
-      // Connect to SSE streaming endpoint
-      const response = await fetch(`${AGENT_API_BASE}/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': AGENT_API_KEY
-        },
-        body: JSON.stringify({
-          message: query,
-          tenant_id: TENANT_ID
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Agent API returned HTTP ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('Readable stream not supported');
-
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulatedText = '';
-      const toolsUsedSet = new Set<string>();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const dataStr = line.slice(6).trim();
-          if (!dataStr) continue;
-
-          try {
-            const event = JSON.parse(dataStr);
-
-            if (event.type === 'status') {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, status: event.message }
-                    : msg
-                )
-              );
-            } else if (event.type === 'tool_start') {
-              toolsUsedSet.add(event.name);
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        status: `Executing ${event.name}...`,
-                        toolsUsed: Array.from(toolsUsedSet)
-                      }
-                    : msg
-                )
-              );
-            } else if (event.type === 'text_delta') {
-              accumulatedText += event.text;
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? { ...msg, content: accumulatedText, status: undefined }
-                    : msg
-                )
-              );
-            } else if (event.type === 'complete') {
-              const finalText = event.response || accumulatedText;
-              const finalTools = event.tools_used || Array.from(toolsUsedSet);
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        content: finalText,
-                        status: undefined,
-                        toolsUsed: finalTools,
-                        isStreaming: false
-                      }
-                    : msg
-                )
-              );
-            }
-          } catch (e) {
-            // Ignore partial SSE JSON chunks
-          }
-        }
-      }
-    } catch (err: any) {
-      console.warn('Streaming error, attempting synchronous fallback:', err);
-      // Fallback to synchronous /chat endpoint
-      try {
-        const fallbackRes = await fetch(`${AGENT_API_BASE}/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': AGENT_API_KEY
-          },
-          body: JSON.stringify({
-            message: query,
-            tenant_id: TENANT_ID
-          })
-        });
-
-        if (fallbackRes.ok) {
-          const data = await fallbackRes.json();
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? {
-                    ...msg,
-                    content: data.response,
-                    status: undefined,
-                    toolsUsed: data.tools_used || [],
-                    isStreaming: false
-                  }
-                : msg
-            )
-          );
-        } else {
-          throw new Error(`Fallback HTTP ${fallbackRes.status}`);
-        }
-      } catch (fallbackErr: any) {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantMessageId
-              ? {
-                  ...msg,
-                  content: `⚠️ **Unable to complete request.**\n\nCould not reach FinPilot Agent backend on port 8100. Error: ${fallbackErr.message || err.message}`,
-                  status: undefined,
-                  isStreaming: false
-                }
-              : msg
-          )
-        );
-      }
-    } finally {
-      setIsStreaming(false);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg
-        )
-      );
-    }
+    sendMessage(query);
   };
 
   // Textarea keydown: Enter to submit, Shift+Enter for newline
@@ -491,7 +299,7 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-status-success"></span>
               </span>
-              <span>12 Tables Connected</span>
+              <span>Live Agent Connected</span>
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-ochre/30 bg-brand-ochre/10 text-xs font-semibold text-brand-ochreDeep dark:text-brand-ochre shadow-xs">
@@ -502,10 +310,19 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
             <Button
               variant="outline"
               size="sm"
-              onClick={handleClearChat}
-              leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+              onClick={() => setShowSidebar(prev => !prev)}
+              leftIcon={<PanelLeft className="w-3.5 h-3.5" />}
             >
-              Reset Chat
+              {showSidebar ? 'Hide Sidebar' : 'Show Chat List'}
+            </Button>
+
+            <Button
+              variant="brand"
+              size="sm"
+              onClick={() => createNewSession()}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+            >
+              New Chat
             </Button>
           </div>
         }
@@ -516,7 +333,7 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
         <div className="p-4 rounded-xl border border-boundary-subtle bg-surface shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-content-muted uppercase tracking-wider">Cash on Hand</p>
-            <p className="text-lg font-bold text-content-primary mt-0.5">৳ 2,275,400</p>
+            <p className="text-lg font-bold text-content-primary mt-0.5">৳ 3,055,400</p>
             <p className="text-[11px] text-content-muted mt-0.5">City Bank, bKash, Cash</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-brand-ochre/15 text-brand-ochre flex items-center justify-center">
@@ -527,8 +344,8 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
         <div className="p-4 rounded-xl border border-boundary-subtle bg-surface shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-content-muted uppercase tracking-wider">Cash Runway</p>
-            <p className="text-lg font-bold text-status-success mt-0.5">10.8 Months</p>
-            <p className="text-[11px] text-content-muted mt-0.5">At ৳ 211k / mo OPEX burn</p>
+            <p className="text-lg font-bold text-status-success mt-0.5">Net Positive (∞)</p>
+            <p className="text-[11px] text-content-muted mt-0.5">Inflows exceed OPEX burn</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-status-successBg text-status-success flex items-center justify-center">
             <Clock className="w-5 h-5" />
@@ -538,8 +355,8 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
         <div className="p-4 rounded-xl border border-boundary-subtle bg-surface shadow-xs flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-content-muted uppercase tracking-wider">Inventory at Cost</p>
-            <p className="text-lg font-bold text-content-primary mt-0.5">৳ 14.06M</p>
-            <p className="text-[11px] text-content-muted mt-0.5">1,840 units across 10 items</p>
+            <p className="text-lg font-bold text-content-primary mt-0.5">৳ 25.57M</p>
+            <p className="text-[11px] text-content-muted mt-0.5">1,341 units across 27 items</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-brand-sage/25 text-stone-900 dark:text-brand-sage flex items-center justify-center">
             <Package className="w-5 h-5" />
@@ -558,10 +375,125 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
         </div>
       </div>
 
-      {/* Main Chat Interface */}
-      <Card className="flex flex-col min-h-[580px] h-[calc(100vh-320px)] border-boundary-subtle shadow-sm overflow-hidden">
-        {/* Chat Feed */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-canvas/40">
+      {/* Main Chat Interface with Left Sidebar */}
+      <Card className="flex flex-row min-h-[640px] h-[calc(100vh-270px)] border-boundary-subtle shadow-sm overflow-hidden p-0">
+        {/* Left Sidebar: New Chat & Chat List */}
+        {showSidebar && (
+          <aside className="w-64 sm:w-72 border-r border-boundary-subtle bg-surface-secondary/40 flex flex-col shrink-0">
+            {/* New Chat Button */}
+            <div className="p-3 border-b border-boundary-subtle bg-surface/50">
+              <button
+                type="button"
+                onClick={() => createNewSession()}
+                className="w-full py-2.5 px-3 rounded-lg bg-brand-ochre text-stone-950 font-semibold text-xs flex items-center justify-center gap-2 shadow-xs hover:bg-brand-ochre/90 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>New Chat</span>
+              </button>
+            </div>
+
+            {/* Chat List Header */}
+            <div className="px-3.5 pt-3 pb-1.5 flex items-center justify-between text-[11px] font-semibold text-content-muted uppercase tracking-wider">
+              <span>Conversations</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface border border-boundary-subtle font-mono text-content-primary">
+                {sessions.length}
+              </span>
+            </div>
+
+            {/* Scrollable Chat Sessions List */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+              {sessions.map((s) => {
+                const isActive = s.id === activeSessionId;
+                return (
+                  <div
+                    key={s.id}
+                    onClick={() => setActiveSessionId(s.id)}
+                    className={`group relative flex items-center gap-2.5 p-2.5 rounded-lg text-xs cursor-pointer transition-all ${
+                      isActive
+                        ? 'bg-surface text-content-primary border border-boundary-strong font-medium shadow-2xs'
+                        : 'text-content-secondary hover:bg-surface-hover hover:text-content-primary'
+                    }`}
+                  >
+                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-brand-ochre' : 'text-content-muted'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium">{s.title || 'Conversation'}</div>
+                      <div className="text-[10px] text-content-muted flex items-center gap-1.5 mt-0.5">
+                        <span>{s.createdAt}</span>
+                        <span>·</span>
+                        <span>{s.messages.length} msg{s.messages.length !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    {sessions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSession(s.id);
+                        }}
+                        title="Delete chat"
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-surface-secondary text-content-muted hover:text-status-danger transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Sidebar Footer */}
+            <div className="p-2.5 border-t border-boundary-subtle bg-surface/50 flex items-center justify-between text-[11px] text-content-muted">
+              <span className="flex items-center gap-1 text-[10.5px]">
+                <Database className="w-3 h-3 text-status-success" /> SQLite Live
+              </span>
+              <button
+                type="button"
+                onClick={clearCurrentSession}
+                title="Reset current chat"
+                className="p-1 px-1.5 rounded hover:bg-surface text-content-muted hover:text-content-primary transition flex items-center gap-1 text-[10.5px] cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" /> Reset
+              </button>
+            </div>
+          </aside>
+        )}
+
+        {/* Right Main Chat Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-canvas/30">
+          {/* Active Session Top Bar */}
+          <div className="px-4 py-2.5 border-b border-boundary-subtle bg-surface/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                type="button"
+                onClick={() => setShowSidebar(prev => !prev)}
+                title={showSidebar ? 'Hide chat list' : 'Show chat list'}
+                className="p-1.5 rounded-lg border border-boundary-subtle bg-surface hover:bg-surface-hover text-content-secondary hover:text-content-primary transition shrink-0"
+              >
+                <PanelLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="font-semibold text-xs text-content-primary truncate">
+                {activeSession?.title || 'Financial Analysis Overview'}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-secondary text-content-muted font-mono shrink-0">
+                {messages.length} message{messages.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isStreaming && (
+                <button
+                  type="button"
+                  onClick={stopStreaming}
+                  className="text-[11px] px-2 py-0.5 rounded bg-status-dangerBg text-status-danger border border-status-dangerBorder font-medium hover:bg-status-danger/10 transition"
+                >
+                  Stop Generating
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Chat Feed */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-canvas/40">
           {messages.map((message) => {
             const isUser = message.role === 'user';
 
@@ -705,6 +637,7 @@ export const AgentCopilotPage: React.FC<AgentCopilotPageProps> = ({ onNavigateTa
               <Database className="w-2.5 h-2.5 text-status-success" /> Direct SQLite Query Mode Active
             </span>
           </div>
+        </div>
         </div>
       </Card>
     </div>

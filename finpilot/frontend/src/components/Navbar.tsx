@@ -35,7 +35,6 @@ interface NavbarProps {
   userRole?: string;
   userEmail?: string;
   onLogout?: () => void;
-  onSwitchUser?: (user: { name: string; role: string; email: string }) => void;
   onNavigateTab?: (tab: string) => void;
   onOpenPos?: () => void;
   onToggleMobileSidebar?: () => void;
@@ -47,16 +46,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   industry: _industry,
   currency: _currency,
   healthScore: _healthScore,
-  userName = "MD Nazmul Hasan",
+  userName = "Shahed Rahman Somoy",
   userRole = "Managing Director",
-  userEmail = "nazmul@dhakasilicon.com",
+  userEmail = "somoy@nowornever.console",
   onLogout,
-  onSwitchUser,
   onNavigateTab,
   onOpenPos,
   onToggleMobileSidebar
 }) => {
-  const { products: _products, orders: _orders, cashRegister, openCashRegister, closeCashRegister, addNewProduct, addNewCustomer, addSupplier, addExpense } = useStore();
+  const { 
+    products: _products, 
+    orders: _orders, 
+    cashRegister, 
+    openCashRegister, 
+    closeCashRegister, 
+    addNewProduct, 
+    addNewCustomer, 
+    addSupplier, 
+    addExpense,
+    notifications,
+    unreadNotificationsCount,
+    markNotificationRead,
+    markAllNotificationsRead
+  } = useStore();
   
   // Header Modals & Dropdowns State
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -65,7 +77,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [quickAddTab, setQuickAddTab] = useState<'product' | 'customer' | 'supplier' | 'expense'>('product');
   const [registerOpen, setRegisterOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notificationsRead, setNotificationsRead] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   // Calculator State
@@ -337,17 +348,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               notificationsOpen ? 'bg-surface-secondary text-content-primary' : ''
             }`}
             title="System Notifications"
-            aria-label={notificationsRead ? 'Notifications' : 'Notifications, 3 unread'}
+            aria-label={unreadNotificationsCount === 0 ? 'Notifications' : `Notifications, ${unreadNotificationsCount} unread`}
             aria-expanded={notificationsOpen}
             aria-controls="notifications-panel"
           >
             <Bell className="h-5 w-5" aria-hidden="true" />
-            {!notificationsRead && (
+            {unreadNotificationsCount > 0 && (
               <span
                 aria-hidden="true"
                 className="absolute -right-0.5 -top-0.5 flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-surface bg-status-danger px-1 text-[10px] font-bold leading-none text-white shadow-sm"
               >
-                3
+                {unreadNotificationsCount}
               </span>
             )}
           </button>
@@ -356,19 +367,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <section
               id="notifications-panel"
               aria-label="Notifications"
-              className="absolute right-0 top-full z-50 mt-3 flex max-h-[min(34rem,calc(100dvh-5rem))] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-boundary-strong bg-surface text-content-primary shadow-2xl shadow-stone-950/15 animate-in fade-in zoom-in-95"
+              className="absolute right-0 top-full z-50 mt-3 flex max-h-[min(34rem,calc(100dvh-5rem))] w-[min(24rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-boundary-strong bg-surface text-content-primary shadow-2xl shadow-stone-950/15 animate-in fade-in zoom-in-95"
             >
               <div className="flex items-start justify-between gap-3 border-b border-boundary-subtle px-4 py-3.5">
                 <div>
                   <h2 className="text-sm font-semibold tracking-tight">Notifications</h2>
                   <p className="mt-0.5 text-[11px] text-content-muted">
-                    {notificationsRead ? 'You’re all caught up' : '3 unread alerts'}
+                    {unreadNotificationsCount === 0 ? 'You’re all caught up' : `${unreadNotificationsCount} unread alerts`}
                   </p>
                 </div>
-                {!notificationsRead && (
+                {unreadNotificationsCount > 0 && (
                   <button
                     type="button"
-                    onClick={() => setNotificationsRead(true)}
+                    onClick={() => markAllNotificationsRead()}
                     className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-semibold text-content-secondary transition hover:bg-surface-secondary hover:text-content-primary"
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
@@ -376,46 +387,55 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
                 )}
               </div>
-              <div className="overflow-y-auto">
-                <article className={`flex gap-3 border-b border-boundary-subtle px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-warningBg text-status-warning">
-                    <AlertTriangle className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-xs font-semibold leading-5">Low stock: RTX 4080 Super</h3>
-                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">Only 14 units left in Banani Central Vault. Reorder threshold is 10.</p>
-                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Inventory</p>
+              <div className="overflow-y-auto max-h-80 divide-y divide-boundary-subtle">
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-content-muted">
+                    No notifications recorded yet.
                   </div>
-                </article>
-                <article className={`flex gap-3 border-b border-boundary-subtle px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-successBg text-status-success">
-                    <Truck className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-xs font-semibold leading-5">Courier delivery in progress</h3>
-                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">Consignment STDF-CTG-81920 is out for delivery in Chattogram.</p>
-                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Delivery</p>
-                  </div>
-                </article>
-                <article className={`flex gap-3 px-4 py-3.5 transition-colors hover:bg-surface-secondary/60 ${notificationsRead ? '' : 'bg-brand-sand/20 dark:bg-brand-ochre/5'}`}>
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-status-infoBg text-status-info">
-                    <Package className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-xs font-semibold leading-5">Customs duty cleared</h3>
-                      {!notificationsRead && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">PO-2026-ASUS-091 cleared customs at Chittagong Port.</p>
-                    <p className="mt-1.5 text-[10px] font-medium text-content-muted">Purchasing</p>
-                  </div>
-                </article>
+                ) : (
+                  notifications.map((notif) => {
+                    const isUnread = !notif.isRead;
+                    const getIcon = () => {
+                      if (notif.type === 'stock' || notif.type === 'warning') return <AlertTriangle className="h-4 w-4" />;
+                      if (notif.type === 'order') return <ShoppingBag className="h-4 w-4" />;
+                      if (notif.type === 'success') return <ShieldCheck className="h-4 w-4" />;
+                      if (notif.type === 'danger') return <AlertTriangle className="h-4 w-4" />;
+                      return <Package className="h-4 w-4" />;
+                    };
+                    const getIconBg = () => {
+                      if (notif.type === 'stock' || notif.type === 'warning') return 'bg-status-warningBg text-status-warning';
+                      if (notif.type === 'order') return 'bg-brand-ochre/20 text-brand-ochreDeep dark:text-brand-ochre';
+                      if (notif.type === 'success') return 'bg-status-successBg text-status-success';
+                      if (notif.type === 'danger') return 'bg-status-dangerBg text-status-danger';
+                      return 'bg-status-infoBg text-status-info';
+                    };
+
+                    return (
+                      <article 
+                        key={notif.id}
+                        onClick={() => {
+                          if (isUnread) markNotificationRead(notif.id);
+                        }}
+                        className={`flex gap-3 px-4 py-3.5 transition-colors cursor-pointer hover:bg-surface-secondary/60 ${isUnread ? 'bg-brand-sand/20 dark:bg-brand-ochre/5' : ''}`}
+                      >
+                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${getIconBg()}`}>
+                          {getIcon()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-xs font-semibold leading-5 text-content-primary">{notif.title}</h3>
+                            {isUnread && <span aria-label="Unread" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-ochre" />}
+                          </div>
+                          <p className="mt-0.5 text-[11px] leading-4 text-content-secondary">{notif.message}</p>
+                          <div className="mt-1.5 flex items-center justify-between text-[10px] text-content-muted">
+                            <span className="capitalize">{notif.type}</span>
+                            <span>{new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
               </div>
             </section>
           )}
@@ -453,42 +473,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <ThemeToggle variant="buttons" className="w-full justify-between" />
               </div>
 
-              <div className="space-y-1">
-                <div className="px-2 py-1 text-[10px] uppercase font-bold text-content-muted">Switch Role</div>
-                <button
-                  onClick={() => {
-                    if (onSwitchUser) onSwitchUser({
-                      name: "MD Nazmul Hasan",
-                      role: "Managing Director / Owner",
-                      email: "nazmul@dhakasilicon.com"
-                    });
-                    setUserDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-secondary flex items-center justify-between text-content-primary transition"
-                >
-                  <div>
-                    <div className="font-semibold">MD Nazmul Hasan</div>
-                    <div className="text-[10px] text-content-muted">Managing Director</div>
-                  </div>
-                  {userName.includes("Nazmul") && <Check className="w-3.5 h-3.5 text-status-success" />}
-                </button>
-                <button
-                  onClick={() => {
-                    if (onSwitchUser) onSwitchUser({
-                      name: "Tanvir Ahmed",
-                      role: "Senior Sales & Inventory Lead",
-                      email: "tanvir@dhakasilicon.com"
-                    });
-                    setUserDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-surface-secondary flex items-center justify-between text-content-primary transition"
-                >
-                  <div>
-                    <div className="font-semibold">Tanvir Ahmed</div>
-                    <div className="text-[10px] text-content-muted">Senior Sales Lead</div>
-                  </div>
-                  {userName.includes("Tanvir") && <Check className="w-3.5 h-3.5 text-status-success" />}
-                </button>
+              <div className="py-2 px-2.5 bg-surface-secondary/60 rounded-lg text-[11px] text-content-muted space-y-1">
+                <div className="flex items-center justify-between">
+                  <span>Terminal:</span>
+                  <span className="font-semibold text-content-primary">Banani Vault #01</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Authentication:</span>
+                  <span className="font-semibold text-status-success flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Verified DB Session
+                  </span>
+                </div>
               </div>
 
               <div className="pt-2 mt-2 border-t border-boundary-subtle">

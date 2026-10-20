@@ -26,6 +26,7 @@ import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
 import { PageHeader } from '../components/common/PageHeader';
+import { printTaxInvoice } from '../utils/printInvoice';
 
 interface SellPageProps {
   initialTab?: 'all' | 'pos' | 'pos-list' | 'shipments' | 'quotations' | 'drafts' | 'returns' | 'discounts' | 'import';
@@ -36,7 +37,7 @@ export const SellPage: React.FC<SellPageProps> = ({
   initialTab = 'all',
   onNavigateTab 
 }) => {
-  const { products, orders, createSaleOrder, updateOrderStatus, dispatchWithCourier } = useStore();
+  const { products, orders, customers, selectedLocation, createSaleOrder, updateOrderStatus, dispatchWithCourier } = useStore();
   const [activeTab, setActiveTab] = useState<string>(initialTab);
 
   React.useEffect(() => {
@@ -62,7 +63,8 @@ export const SellPage: React.FC<SellPageProps> = ({
   const [customerAddress, setCustomerAddress] = useState('');
   const [discountPercent, setDiscountPercent] = useState<number>(0);
   const [discountAmountFlat, setDiscountAmountFlat] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'bank_transfer' | 'credit_30d'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bkash' | 'bank_transfer' | 'credit_30d' | 'due'>('cash');
+  const [posPaidNowAmount, setPosPaidNowAmount] = useState<number>(0);
   const [posOrderType] = useState<'offline' | 'online'>('offline');
   const [posSuccessOrder, setPosSuccessOrder] = useState<Order | null>(null);
 
@@ -101,9 +103,20 @@ export const SellPage: React.FC<SellPageProps> = ({
   const vatAmount = Math.round(taxableSubtotal * 0.05); // 5% NBR VAT
   const totalPayable = taxableSubtotal + vatAmount;
 
+  // Real Cost & Gross Profit Calculations for POS
+  const cartTotalCost = cart.reduce((acc, curr) => acc + (curr.product.costPrice || 0) * curr.quantity, 0);
+  const posEstimatedProfit = Math.max(0, taxableSubtotal - cartTotalCost);
+  const posMarginPct = taxableSubtotal > 0 ? ((posEstimatedProfit / taxableSubtotal) * 100).toFixed(1) : '0';
+
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
+
+    const finalPaid = paymentMethod === 'due' ? Number(posPaidNowAmount) : totalPayable;
+    const finalDue = paymentMethod === 'due' ? Math.max(0, totalPayable - finalPaid) : 0;
+    const activeBranch = selectedLocation && selectedLocation !== 'All Locations'
+      ? selectedLocation
+      : 'Banani Central Vault & Warehouse';
 
     const created = createSaleOrder({
       customerName: customerName || 'Walk-In Customer (Showroom Counter)',
@@ -114,6 +127,9 @@ export const SellPage: React.FC<SellPageProps> = ({
       discountAmountFlat,
       orderType: posOrderType,
       paymentMethod,
+      paidAmount: finalPaid,
+      dueAmount: finalDue,
+      branch: activeBranch,
       salesman: 'Tanvir Ahmed (Sales Lead)'
     });
 
@@ -124,6 +140,7 @@ export const SellPage: React.FC<SellPageProps> = ({
     setCustomerAddress('');
     setDiscountAmountFlat(0);
     setDiscountPercent(0);
+    setPosPaidNowAmount(0);
   };
 
   // Filtered Orders for All Sales
@@ -248,11 +265,12 @@ export const SellPage: React.FC<SellPageProps> = ({
             <TableHeader>
               <tr>
                 <TableHeadCell>Order # & Date</TableHeadCell>
-                <TableHeadCell>Customer & Channel</TableHeadCell>
+                <TableHeadCell>Customer & Branch</TableHeadCell>
                 <TableHeadCell>Items Summary</TableHeadCell>
                 <TableHeadCell>Payment Status</TableHeadCell>
                 <TableHeadCell align="center">Fulfillment</TableHeadCell>
                 <TableHeadCell align="right">Total (৳)</TableHeadCell>
+                <TableHeadCell align="right">Gross Profit (৳)</TableHeadCell>
                 <TableHeadCell align="center">Action</TableHeadCell>
               </tr>
             </TableHeader>
@@ -261,11 +279,16 @@ export const SellPage: React.FC<SellPageProps> = ({
                 const payVariant = o.paymentStatus === 'Paid' ? 'success' : o.paymentStatus === 'Credit 30D' ? 'danger' : 'warning';
                 const isCompleted = o.status === 'Delivered' || o.status === 'Counter Collected';
                 const isInTransit = o.status === 'In Transit';
+                const profitMargin = o.totalAmount > 0 ? Math.round(((o.profit || 0) / o.totalAmount) * 100) : 0;
 
                 return (
-                  <TableRow key={o.id}>
+                  <TableRow 
+                    key={o.id}
+                    onClick={() => setSelectedOrder(o)}
+                    className="cursor-pointer hover:bg-surface-secondary/80 transition group"
+                  >
                     <TableCell>
-                      <div className="font-semibold text-content-primary">{o.orderNumber}</div>
+                      <div className="font-semibold text-content-primary group-hover:text-brand-ochre transition">{o.orderNumber}</div>
                       <div className="text-[11px] text-content-muted font-mono">{o.orderDate}</div>
                     </TableCell>
                     <TableCell>
@@ -273,6 +296,8 @@ export const SellPage: React.FC<SellPageProps> = ({
                       <div className="text-[11px] text-content-muted flex items-center gap-1.5 mt-0.5">
                         <span className={`w-1.5 h-1.5 rounded-full ${o.orderType === 'online' ? 'bg-sky-500' : 'bg-emerald-500'}`} />
                         <span>{o.orderType === 'online' ? 'Courier Delivery' : 'Showroom Counter'}</span>
+                        <span>·</span>
+                        <span className="text-brand-ochre font-medium">{o.branch ? o.branch.split(' ')[0] : 'Banani'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="max-w-xs truncate text-content-secondary">
@@ -281,6 +306,11 @@ export const SellPage: React.FC<SellPageProps> = ({
                     <TableCell>
                       <Badge variant={payVariant} size="sm">{o.paymentStatus}</Badge>
                       <div className="text-[10px] text-content-muted uppercase font-mono mt-0.5">{o.paymentMethod.replace('_', ' ')}</div>
+                      {o.dueAmount !== undefined && o.dueAmount > 0 && (
+                        <div className="text-[10.5px] font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">
+                          Due: ৳{o.dueAmount.toLocaleString()}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell align="center">
                       <div className="flex flex-col items-center">
@@ -295,10 +325,16 @@ export const SellPage: React.FC<SellPageProps> = ({
                     <TableCell align="right" tabular className="font-bold text-content-primary">
                       ৳{o.totalAmount.toLocaleString()}
                     </TableCell>
+                    <TableCell align="right" tabular className="font-bold text-status-success">
+                      +৳{(o.profit || 0).toLocaleString()}
+                      <div className="text-[10px] text-content-muted font-normal font-mono">
+                        {profitMargin}% margin
+                      </div>
+                    </TableCell>
                     <TableCell align="center">
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(o)}>
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedOrder(o); }}>
                         <Receipt className="w-3.5 h-3.5 mr-1" />
-                        Invoice
+                        Details
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -492,15 +528,42 @@ export const SellPage: React.FC<SellPageProps> = ({
                       </label>
                       <Select
                         value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as any)}
+                        onChange={(e) => {
+                          setPaymentMethod(e.target.value as any);
+                          if (e.target.value !== 'due') setPosPaidNowAmount(0);
+                        }}
                       >
                         <option value="cash">Cash (Showroom Drawer)</option>
+                        <option value="due">Due / Customer Credit</option>
                         <option value="bkash">bKash Merchant</option>
                         <option value="bank_transfer">Bank Wire / EFTN</option>
                         <option value="credit_30d">Corporate Credit (30D)</option>
                       </Select>
                     </div>
                   </div>
+
+                  {paymentMethod === 'due' && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-content-primary">Paid Now (Advance BDT):</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={totalPayable}
+                          value={posPaidNowAmount}
+                          onChange={(e) => setPosPaidNowAmount(Math.max(0, Math.min(totalPayable, Number(e.target.value) || 0)))}
+                          placeholder="0"
+                          className="w-24 px-2 py-1 bg-surface border border-boundary-strong rounded-lg text-right font-mono font-bold text-xs"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-boundary-subtle">
+                        <span className="font-bold text-content-primary">Remaining Due:</span>
+                        <span className="font-mono font-bold text-status-danger">
+                          ৳{Math.max(0, totalPayable - posPaidNowAmount).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -523,6 +586,14 @@ export const SellPage: React.FC<SellPageProps> = ({
                 <div className="flex justify-between text-base font-extrabold text-content-primary pt-2 border-t border-boundary-subtle">
                   <span>Total Payable:</span>
                   <span className="font-tabular">৳{totalPayable.toLocaleString()}</span>
+                </div>
+
+                {/* Gross Profit Badge */}
+                <div className="flex justify-between items-center p-2 rounded-xl bg-brand-olive/15 border border-brand-ochre/30 text-xs">
+                  <span className="font-semibold text-content-primary">Gross Profit:</span>
+                  <span className="font-mono font-bold text-status-success">
+                    +৳{posEstimatedProfit.toLocaleString()} ({posMarginPct}%)
+                  </span>
                 </div>
 
                 <Button
@@ -934,69 +1005,194 @@ export const SellPage: React.FC<SellPageProps> = ({
       )}
 
       {/* ============================================================== */}
-      {/* INVOICE PREVIEW MODAL */}
+      {/* INVOICE & CUSTOMER INTELLIGENCE DOSSIER MODAL */}
       {/* ============================================================== */}
-      {selectedOrder && (
-        <Modal
-          isOpen={true}
-          onClose={() => setSelectedOrder(null)}
-          title={`Official Tax Invoice — ${selectedOrder.orderNumber}`}
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-surface-secondary border border-boundary-subtle text-xs space-y-1">
-              <div className="text-content-muted text-[11px] uppercase font-bold tracking-wider">Billed Customer</div>
-              <div className="font-bold text-content-primary text-sm">{selectedOrder.customerName}</div>
-              <div className="text-content-secondary">{selectedOrder.contactNumber}</div>
-              <div className="text-content-muted">{selectedOrder.deliveryAddress}</div>
-            </div>
+      {selectedOrder && (() => {
+        const custDetails = customers.find(c => 
+          c.name.toLowerCase() === selectedOrder.customerName.toLowerCase() || 
+          (selectedOrder.contactNumber && c.contactNumber.replace(/\D/g, '') === selectedOrder.contactNumber.replace(/\D/g, ''))
+        ) || selectedOrder.customerDetails;
 
-            <div className="space-y-1.5 text-xs">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-content-muted flex justify-between py-1 border-b border-boundary-subtle">
-                <span>Hardware Description</span>
-                <span>Amount</span>
-              </div>
-              {selectedOrder.items.map((it, idx) => (
-                <div key={idx} className="flex justify-between py-1.5 border-b border-boundary-subtle/50">
-                  <span className="text-content-primary">{it.quantity}x {it.name}</span>
-                  <span className="font-tabular font-semibold text-content-primary">৳{it.total.toLocaleString()}</span>
+        const netProfit = selectedOrder.profit !== undefined ? selectedOrder.profit : 0;
+        const profitMargin = selectedOrder.totalAmount > 0 ? Math.round((netProfit / selectedOrder.totalAmount) * 100) : 0;
+
+        return (
+          <Modal
+            isOpen={true}
+            onClose={() => setSelectedOrder(null)}
+            title={`Sales Order Dossier & Invoice — ${selectedOrder.orderNumber}`}
+            size="lg"
+          >
+            <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+              {/* Customer Intelligence Dossier Card */}
+              <div className="p-4 rounded-xl bg-surface-secondary border border-boundary-subtle text-xs space-y-2.5">
+                <div className="flex items-center justify-between border-b border-boundary-subtle pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-brand-ochre">
+                      Purchasing Customer Profile
+                    </span>
+                    <Badge variant="neutral" size="sm">
+                      {custDetails?.customerType || 'Wholesale / Retail'}
+                    </Badge>
+                  </div>
+                  <span className="text-[11px] text-content-muted font-mono font-medium">
+                    Branch: {selectedOrder.branch || 'Banani Central Vault & Warehouse'}
+                  </span>
                 </div>
-              ))}
-            </div>
 
-            <div className="pt-2 border-t border-boundary-subtle space-y-1 text-xs font-medium">
-              <div className="flex justify-between text-content-secondary">
-                <span>Subtotal:</span>
-                <span className="font-tabular">৳{selectedOrder.subtotal.toLocaleString()}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="font-bold text-content-primary text-sm">{selectedOrder.customerName}</div>
+                    <div className="text-content-secondary mt-0.5">{selectedOrder.contactNumber}</div>
+                    <div className="text-content-muted mt-0.5">{selectedOrder.deliveryAddress}</div>
+                    {custDetails?.binNumber && (
+                      <div className="text-[11px] text-content-muted font-mono mt-1">
+                        BIN: {custDetails.binNumber}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-surface p-3 rounded-lg border border-boundary-subtle space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-content-muted">Lifetime Volume:</span>
+                      <span className="font-mono font-bold text-content-primary">
+                        ৳{(custDetails?.totalPurchases || selectedOrder.totalAmount).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-content-muted">Total Due Balance:</span>
+                      <span className={`font-mono font-bold ${(custDetails?.totalDue || selectedOrder.dueAmount || 0) > 0 ? 'text-status-danger' : 'text-status-success'}`}>
+                        ৳{(custDetails?.totalDue !== undefined ? custDetails.totalDue : (selectedOrder.dueAmount || 0)).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-content-muted">Sales Representative:</span>
+                      <span className="font-medium text-content-secondary">{selectedOrder.salesman || 'Tanvir Ahmed'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              {selectedOrder.discountAmount > 0 && (
-                <div className="flex justify-between text-status-danger">
-                  <span>Discount:</span>
-                  <span className="font-tabular">- ৳{selectedOrder.discountAmount.toLocaleString()}</span>
+
+              {/* Itemized Hardware & Profit Breakdown Table */}
+              <div className="space-y-1.5 text-xs">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-content-muted grid grid-cols-12 py-1.5 border-b border-boundary-subtle">
+                  <span className="col-span-5">Hardware Description</span>
+                  <span className="col-span-2 text-right">Selling Rate</span>
+                  <span className="col-span-2 text-right">Cost Price</span>
+                  <span className="col-span-3 text-right">Line Profit</span>
+                </div>
+                {selectedOrder.items.map((it, idx) => {
+                  const unitCost = it.costPrice || 0;
+                  const itemProfit = it.profit !== undefined ? it.profit : (it.unitPrice - unitCost) * it.quantity;
+                  return (
+                    <div key={idx} className="grid grid-cols-12 py-2 border-b border-boundary-subtle/50 items-center">
+                      <div className="col-span-5 pr-2">
+                        <div className="font-semibold text-content-primary line-clamp-1">{it.quantity}x {it.name}</div>
+                        {it.sku && <div className="text-[10px] text-content-muted font-mono">{it.sku}</div>}
+                      </div>
+                      <div className="col-span-2 text-right font-tabular text-content-primary font-medium">
+                        ৳{it.unitPrice.toLocaleString()}
+                      </div>
+                      <div className="col-span-2 text-right font-tabular text-content-muted">
+                        ৳{unitCost.toLocaleString()}
+                      </div>
+                      <div className="col-span-3 text-right font-tabular font-bold text-status-success">
+                        +৳{itemProfit.toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Financial Totals & Due Status */}
+              <div className="pt-2 border-t border-boundary-subtle space-y-1.5 text-xs font-medium">
+                <div className="flex justify-between text-content-secondary">
+                  <span>Subtotal:</span>
+                  <span className="font-tabular">৳{selectedOrder.subtotal.toLocaleString()}</span>
+                </div>
+                {selectedOrder.discountAmount > 0 && (
+                  <div className="flex justify-between text-status-danger">
+                    <span>Discount Applied:</span>
+                    <span className="font-tabular">- ৳{selectedOrder.discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-content-secondary">
+                  <span>NBR 5% Standard VAT:</span>
+                  <span className="font-tabular">৳{selectedOrder.vatAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-base font-extrabold text-content-primary pt-1 border-t border-boundary-subtle">
+                  <span>Total Invoiced:</span>
+                  <span className="font-tabular">৳{selectedOrder.totalAmount.toLocaleString()}</span>
+                </div>
+
+                {/* Paid vs Due Split */}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div className="p-2.5 rounded-lg bg-surface-secondary border border-boundary-subtle flex justify-between items-center">
+                    <span className="text-content-muted text-[11px]">Paid Amount:</span>
+                    <span className="font-mono font-bold text-content-primary">
+                      ৳{(selectedOrder.paidAmount !== undefined ? selectedOrder.paidAmount : selectedOrder.totalAmount).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-surface-secondary border border-boundary-subtle flex justify-between items-center">
+                    <span className="text-content-muted text-[11px]">Due Balance:</span>
+                    <span className={`font-mono font-bold ${(selectedOrder.dueAmount || 0) > 0 ? 'text-status-danger' : 'text-status-success'}`}>
+                      ৳{(selectedOrder.dueAmount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Net Gross Profit for this Sale */}
+                <div className="p-3 rounded-xl bg-brand-olive/20 border border-brand-ochre/40 flex justify-between items-center">
+                  <div>
+                    <div className="font-bold text-content-primary">Total Gross Profit from this Sale</div>
+                    <div className="text-[11px] text-content-muted font-mono">{profitMargin}% Gross Margin realized</div>
+                  </div>
+                  <span className="font-mono font-extrabold text-status-success text-base">
+                    +৳{netProfit.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Courier Delivery Tracking Link */}
+              {selectedOrder.courier && (
+                <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-content-primary">
+                      <Truck className="w-4 h-4 text-sky-500" />
+                      <span>{selectedOrder.courier.provider} Courier Consignment</span>
+                    </div>
+                    <Badge variant="info" size="sm">{selectedOrder.courier.status}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] pt-1">
+                    <span className="text-content-muted">Consignment ID: <span className="font-mono font-bold text-content-primary">{selectedOrder.courier.consignmentId}</span></span>
+                    {selectedOrder.courier.trackingUrl && (
+                      <a
+                        href={selectedOrder.courier.trackingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sky-500 hover:text-sky-600 font-semibold flex items-center gap-1"
+                      >
+                        Live Tracking <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="flex justify-between text-content-secondary">
-                <span>NBR 5% VAT:</span>
-                <span className="font-tabular">৳{selectedOrder.vatAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-base font-extrabold text-content-primary pt-2 border-t border-boundary-subtle">
-                <span>Grand Total:</span>
-                <span className="font-tabular">৳{selectedOrder.totalAmount.toLocaleString()}</span>
-              </div>
-            </div>
 
-            <div className="pt-2 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>
-                Close
-              </Button>
-              <Button variant="primary" size="sm" onClick={() => window.print()}>
-                <Printer className="w-4 h-4 mr-1.5" />
-                Print Tax Receipt
-              </Button>
+              {/* Actions */}
+              <div className="pt-2 flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>
+                  Close
+                </Button>
+                <Button variant="brand" size="sm" onClick={() => printTaxInvoice(selectedOrder, custDetails)}>
+                  <Printer className="w-4 h-4 mr-1.5" />
+                  Print / Download PDF (Mushak-6.3)
+                </Button>
+              </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
 
       {/* ============================================================== */}
       {/* POS SALE SUCCESS MODAL */}

@@ -1,4 +1,7 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+const isCustomDomain = typeof window !== 'undefined' && window.location.hostname && !window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/) && window.location.hostname !== 'localhost';
+const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
+const BASE_URL = import.meta.env.VITE_API_URL || (isHttps || isCustomDomain ? '' : `http://${host}:3001`);
 
 async function request<T>(path: string, opts?: RequestInit): Promise<T> {
   const token = localStorage.getItem('auth_token');

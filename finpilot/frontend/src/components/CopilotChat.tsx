@@ -31,7 +31,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({ isOpen, onClose }) => 
     {
       sender: 'agent',
       specialist: 'orchestrator',
-      content: "Hello Tanvir! I am your AI Finance Copilot for Dhaka Silicon & Hardware Ltd. I monitor your computer parts cash ledger, GPU/CPU import duties, and customer store receivables. How can I assist your sales operations today?",
+      content: "Hello Shahed Rahman Somoy! I am your AI Financial Copilot for Now_or_Never Console. I monitor your live cash ledger, inventory valuations, accounts receivable, and operational runway across all database tables. How can I assist you today?",
       guardrail_flags: ['pii_sanitized', 'grounded_database_verified']
     }
   ]);
@@ -107,7 +107,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({ isOpen, onClose }) => 
                 Active
               </span>
             </div>
-            <div className="text-[10.5px] text-[#8b949e]">Grounded in Dhaka Silicon Hardware Ledger</div>
+            <div className="text-[10.5px] text-[#8b949e]">Grounded in Now_or_Never Console Ledger</div>
           </div>
         </div>
         <button

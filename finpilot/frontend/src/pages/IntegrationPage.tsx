@@ -36,7 +36,7 @@ interface SimulatedSME {
 const PRESET_SMES: SimulatedSME[] = [
   {
     id: 'hardware',
-    name: 'Dhaka Silicon & Hardware Ltd.',
+    name: 'Now_or_Never Console',
     industry: 'Computer Parts & PC Components Wholesale',
     currency: 'BDT',
     balance: 1850000,
@@ -260,7 +260,7 @@ export const IntegrationPage: React.FC = () => {
               <Building2 className="w-3.5 h-3.5" /> 1. Any SME Management Site
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Wholesale computer parts (Dhaka Silicon), Pharmacy, Retail or Restaurant ERPs run independently.
+              Wholesale computer parts (Now_or_Never Console), Pharmacy, Retail or Restaurant ERPs run independently.
             </p>
           </div>
           <div className="bg-[#21262d] p-3 rounded-lg border border-[#30363d]">

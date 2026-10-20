@@ -3,7 +3,10 @@ export const BACKEND_URL = typeof window !== 'undefined' && window.location.port
   : (typeof window !== 'undefined' ? window.location.origin : "http://localhost:8090");
 
 export const API_BASE = `${BACKEND_URL}/api/v1`;
-export const AGENT_SERVICE_URL = "http://localhost:8100";
+const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+const isCustomDomain = typeof window !== 'undefined' && window.location.hostname && !window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/) && window.location.hostname !== 'localhost';
+const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
+export const AGENT_SERVICE_URL = isHttps || isCustomDomain ? '' : `http://${host}:8100`;
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem("finpilot_token");

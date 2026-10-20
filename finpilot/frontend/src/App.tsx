@@ -4,9 +4,10 @@ import { Button } from './components/common/Button';
 import { AppSidebar } from './components/AppSidebar';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './pages/LoginPage';
+import { authApi } from './api';
 
 // Core ERP Pages
-import { ExecutiveDashboardPage } from './pages/ExecutiveDashboardPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { ContactsPage } from './pages/ContactsPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { PurchasesPage } from './pages/PurchasesPage';
@@ -22,8 +23,10 @@ import { SystemSettingsPage } from './pages/SystemSettingsPage';
 import { DatabaseAuditPage } from './pages/DatabaseAuditPage';
 import { AgentCopilotPage } from './pages/AgentCopilotPage';
 
-const getPageTitle = (activeTab: string) => {
+const getPageTitle = (activeTab: string, isSalesman: boolean = false) => {
   if (activeTab === 'agent-copilot' || activeTab.startsWith('agent-')) return 'FinPilot AI Copilot';
+  if (activeTab === 'sales-dashboard' || (activeTab === 'home-dashboard' && isSalesman)) return 'Salesman Dashboard';
+  if (activeTab === 'home-dashboard') return 'Executive Management Dashboard';
   if (activeTab.startsWith('sell-')) return activeTab === 'sell-pos' ? 'Point of sale' : 'Sales & orders';
   if (activeTab.startsWith('products-')) return 'Products';
   if (activeTab.startsWith('purchases-')) return 'Purchasing';
@@ -46,23 +49,30 @@ export function App() {
     role: string;
     email: string;
   } | null>(() => {
-    const saved = localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
+    const saved = localStorage.getItem('now_or_never_logged_user') || localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const u = JSON.parse(saved);
+        if (u.name === 'MD Nazmul Hasan' || u.email?.includes('dhakasilicon.com')) {
+          return {
+            name: 'Shahed Rahman Somoy',
+            role: 'Managing Director & System Manager',
+            email: 'somoy@nowornever.console'
+          };
+        }
+        return u;
+      } catch (e) {}
     }
-    return null;
+    return {
+      name: 'Shahed Rahman Somoy',
+      role: 'Managing Director & System Manager',
+      email: 'somoy@nowornever.console'
+    };
   });
 
   const [activeTab, setActiveTabState] = useState<string>(() => {
     const savedTab = localStorage.getItem('finpilot_active_tab');
     if (savedTab) return savedTab;
-    const savedUser = localStorage.getItem('dhaka_silicon_logged_user_v2') || localStorage.getItem('dhaka_silicon_logged_user');
-    if (savedUser) {
-      try {
-        const u = JSON.parse(savedUser);
-        if (u.role?.toLowerCase().includes('sales')) return 'sell-pos';
-      } catch (e) {}
-    }
     return 'home-dashboard';
   });
 
@@ -76,12 +86,18 @@ export function App() {
     () => localStorage.getItem('finpilot_sidebar_collapsed') === 'true'
   );
 
-  const companyName = "Dhaka Silicon & Hardware Ltd.";
-  const industry = "Computer Wholesale & Retail";
+  const companyName = "Now_or_Never Console";
+  const industry = "Enterprise Operations & Wholesale";
   const currency = "BDT";
-  const healthScore = 92;
+  const healthScore = 94;
 
   const handleLogout = () => {
+    if (currentUser) {
+      authApi.logout(currentUser.email, currentUser.name, currentUser.role).catch(err => {
+        console.warn('Could not record logout event on db-server:', err);
+      });
+    }
+    localStorage.removeItem('now_or_never_logged_user');
     localStorage.removeItem('dhaka_silicon_logged_user_v2');
     localStorage.removeItem('dhaka_silicon_logged_user');
     localStorage.removeItem('finpilot_auth_token');
@@ -90,18 +106,11 @@ export function App() {
   };
 
   const handleLogin = (user: { name: string; role: string; email: string }) => {
+    localStorage.setItem('now_or_never_logged_user', JSON.stringify(user));
     localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
-    localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
     setCurrentUser(user);
-    const defaultTab = user.role.toLowerCase().includes('sales') ? 'sell-pos' : 'home-dashboard';
-    setActiveTab(defaultTab);
-  };
-
-  const handleSwitchUser = (user: { name: string; role: string; email: string }) => {
-    localStorage.setItem('dhaka_silicon_logged_user_v2', JSON.stringify(user));
-    localStorage.setItem('dhaka_silicon_logged_user', JSON.stringify(user));
-    setCurrentUser(user);
-    const defaultTab = user.role.toLowerCase().includes('sales') ? 'sell-pos' : 'home-dashboard';
+    const isSales = user.role.toLowerCase().includes('sales');
+    const defaultTab = isSales ? 'sales-dashboard' : 'home-dashboard';
     setActiveTab(defaultTab);
   };
 
@@ -121,11 +130,8 @@ export function App() {
       activeTab.startsWith('contacts-suppliers') ||
       activeTab.startsWith('users-') ||
       activeTab.startsWith('hrm-') ||
-      activeTab.startsWith('stock-adjustments-') ||
-      activeTab.startsWith('stock-transfers-') ||
       activeTab.startsWith('settings-') ||
-      activeTab === 'admin-database' ||
-      activeTab === 'essentials-todo';
+      activeTab === 'admin-database';
 
     if (isSalesman && isRestrictedForSalesman) {
       return (
@@ -139,8 +145,8 @@ export function App() {
             This executive management module requires <strong>Managing Director / Owner</strong> privileges.
           </p>
           <div className="pt-2">
-            <Button variant="primary" size="sm" onClick={() => setActiveTab('sell-pos')}>
-              Return to Point of Sale (POS)
+            <Button variant="primary" size="sm" onClick={() => setActiveTab('sales-dashboard')}>
+              Return to Sales Dashboard
             </Button>
           </div>
         </div>
@@ -148,15 +154,16 @@ export function App() {
     }
 
     switch (activeTab) {
-      // 1. Home Dashboard
+      // 1. Dashboards
       case 'home-dashboard':
       case 'admin-dashboard':
       case 'sales-dashboard':
         return (
-          <ExecutiveDashboardPage 
-            key="home-dashboard"
+          <DashboardPage 
+            key={activeTab}
             onNavigateTab={setActiveTab} 
             userName={currentUser.name}
+            userRole={currentUser.role}
           />
         );
 
@@ -300,10 +307,11 @@ export function App() {
 
       default:
         return (
-          <ExecutiveDashboardPage 
+          <DashboardPage 
             key="default-dashboard"
             onNavigateTab={setActiveTab} 
             userName={currentUser.name}
+            userRole={currentUser.role}
           />
         );
     }
@@ -329,7 +337,7 @@ export function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <Navbar 
           companyName={companyName}
-          pageTitle={getPageTitle(activeTab)}
+          pageTitle={getPageTitle(activeTab, isSalesman)}
           industry={industry}
           currency={currency}
           healthScore={healthScore}
@@ -337,7 +345,6 @@ export function App() {
           userRole={currentUser.role}
           userEmail={currentUser.email}
           onLogout={handleLogout}
-          onSwitchUser={handleSwitchUser}
           onNavigateTab={setActiveTab}
           onOpenPos={() => setActiveTab('sell-pos')}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}

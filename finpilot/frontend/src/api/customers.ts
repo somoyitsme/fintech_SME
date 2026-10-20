@@ -4,10 +4,12 @@ export interface Customer {
   id: string;
   name: string;
   contactNumber: string;
+  email?: string | null;
   deliveryAddress: string;
   customerType: string;
   binNumber: string | null;
   totalPurchases: number;
+  totalDue?: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -156,7 +156,7 @@ export const StaffManagementPage: React.FC = () => {
       <div className="bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 dark:border-[#30363d] flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-            Dhaka Silicon Employees & Roles
+            Now_or_Never Console Personnel & Roles
           </h2>
           <span className="text-xs text-slate-400 font-mono">{staffList.length} Accounts Registered</span>
         </div>
