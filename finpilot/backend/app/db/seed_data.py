@@ -54,12 +54,12 @@ def seed_database():
         db.flush()
 
         # 3. API Key for SDK widget integration
-        api_key_raw = "fp_live_testdemo123456789abcdef"
+        api_key_raw = "fp_test_demo123456789abcdef"
         api_key = ApiKey(
             tenant_id=tenant.id,
             name="Universal Embed Widget SDK Key",
             key_hash=hash_api_key(api_key_raw),
-            key_prefix="fp_live_test",
+            key_prefix="fp_test_demo",
             permissions=["read", "write", "agent"],
             is_active=True
         )

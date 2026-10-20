@@ -367,7 +367,7 @@ For SMEs that already use existing software (Tally Prime, QuickBooks, custom ERP
 <!-- Drop into any web page before </body> -->
 <script 
   src="https://fin.ytdown.live/sdk/loader.js" 
-  data-api-key="fp_live_testdemo123456789abcdef" 
+  data-api-key="YOUR_FINPILOT_API_KEY" 
   data-tenant="dhaka-silicon">
 </script>
 ```

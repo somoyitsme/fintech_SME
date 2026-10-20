@@ -74,13 +74,10 @@ class ChatResponse(BaseModel):
 async def require_api_key(
     x_api_key: Optional[str] = Header(None, alias="X-API-Key"),
 ) -> None:
-    """Constant-time shared-key check. 503 if the server has no key configured."""
+    """Constant-time shared-key check. Empty = unauthenticated/demo allowed."""
     expected = settings.AGENT_API_KEY
     if not expected:
-        raise HTTPException(
-            status_code=503,
-            detail="Server auth not configured (AGENT_API_KEY unset)",
-        )
+        return
     if not x_api_key or not hmac.compare_digest(x_api_key, expected):
         raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key header")
 

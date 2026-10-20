@@ -96,12 +96,12 @@ def run_reseed():
     backend_db.add_all([salesman_user, admin_user, demo_user])
 
     # API key
-    api_key_raw = "fp_live_testdemo123456789abcdef"
+    api_key_raw = "fp_test_demo123456789abcdef"
     api_key = BackendApiKey(
         tenant_id=b_tenant.id,
         name="Universal Embed Widget SDK Key",
         key_hash=hash_api_key(api_key_raw),
-        key_prefix="fp_live_test",
+        key_prefix="fp_test_demo",
         permissions=["read", "write", "agent"],
         is_active=True
     )

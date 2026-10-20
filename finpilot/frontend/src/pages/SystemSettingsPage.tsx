@@ -64,7 +64,7 @@ export const SystemSettingsPage: React.FC = () => {
 
     // 4. AI Agent Integration & Database Engine
     agentServiceEndpoint: 'http://localhost:8100',
-    agentApiKey: 'fpk_live_now_or_never_engine',
+    agentApiKey: '',
     agentModel: 'claude-opus-4-8-mirai',
     autonomousSqlMode: 'Strict Read-Only Reflection (WAL Mode)',
     sessionRetentionDays: 30,

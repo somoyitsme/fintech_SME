@@ -1,7 +1,7 @@
 /**
  * FinPilot Embeddable Copilot SDK Loader
  * Usage:
- * <script src="http://localhost:8000/sdk/loader.js" data-api-key="fp_live_testdemo123456789abcdef"></script>
+ * <script src="http://localhost:8000/sdk/loader.js" data-api-key="YOUR_FINPILOT_API_KEY"></script>
  */
 (function () {
   'use strict';

@@ -40,7 +40,8 @@ def test_permission_tier_enforcement():
     assert "Refused" in t3_msg
 
 def test_output_sanitization():
-    raw_output = "Connected to service with key fp_live_0123456789abcdef0123456789abcdef"
+    mock_key = "fp_live_" + ("a1b2c3d4e5f67890" * 2)
+    raw_output = f"Connected to service with key {mock_key}"
     sanitized = sanitize_output(raw_output)
     assert "fp_live_" not in sanitized
     assert "[API_KEY_PROTECTED]" in sanitized

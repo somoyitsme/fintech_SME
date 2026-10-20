@@ -23,7 +23,7 @@ const isHttps = typeof window !== 'undefined' && window.location.protocol === 'h
 const isCustomDomain = typeof window !== 'undefined' && window.location.hostname && !window.location.hostname.match(/^\d+\.\d+\.\d+\.\d+$/) && window.location.hostname !== 'localhost';
 const host = typeof window !== 'undefined' && window.location.hostname ? window.location.hostname : 'localhost';
 const AGENT_API_BASE = import.meta.env.VITE_AGENT_URL || (isHttps || isCustomDomain ? '' : `http://${host}:8100`);
-const AGENT_API_KEY = 'fp_live_f407b24b5fcf1fc17c717429793a9ca4';
+const AGENT_API_KEY = import.meta.env.VITE_AGENT_API_KEY || '';
 const TENANT_ID = '28434594-e04c-4aae-aa17-d4612114e348';
 
 const createDefaultSession = (): ChatSession => ({
@@ -214,12 +214,16 @@ export function useTanStackAIChat() {
         }));
 
       try {
+        const streamHeaders: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (AGENT_API_KEY) {
+          streamHeaders['X-API-Key'] = AGENT_API_KEY;
+        }
+
         const response = await fetch(`${AGENT_API_BASE}/chat/stream`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': AGENT_API_KEY
-          },
+          headers: streamHeaders,
           body: JSON.stringify({
             message: query,
             tenant_id: TENANT_ID,
@@ -347,12 +351,16 @@ export function useTanStackAIChat() {
 
         // Fallback to synchronous /chat endpoint
         try {
+          const fallbackHeaders: Record<string, string> = {
+            'Content-Type': 'application/json'
+          };
+          if (AGENT_API_KEY) {
+            fallbackHeaders['X-API-Key'] = AGENT_API_KEY;
+          }
+
           const fallbackRes = await fetch(`${AGENT_API_BASE}/chat`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': AGENT_API_KEY
-            },
+            headers: fallbackHeaders,
             body: JSON.stringify({
               message: query,
               tenant_id: TENANT_ID,

@@ -40,7 +40,7 @@ def test_scenario_d_widget_chat_with_api_key():
     """Scenario D: External platform invokes Copilot through the widget SDK with an API key."""
     res = client.post(
         "/api/v1/widget/chat",
-        headers={"X-API-Key": "fp_live_testdemo123456789abcdef"},
+        headers={"X-API-Key": "fp_test_demo123456789abcdef"},
         json={"message": "What is our company financial health score?"}
     )
     assert res.status_code == 200

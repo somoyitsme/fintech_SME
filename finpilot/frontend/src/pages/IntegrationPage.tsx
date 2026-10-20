@@ -106,12 +106,12 @@ export const IntegrationPage: React.FC = () => {
   const embedCodeSnippet = `<!-- 1-Line Universal FinPilot Standalone Agent Script -->
 <script 
   src="http://localhost:8100/sdk/finpilot-sdk.js" 
-  data-api-key="fpk_live_dhaka_silicon">
+  data-api-key="YOUR_FINPILOT_API_KEY">
 </script>`;
 
   const curlSnippet = `curl -X POST "http://localhost:8100/api/v1/chat" \\
   -H "Content-Type: application/json" \\
-  -H "X-API-Key: fpk_live_dhaka_silicon" \\
+  -H "X-API-Key: YOUR_FINPILOT_API_KEY" \\
   -d '{
     "message": "Analyze cash runway, overdue receivables, and WeBank credit prequalification"
   }'`;
@@ -494,7 +494,7 @@ export const IntegrationPage: React.FC = () => {
 
           <div className="w-full h-[620px] rounded-xl overflow-hidden border border-[#30363d] bg-[#0d1117] shadow-inner">
             <iframe
-              src={`${BACKEND_URL}/sdk/widget.html?apiKey=fp_live_testdemo123456789abcdef`}
+              src={`${BACKEND_URL}/sdk/widget.html?apiKey=preview_demo_key`}
               className="w-full h-full border-none"
               title="Widget Preview"
             />
