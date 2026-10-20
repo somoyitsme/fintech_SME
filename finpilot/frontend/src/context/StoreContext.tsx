@@ -205,6 +205,7 @@ interface StoreContextType {
   openCashRegister: (openingAmount: number) => void;
   closeCashRegister: () => void;
   addStock: (productId: string, quantity: number, unitCost?: number) => void;
+  updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   addNewProduct: (product: Omit<Product, 'id'>) => void;
   addNewCustomer: (customer: Omit<Customer, 'id'>) => Customer;
   addSupplier: (supplier: Omit<Supplier, 'id'>) => Supplier;
@@ -535,6 +536,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
+  // Update product prices, cost, or metadata
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    try {
+      await productsApi.update(id, updates);
+    } catch (err: any) {
+      console.warn('Could not persist product update to db-server:', err);
+    }
+  };
+
   // Add a brand new hardware product
   const addNewProduct = (newProdData: Omit<Product, 'id'>) => {
     const tempId = `prod-${Date.now()}`;
@@ -629,7 +640,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return created;
   };
 
-  // Create Stock Transfer
+  // Create Stock Transfer with live product stock updates
   const createStockTransfer = (trData: Omit<StockTransfer, 'id' | 'transferNumber'>) => {
     const tempId = `tr-${Date.now()}`;
     const transferNumber = `TR-2026-${Math.floor(100 + Math.random() * 900)}`;
@@ -639,6 +650,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       transferNumber
     };
     setStockTransfers((prev) => [created, ...prev]);
+
+    // Live update product stock counts across branches
+    setProducts((prev) => {
+      const source = prev.find(p => p.id === trData.productId);
+      if (!source) return prev;
+
+      const targetMatch = prev.find(p => 
+        p.id !== source.id && 
+        p.name === source.name && 
+        p.location.toLowerCase().includes(trData.toLocation.split(' ')[0].toLowerCase())
+      );
+
+      if (targetMatch) {
+        return prev.map((p) => {
+          if (p.id === source.id) return { ...p, stockCount: Math.max(0, p.stockCount - trData.quantity) };
+          if (p.id === targetMatch.id) return { ...p, stockCount: p.stockCount + trData.quantity };
+          return p;
+        });
+      } else {
+        const updatedSource = { ...source, stockCount: Math.max(0, source.stockCount - trData.quantity) };
+        const newBranchProd: Product = {
+          ...source,
+          id: `prod-tr-${Date.now()}`,
+          sku: `${source.sku}-${trData.toLocation.split(' ')[0].toUpperCase()}`,
+          location: trData.toLocation,
+          stockCount: trData.quantity
+        };
+        return [...prev.map(p => p.id === source.id ? updatedSource : p), newBranchProd];
+      }
+    });
 
     stockApi.createTransfer({
       transferNumber,
@@ -652,6 +693,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       notes: trData.notes
     }).then((saved: any) => {
       setStockTransfers(prev => prev.map(t => t.id === tempId ? { ...t, id: saved.id } : t));
+      syncWithDbServer();
     }).catch((err: any) => {
       console.warn('Could not persist stock transfer to db-server:', err);
     });
@@ -883,6 +925,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }));
     }
 
+    // Immediately decrement product stock in local state for all purchased items
+    setProducts((prev) =>
+      prev.map((p) => {
+        const item = orderItems.find((i) => i.productId === p.id);
+        if (item) {
+          return { ...p, stockCount: Math.max(0, p.stockCount - item.quantity) };
+        }
+        return p;
+      })
+    );
+
     setOrders((prev) => [newOrder, ...prev]);
 
     ordersApi.create({
@@ -920,6 +973,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         profit: saved.profit || orderProfit,
         customerDetails: saved.customerDetails || o.customerDetails 
       } : o));
+      // Re-sync with db-server to ensure SQLite ledger and stock counts match perfectly
+      syncWithDbServer();
     }).catch((err: any) => {
       console.warn('Could not persist order to db-server:', err);
     });
@@ -1001,7 +1056,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const isAllLocations = !selectedLocation || selectedLocation === 'All Locations';
   const branchFilterKeyword = !isAllLocations ? selectedLocation.split(' ')[0].toLowerCase() : '';
 
-  const activeOrders = isAllLocations 
+  const locationFilteredOrders = isAllLocations 
     ? orders 
     : orders.filter(o => (o.branch || '').toLowerCase().includes(branchFilterKeyword));
 
@@ -1009,12 +1064,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ? products 
     : products.filter(p => (p.location || '').toLowerCase().includes(branchFilterKeyword));
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Date filtering logic based on dateFilter ('today' | 'week' | 'month' | 'past30' | 'all')
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  const activeOrders = locationFilteredOrders.filter(o => {
+    if (!dateFilter || dateFilter === 'all') return true;
+    const orderDateRaw = o.orderDate || '';
+    const datePart = orderDateRaw.split(' ')[0].split('T')[0];
+    
+    if (dateFilter === 'today') {
+      return datePart === todayStr || orderDateRaw.includes('Today') || orderDateRaw.includes('Just now');
+    }
+    if (dateFilter === 'week') {
+      const t = new Date(datePart).getTime();
+      const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      return !isNaN(t) && t >= sevenDaysAgo;
+    }
+    if (dateFilter === 'month') {
+      const [nowYear, nowMonth] = todayStr.split('-');
+      return datePart.startsWith(`${nowYear}-${nowMonth}`);
+    }
+    if (dateFilter === 'past30') {
+      const t = new Date(datePart).getTime();
+      const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      return !isNaN(t) && t >= thirtyDaysAgo;
+    }
+    return true;
+  });
+
   const totalSalesRevenue = activeOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-  const salesTodayOrders = activeOrders.filter((o) => 
-    o.orderDate.startsWith(todayStr) || 
-    o.orderDate.includes('Today') || 
-    o.orderDate.includes('Just now')
+  const salesTodayOrders = locationFilteredOrders.filter((o) => 
+    (o.orderDate || '').startsWith(todayStr) || 
+    (o.orderDate || '').includes('Today') || 
+    (o.orderDate || '').includes('Just now')
   );
   const salesTodayCount = salesTodayOrders.length;
   const salesTodayRevenue = salesTodayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
@@ -1028,14 +1111,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const totalSales = totalSalesRevenue;
   const sellReturn = 0;
-  const totalPurchase = purchaseOrders.reduce((sum, po) => sum + po.totalCost, 0) + (isAllLocations ? 7500000 : 2500000);
+  const totalPurchase = purchaseOrders.reduce((sum, po) => sum + (po.totalCost || 0), 0) + (isAllLocations ? 7500000 : 2500000);
   const purchaseReturn = 0;
   const purchaseDue = 0;
-  const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // Active expenses filtered by date range
+  const activeExpenses = expenses.filter(e => {
+    if (!dateFilter || dateFilter === 'all') return true;
+    const expDate = (e.date || '').split(' ')[0].split('T')[0];
+    if (dateFilter === 'today') return expDate === todayStr || (e.date || '').includes('Today');
+    if (dateFilter === 'week') {
+      const t = new Date(expDate).getTime();
+      return !isNaN(t) && t >= (now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+    if (dateFilter === 'month') {
+      const [nowYear, nowMonth] = todayStr.split('-');
+      return expDate.startsWith(`${nowYear}-${nowMonth}`);
+    }
+    if (dateFilter === 'past30') {
+      const t = new Date(expDate).getTime();
+      return !isNaN(t) && t >= (now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    return true;
+  });
+  const totalExpense = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
   const expenseDue = 0;
   
   // Real gross profit computed from real orders and item cost prices
-  const grossProfit = activeOrders.reduce((sum, o) => sum + (o.profit || 0), 0) || Math.round(totalSales * 0.19);
+  const grossProfit = activeOrders.reduce((sum, o) => sum + (o.profit || 0), 0) || Math.round(totalSales * 0.20);
   const netProfit = Math.max(0, grossProfit - (isAllLocations ? totalExpense * 0.65 : totalExpense * 0.22));
 
   // Overdue / Due amounts for this location
@@ -1073,6 +1176,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         openCashRegister,
         closeCashRegister,
         addStock,
+        updateProduct,
         addNewProduct,
         addNewCustomer,
         addSupplier,

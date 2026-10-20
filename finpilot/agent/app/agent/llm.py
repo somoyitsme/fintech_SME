@@ -1,6 +1,5 @@
 """Live Anthropic Claude integration with streaming and tool-use."""
-from __future__ import annotations
-
+import asyncio
 import json
 from typing import Any, AsyncIterator, Callable, Optional
 
@@ -35,7 +34,7 @@ class LLMClient:
         max_iterations: int = 5,
         conversation_history: Optional[list[dict]] = None,
     ) -> tuple[str, list[str]]:
-        """Execute tool-use loop with Claude."""
+        """Execute tool-use loop with Claude, running parallel tools concurrently."""
         messages: list[dict[str, Any]] = []
         if conversation_history:
             for item in conversation_history:
@@ -66,26 +65,42 @@ class LLMClient:
                 )
                 return text, tools_used
 
-            # Execute tools
+            # Execute tools concurrently with asyncio.gather
             messages.append({"role": "assistant", "content": response.content})
-            tool_results = []
-
-            for tool_block in tool_blocks:
-                tools_used.append(tool_block.name)
+            
+            async def _run_tool(tb):
                 try:
-                    result = await tool_executor(tool_block.name, tool_block.input)
-                    tool_results.append({
+                    res = await tool_executor(tb.name, tb.input)
+                    return {
                         "type": "tool_result",
-                        "tool_use_id": tool_block.id,
-                        "content": json.dumps(result, default=str),
-                    })
+                        "tool_use_id": tb.id,
+                        "content": json.dumps(res, default=str),
+                        "name": tb.name,
+                        "raw_result": res,
+                        "is_error": False,
+                    }
                 except Exception as e:
-                    tool_results.append({
+                    return {
                         "type": "tool_result",
-                        "tool_use_id": tool_block.id,
+                        "tool_use_id": tb.id,
                         "content": json.dumps({"error": str(e)}),
+                        "name": tb.name,
+                        "raw_result": {"error": str(e)},
                         "is_error": True,
-                    })
+                    }
+
+            exec_results = await asyncio.gather(*[_run_tool(tb) for tb in tool_blocks])
+            tool_results = []
+            for res in exec_results:
+                tools_used.append(res["name"])
+                tr_dict = {
+                    "type": "tool_result",
+                    "tool_use_id": res["tool_use_id"],
+                    "content": res["content"],
+                }
+                if res["is_error"]:
+                    tr_dict["is_error"] = True
+                tool_results.append(tr_dict)
 
             messages.append({"role": "user", "content": tool_results})
 
@@ -167,35 +182,51 @@ class LLMClient:
                 }
                 return
 
-            # Execute tools
+            # Execute tools concurrently
             messages.append({"role": "assistant", "content": message.content})
-            tool_results = []
 
-            for tool_block in tool_blocks:
-                tools_used.append(tool_block.name)
+            if status_callback and tool_blocks:
+                tool_names = ", ".join(tb.name for tb in tool_blocks)
+                await status_callback(f"Executing tools: {tool_names}...")
 
-                if status_callback:
-                    await status_callback(f"Executing {tool_block.name}...")
-
+            async def _run_stream_tool(tb):
                 try:
-                    result = await tool_executor(tool_block.name, tool_block.input)
-                    tool_results.append({
+                    res = await tool_executor(tb.name, tb.input)
+                    return {
                         "type": "tool_result",
-                        "tool_use_id": tool_block.id,
-                        "content": json.dumps(result, default=str),
-                    })
-                    yield {
-                        "type": "tool_result",
-                        "name": tool_block.name,
-                        "result": result,
+                        "tool_use_id": tb.id,
+                        "content": json.dumps(res, default=str),
+                        "name": tb.name,
+                        "raw_result": res,
+                        "is_error": False,
                     }
                 except Exception as e:
-                    tool_results.append({
+                    return {
                         "type": "tool_result",
-                        "tool_use_id": tool_block.id,
+                        "tool_use_id": tb.id,
                         "content": json.dumps({"error": str(e)}),
+                        "name": tb.name,
+                        "raw_result": {"error": str(e)},
                         "is_error": True,
-                    })
+                    }
+
+            stream_results = await asyncio.gather(*[_run_stream_tool(tb) for tb in tool_blocks])
+            tool_results = []
+            for res in stream_results:
+                tools_used.append(res["name"])
+                tr_dict = {
+                    "type": "tool_result",
+                    "tool_use_id": res["tool_use_id"],
+                    "content": res["content"],
+                }
+                if res["is_error"]:
+                    tr_dict["is_error"] = True
+                tool_results.append(tr_dict)
+                yield {
+                    "type": "tool_result",
+                    "name": res["name"],
+                    "result": res["raw_result"],
+                }
 
             messages.append({"role": "user", "content": tool_results})
 
@@ -203,5 +234,12 @@ class LLMClient:
                 await status_callback("Synthesizing response...")
 
 
+_client_instance: Optional[LLMClient] = None
+
+
 def get_llm_client() -> LLMClient:
-    return LLMClient()
+    global _client_instance
+    if _client_instance is None:
+        _client_instance = LLMClient()
+    return _client_instance
+

@@ -19,6 +19,7 @@ import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
 import { PageHeader } from '../components/common/PageHeader';
+import { Pagination } from '../components/common/Pagination';
 
 interface ExpensesPageProps {
   initialTab?: 'list' | 'add' | 'categories';
@@ -31,6 +32,10 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
   const [pnl, setPnl] = useState<any>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -169,7 +174,8 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
       {/* TAB 1: EXPENSES TABLE */}
       {/* ============================================================== */}
       {activeTab === 'list' && (
-        <DataTable isEmpty={expenses.length === 0} emptyMessage="No expenses recorded yet.">
+        <div className="space-y-4">
+          <DataTable isEmpty={expenses.length === 0} emptyMessage="No expenses recorded yet.">
           <TableHeader>
             <tr>
               <TableHeadCell>Date</TableHeadCell>
@@ -181,7 +187,7 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
             </tr>
           </TableHeader>
           <TableBody>
-            {expenses.map((e) => (
+            {expenses.slice((page - 1) * pageSize, page * pageSize).map((e) => (
               <TableRow key={e.id}>
                 <TableCell className="font-mono text-xs text-content-muted">
                   {e.date?.slice(0, 10)}
@@ -213,7 +219,16 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({ initialTab = 'list' 
             ))}
           </TableBody>
         </DataTable>
-      )}
+
+        <Pagination
+          currentPage={page}
+          totalItems={expenses.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
+    )}
 
       {/* ============================================================== */}
       {/* TAB 2: ADD EXPENSE FORM */}

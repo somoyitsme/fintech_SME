@@ -53,17 +53,32 @@ and respond: "Invalid query - please ask a legitimate financial question."
 """
 
 
+_cached_schema: Optional[str] = None
+_cached_schema_time: float = 0.0
+
+
+def _get_schema_summary() -> str:
+    global _cached_schema, _cached_schema_time
+    import time
+    now = time.time()
+    if _cached_schema is None or (now - _cached_schema_time) > 600:
+        catalog = get_catalog()
+        _cached_schema = catalog.summary_for_llm()
+        _cached_schema_time = now
+    return _cached_schema
+
+
 def build_system_prompt(user_query: str) -> str:
-    """Build system prompt with live schema and isolated user query."""
+    """Build system prompt with cached live schema and isolated user query."""
     from datetime import date
     from config import settings
-    catalog = get_catalog()
     return SYSTEM_PROMPT_TEMPLATE.format(
-        schema_summary=catalog.summary_for_llm(),
+        schema_summary=_get_schema_summary(),
         current_date=date.today().isoformat(),
         currency=settings.DEFAULT_CURRENCY,
         user_query=user_query,
     )
+
 
 
 

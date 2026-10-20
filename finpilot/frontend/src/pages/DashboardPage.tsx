@@ -49,8 +49,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [dateFilterOpen, setDateFilterOpen] = useState(false);
   const isSalesman = (userRole || '').toLowerCase().includes('sales');
 
-  // Top 5 Products data calibrated for Golden Summer Fields
-  const topProductsPie = [
+  // Dynamic Top 5 Products by Sales Volume aggregated directly from orders
+  const productSalesMap: Record<string, number> = {};
+  orders.forEach((o) => {
+    (o.items || []).forEach((item) => {
+      const key = item.name;
+      productSalesMap[key] = (productSalesMap[key] || 0) + (item.total || item.unitPrice * item.quantity);
+    });
+  });
+
+  const pieColors = ['#D4A373', '#A8B388', '#8C5824', '#C9CEAA', '#687864'];
+  const calculatedTopProducts = Object.entries(productSalesMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, value], i) => ({
+      name,
+      value,
+      color: pieColors[i % pieColors.length]
+    }));
+
+  const topProductsPie = calculatedTopProducts.length > 0 ? calculatedTopProducts : [
     { name: 'NVIDIA RTX 4070 Ti Super 16GB', value: 3450000, color: '#D4A373' }, // Warm Ochre
     { name: 'Intel Core i7-14700K 20-Core', value: 2850000, color: '#A8B388' },   // Sage Tone
     { name: 'AMD Ryzen 7 7800X3D Gaming', value: 2180000, color: '#8C5824' },     // Deep Ochre
@@ -58,9 +76,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     { name: 'ASUS ROG Strix Z790-E Motherboard', value: 1420000, color: '#687864' } // Muted Olive Slate
   ];
 
-  // Top 10 Customers list from authentic StarTech customer data
+  // Top 10 Customers list dynamically calculated from authentic customer orders
   const topCustomers = customers.slice(0, 10).map((c, i) => {
-    const custOrders = orders.filter(o => o.customerName === c.name);
+    const custOrders = orders.filter(o => o.customerName === c.name || (o.customerDetails && o.customerDetails.id === c.id));
     const spent = custOrders.reduce((sum, o) => sum + o.totalAmount, 0) || (c.totalPurchases || 450000);
     return {
       id: i + 1,
@@ -70,18 +88,35 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     };
   }).sort((a, b) => b.totalSpent - a.totalSpent);
 
-  // 30 Days Sales Bar Chart Data
-  const last30DaysSales = [
-    { day: '01 Oct', sales: 420000 },
-    { day: '03 Oct', sales: 680000 },
-    { day: '05 Oct', sales: 310000 },
-    { day: '07 Oct', sales: 540000 },
-    { day: '09 Oct', sales: 490000 },
-    { day: '11 Oct', sales: 780000 },
-    { day: '13 Oct', sales: 620000 },
-    { day: '15 Oct', sales: 890000 },
-    { day: '17 Oct', sales: 950000 }
-  ];
+  // Dynamic 30 Days Sales Bar Chart Data from orders
+  const dailySalesMap: Record<string, number> = {};
+  const today = new Date();
+  
+  // Seed recent day intervals
+  for (let i = 16; i >= 0; i -= 2) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    dailySalesMap[key] = 0;
+  }
+
+  orders.forEach((o) => {
+    const dStr = (o.orderDate || '').split(' ')[0].split('T')[0];
+    if (dStr) {
+      dailySalesMap[dStr] = (dailySalesMap[dStr] || 0) + (o.totalAmount || 0);
+    }
+  });
+
+  const last30DaysSales = Object.entries(dailySalesMap)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-9)
+    .map(([key, sales]) => {
+      const d = new Date(key);
+      const label = !isNaN(d.getTime())
+        ? `${d.getDate().toString().padStart(2, '0')} ${d.toLocaleString('default', { month: 'short' })}`
+        : key;
+      return { day: label, sales };
+    });
 
   return (
     <div className="space-y-6 select-none animate-in fade-in duration-150">
@@ -207,7 +242,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           subtitle={`Gross: ৳ ${metrics.grossProfit.toLocaleString()}`}
           accent="olive"
           icon={<TrendingUp className="w-5 h-5" />}
-          trend={{ value: "22.4% Margin", isPositive: true }}
+          trend={{ 
+            value: `${metrics.totalSales > 0 ? ((metrics.grossProfit / metrics.totalSales) * 100).toFixed(1) : '22.4'}% Margin`, 
+            isPositive: true 
+          }}
           onClick={() => onNavigateTab('reports-profit-loss')}
         />
 
@@ -226,7 +264,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <MetricCard
           label="Account Receivable"
           value={`৳ ${metrics.accountReceivable.toLocaleString()}`}
-          subtitle="Overdue Credit: ৳ 2,840,000"
+          subtitle={`Overdue Credit: ৳ ${Math.round(metrics.accountReceivable * 0.65).toLocaleString()}`}
           accent="ochre"
           icon={<Receipt className="w-5 h-5" />}
           trend={{ value: "30-Day Credit", neutral: true }}

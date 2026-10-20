@@ -81,6 +81,87 @@ router.post('/transfers', async (req, res) => {
     await db.insert(stockTransfers).values({ id, ...data, notes: data.notes || null, createdAt: now, updatedAt: now });
     const [created] = await db.select().from(stockTransfers).where(eq(stockTransfers.id, id)).limit(1);
 
+    // Update product stock counts across branches
+    const [sourceProd] = await db.select().from(products).where(eq(products.id, data.productId)).limit(1);
+    if (sourceProd) {
+      const prevStock = sourceProd.stockCount;
+      const newStock = Math.max(0, prevStock - data.quantity);
+      await db.update(products).set({ stockCount: newStock, updatedAt: now }).where(eq(products.id, sourceProd.id));
+
+      recordStockMovement({
+        productId: sourceProd.id,
+        productName: sourceProd.name,
+        referenceType: 'transfer_out',
+        referenceId: data.transferNumber,
+        location: data.fromLocation,
+        quantityChange: -data.quantity,
+        previousStock,
+        newStock,
+        unitCost: sourceProd.costPrice,
+        notes: `Transferred to ${data.toLocation} (Ref: ${data.transferNumber})`,
+      });
+
+      // Target product: find if same SKU or name exists at toLocation
+      const targetMatches = await db.select().from(products)
+        .where(eq(products.name, sourceProd.name));
+      
+      const targetProd = targetMatches.find(p => 
+        p.id !== sourceProd.id && 
+        p.location.toLowerCase().includes(data.toLocation.split(' ')[0].toLowerCase())
+      );
+
+      if (targetProd) {
+        const targetPrev = targetProd.stockCount;
+        const targetNew = targetPrev + data.quantity;
+        await db.update(products).set({ stockCount: targetNew, updatedAt: now }).where(eq(products.id, targetProd.id));
+
+        recordStockMovement({
+          productId: targetProd.id,
+          productName: targetProd.name,
+          referenceType: 'transfer_in',
+          referenceId: data.transferNumber,
+          location: data.toLocation,
+          quantityChange: data.quantity,
+          previousStock: targetPrev,
+          newStock: targetNew,
+          unitCost: targetProd.costPrice,
+          notes: `Received from ${data.fromLocation} (Ref: ${data.transferNumber})`,
+        });
+      } else {
+        // Create product record at target location
+        const targetId = uuidv4();
+        await db.insert(products).values({
+          id: targetId,
+          name: sourceProd.name,
+          sku: `${sourceProd.sku}-${data.toLocation.split(' ')[0].toUpperCase()}`,
+          category: sourceProd.category,
+          brand: sourceProd.brand,
+          retailPrice: sourceProd.retailPrice,
+          costPrice: sourceProd.costPrice,
+          stockCount: data.quantity,
+          unit: sourceProd.unit,
+          minThreshold: sourceProd.minThreshold,
+          location: data.toLocation,
+          warranty: sourceProd.warranty,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        recordStockMovement({
+          productId: targetId,
+          productName: sourceProd.name,
+          referenceType: 'transfer_in',
+          referenceId: data.transferNumber,
+          location: data.toLocation,
+          quantityChange: data.quantity,
+          previousStock: 0,
+          newStock: data.quantity,
+          unitCost: sourceProd.costPrice,
+          notes: `Initial stock received via transfer from ${data.fromLocation}`,
+        });
+      }
+    }
+
     // Audit log & notification
     logActivity({
       userId: (req as any).userId,

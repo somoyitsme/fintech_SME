@@ -199,15 +199,20 @@ Language models in FinPilot are **strictly prohibited from doing math in text to
 - 1-click thermal receipt printing (80mm/58mm) and NBR-compliant A4 Tax Invoice (Mushak 6.3).
 
 ### 2. 📦 Inventory & Multi-Warehouse Stock Transfers
-- Multi-location stock tracking (e.g. *Banani Central Vault*, *Elephant Road Multiplan Branch*).
-- Inter-branch stock transfers with status tracking (`In Transit` → `Completed`).
-- Stock adjustment logs for damaged items or inventory audit surpluses/shortages.
-- Automatic low-stock triggers with automated reorder calculations.
+- **Multi-Location Vaults**: Live multi-location inventory across *Banani Central Vault & Warehouse*, *Elephant Road Multiplan Branch*, and *BCS Computer City IDB Branch*.
+- **Inter-Branch Stock Relocation**: Transfers mutate source warehouse stock, credit destination warehouse stock, and append dual-entry stock ledger movements (`transfer_out` / `transfer_in`).
+- **Live Gross Margin Markup Editor**: Batch and single-item price adjuster with instantaneous live margin (%) and unit profit (৳) recalculation on every keystroke, persisting updates directly to the database.
+- **Universal Table Pagination**: Seamless page-by-page browsing with configurable page sizes (10, 25, 50, 100) across Product Catalog, Sales Orders, Purchases, Expenses, and Contacts.
 
-### 3. 💳 Invoicing & Accounts Receivable (AR) Aging
-- Commercial invoice generation with auto-incrementing serials (`INV-2026-101`).
-- Aging analysis buckets: `Current`, `1-30 Days`, `31-60 Days`, `61-90 Days`, and `90+ Days Delinquent`.
-- Days Sales Outstanding (DSO) calculation to optimize cash conversion cycles.
+### 3. 💳 Invoicing, POS & Day-to-Day Sales Filtering
+- **Day-to-Day Date Filtering**: Filter sales orders and financial metrics by *Today (Live)*, *Yesterday*, *Last 7 Days*, *This Month*, *Last Month*, or *All Time*.
+- **Live Showroom POS Terminal**: Barcode scanning, custom cart discounts, NBR 5% VAT calculation, cash register drawer reconciliation, and dual invoice printing (A4 & thermal 80mm).
+- **Accounts Receivable (AR) Aging**: Automatic customer due balance increments, 30-day credit tracking, and automated aging buckets (`0-30` to `90+`).
+
+### 4. ⚡ High-Throughput Agent Execution Engine
+- **Singleton Connection Pool**: Reusable HTTP/TLS socket connection pool eliminating redundant connection handshakes.
+- **Parallel Tool Execution**: Multi-tool calls run concurrently via `asyncio.gather`, cutting multi-step financial query turnaround time by up to 60%.
+- **Cached Schema Reflection**: In-memory catalog caching preventing redundant SQLite introspection disk I/O on conversational turns.
 
 ### 4. 🏦 Treasury & Multi-Account Banking
 - Real-time balances across multiple accounts:

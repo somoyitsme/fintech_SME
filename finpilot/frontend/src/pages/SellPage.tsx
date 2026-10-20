@@ -26,6 +26,7 @@ import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
 import { PageHeader } from '../components/common/PageHeader';
+import { Pagination } from '../components/common/Pagination';
 import { printTaxInvoice } from '../utils/printInvoice';
 
 interface SellPageProps {
@@ -48,6 +49,17 @@ export const SellPage: React.FC<SellPageProps> = ({
   const [search, setSearch] = useState('');
   const [payFilter, setPayFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [dateRangeFilter, setDateRangeFilter] = useState<string>('all');
+  const [branchFilter, setBranchFilter] = useState<string>('All');
+
+  // Pagination for All Sales
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Reset pagination on filter changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, payFilter, typeFilter, dateRangeFilter, branchFilter]);
 
   // Invoice Modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -143,6 +155,44 @@ export const SellPage: React.FC<SellPageProps> = ({
     setPosPaidNowAmount(0);
   };
 
+  // Date filtering logic
+  const matchDateRange = (dateStr: string, range: string) => {
+    if (!range || range === 'all') return true;
+    if (!dateStr) return false;
+
+    const lower = dateStr.toLowerCase();
+    if (range === 'today' && (lower.includes('today') || lower.includes('just now'))) return true;
+    if (range === 'yesterday' && lower.includes('yesterday')) return true;
+
+    const d = new Date(dateStr.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return true;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 86400000;
+    const yesterdayStart = todayStart - 86400000;
+    const sevenDaysAgo = todayStart - 7 * 86400000;
+    const t = d.getTime();
+
+    if (range === 'today') {
+      return t >= todayStart && t < todayEnd;
+    }
+    if (range === 'yesterday') {
+      return t >= yesterdayStart && t < todayStart;
+    }
+    if (range === 'last7') {
+      return t >= sevenDaysAgo;
+    }
+    if (range === 'this_month') {
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+    if (range === 'last_month') {
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return d.getFullYear() === prevMonth.getFullYear() && d.getMonth() === prevMonth.getMonth();
+    }
+    return true;
+  };
+
   // Filtered Orders for All Sales
   const filteredOrders = orders.filter(o => {
     const matchSearch = o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -150,8 +200,12 @@ export const SellPage: React.FC<SellPageProps> = ({
                         o.itemsSummary.toLowerCase().includes(search.toLowerCase());
     const matchPay = payFilter === 'All' || o.paymentStatus === payFilter;
     const matchType = typeFilter === 'All' || o.orderType === typeFilter;
-    return matchSearch && matchPay && matchType;
+    const matchBranch = branchFilter === 'All' || (o.branch || '').toLowerCase().includes(branchFilter.toLowerCase());
+    const matchDate = matchDateRange(o.orderDate, dateRangeFilter);
+    return matchSearch && matchPay && matchType && matchBranch && matchDate;
   });
+
+  const paginatedOrders = filteredOrders.slice((page - 1) * pageSize, page * pageSize);
 
   // Filtered Online Shipments
   const courierOrders = orders.filter(o => o.orderType === 'online' || o.courier);
@@ -224,7 +278,7 @@ export const SellPage: React.FC<SellPageProps> = ({
           <Card className="p-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                <div className="flex-1 min-w-[240px]">
+                <div className="flex-1 min-w-[200px]">
                   <Input
                     placeholder="Search by order #, customer, item..."
                     value={search}
@@ -234,16 +288,40 @@ export const SellPage: React.FC<SellPageProps> = ({
                 </div>
                 <div className="w-44">
                   <Select
+                    value={dateRangeFilter}
+                    onChange={(e) => setDateRangeFilter(e.target.value)}
+                  >
+                    <option value="all">📅 All Time (All Dates)</option>
+                    <option value="today">Today (Live)</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="last7">Last 7 Days</option>
+                    <option value="this_month">This Month (Oct 2026)</option>
+                    <option value="last_month">Last Month (Sep 2026)</option>
+                  </Select>
+                </div>
+                <div className="w-36">
+                  <Select
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                  >
+                    <option value="All">All Branches</option>
+                    <option value="Banani">Banani Vault</option>
+                    <option value="Multiplan">Multiplan</option>
+                    <option value="IDB">IDB Branch</option>
+                  </Select>
+                </div>
+                <div className="w-36">
+                  <Select
                     value={payFilter}
                     onChange={(e) => setPayFilter(e.target.value)}
                   >
-                    <option value="All">All Payment States</option>
+                    <option value="All">All Payments</option>
                     <option value="Paid">Paid in Full</option>
                     <option value="Credit 30D">Credit 30D (Due)</option>
                     <option value="COD Pending">COD Pending</option>
                   </Select>
                 </div>
-                <div className="w-44">
+                <div className="w-36">
                   <Select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
@@ -255,7 +333,7 @@ export const SellPage: React.FC<SellPageProps> = ({
                 </div>
               </div>
 
-              <div className="text-xs text-content-muted font-mono font-medium">
+              <div className="text-xs text-content-muted font-mono font-medium whitespace-nowrap">
                 {filteredOrders.length} records matching
               </div>
             </div>
@@ -275,7 +353,7 @@ export const SellPage: React.FC<SellPageProps> = ({
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredOrders.map((o) => {
+              {paginatedOrders.map((o) => {
                 const payVariant = o.paymentStatus === 'Paid' ? 'success' : o.paymentStatus === 'Credit 30D' ? 'danger' : 'warning';
                 const isCompleted = o.status === 'Delivered' || o.status === 'Counter Collected';
                 const isInTransit = o.status === 'In Transit';
@@ -342,6 +420,15 @@ export const SellPage: React.FC<SellPageProps> = ({
               })}
             </TableBody>
           </DataTable>
+
+          {/* All Sales Pagination */}
+          <Pagination
+            currentPage={page}
+            totalItems={filteredOrders.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 

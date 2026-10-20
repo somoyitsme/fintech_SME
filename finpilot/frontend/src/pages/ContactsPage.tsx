@@ -10,6 +10,7 @@ import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
 import { PageHeader } from '../components/common/PageHeader';
+import { Pagination } from '../components/common/Pagination';
 
 interface ContactsPageProps {
   initialTab?: 'suppliers' | 'customers' | 'groups' | 'import';
@@ -28,6 +29,17 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
   }, [initialTab]);
 
   const [search, setSearch] = useState('');
+
+  // Pagination states
+  const [custPage, setCustPage] = useState(1);
+  const [custPageSize, setCustPageSize] = useState(10);
+  const [supPage, setSupPage] = useState(1);
+  const [supPageSize, setSupPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setCustPage(1);
+    setSupPage(1);
+  }, [search]);
   
   // Add Modals
   const [showAddCustomer, setShowAddCustomer] = useState(false);
@@ -53,11 +65,15 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
     c.deliveryAddress.toLowerCase().includes(search.toLowerCase())
   );
 
+  const paginatedCustomers = filteredCustomers.slice((custPage - 1) * custPageSize, custPage * custPageSize);
+
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
     s.category.toLowerCase().includes(search.toLowerCase())
   );
+
+  const paginatedSuppliers = filteredSuppliers.slice((supPage - 1) * supPageSize, supPage * supPageSize);
 
   const handleAddCustSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,114 +182,134 @@ export const ContactsPage: React.FC<ContactsPageProps> = ({
       {/* TAB 1: CUSTOMERS TABLE */}
       {/* ============================================================== */}
       {activeTab === 'customers' && (
-        <DataTable isEmpty={filteredCustomers.length === 0} emptyMessage="No customers match your search query.">
-          <TableHeader>
-            <tr>
-              <TableHeadCell>Customer Name</TableHeadCell>
-              <TableHeadCell>Contact Mobile</TableHeadCell>
-              <TableHeadCell>Customer Type</TableHeadCell>
-              <TableHeadCell>BIN / Tax ID</TableHeadCell>
-              <TableHeadCell>Delivery Address</TableHeadCell>
-              <TableHeadCell align="right">Total Purchases</TableHeadCell>
-              <TableHeadCell align="center">Action</TableHeadCell>
-            </tr>
-          </TableHeader>
-          <TableBody>
-            {filteredCustomers.map((cust) => {
-              const typeVariant = cust.customerType === 'Wholesale' ? 'info' : cust.customerType === 'Corporate' ? 'neutral' : 'success';
+        <div className="space-y-4">
+          <DataTable isEmpty={filteredCustomers.length === 0} emptyMessage="No customers match your search query.">
+            <TableHeader>
+              <tr>
+                <TableHeadCell>Customer Name</TableHeadCell>
+                <TableHeadCell>Contact Mobile</TableHeadCell>
+                <TableHeadCell>Customer Type</TableHeadCell>
+                <TableHeadCell>BIN / Tax ID</TableHeadCell>
+                <TableHeadCell>Delivery Address</TableHeadCell>
+                <TableHeadCell align="right">Total Purchases</TableHeadCell>
+                <TableHeadCell align="center">Action</TableHeadCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {paginatedCustomers.map((cust) => {
+                const typeVariant = cust.customerType === 'Wholesale' ? 'info' : cust.customerType === 'Corporate' ? 'neutral' : 'success';
 
-              return (
-                <TableRow key={cust.id}>
-                  <TableCell>
-                    <div className="font-semibold text-content-primary">{cust.name}</div>
-                    <div className="text-[11px] text-content-muted font-mono">ID: {cust.id}</div>
-                  </TableCell>
-                  <TableCell className="font-mono text-content-secondary">
-                    {cust.contactNumber}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={typeVariant} size="sm">
-                      {cust.customerType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-content-muted">
-                    {cust.binNumber || 'BIN-00829103-01'}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate text-content-secondary text-xs">
-                    {cust.deliveryAddress}
-                  </TableCell>
-                  <TableCell align="right" tabular className="font-bold text-content-primary">
-                    ৳ {(cust.totalPurchases || 450000).toLocaleString()}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (onNavigateTab) onNavigateTab('sell-pos');
-                      }}
-                    >
-                      New Sale
-                      <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </DataTable>
+                return (
+                  <TableRow key={cust.id}>
+                    <TableCell>
+                      <div className="font-semibold text-content-primary">{cust.name}</div>
+                      <div className="text-[11px] text-content-muted font-mono">ID: {cust.id}</div>
+                    </TableCell>
+                    <TableCell className="font-mono text-content-secondary">
+                      {cust.contactNumber}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={typeVariant} size="sm">
+                        {cust.customerType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-content-muted">
+                      {cust.binNumber || 'BIN-00829103-01'}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-content-secondary text-xs">
+                      {cust.deliveryAddress}
+                    </TableCell>
+                    <TableCell align="right" tabular className="font-bold text-content-primary">
+                      ৳ {(cust.totalPurchases || 450000).toLocaleString()}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (onNavigateTab) onNavigateTab('sell-pos');
+                        }}
+                      >
+                        New Sale
+                        <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </DataTable>
+
+          <Pagination
+            currentPage={custPage}
+            totalItems={filteredCustomers.length}
+            pageSize={custPageSize}
+            onPageChange={setCustPage}
+            onPageSizeChange={setCustPageSize}
+          />
+        </div>
       )}
 
       {/* ============================================================== */}
       {/* TAB 2: SUPPLIERS TABLE */}
       {/* ============================================================== */}
       {activeTab === 'suppliers' && (
-        <DataTable isEmpty={filteredSuppliers.length === 0} emptyMessage="No suppliers found.">
-          <TableHeader>
-            <tr>
-              <TableHeadCell>Supplier / Vendor</TableHeadCell>
-              <TableHeadCell>Contact Person</TableHeadCell>
-              <TableHeadCell>Phone & Email</TableHeadCell>
-              <TableHeadCell>Hardware Category</TableHeadCell>
-              <TableHeadCell>Country / Hub</TableHeadCell>
-              <TableHeadCell align="right">Total Sourcing (৳)</TableHeadCell>
-              <TableHeadCell align="center">Status</TableHeadCell>
-            </tr>
-          </TableHeader>
-          <TableBody>
-            {filteredSuppliers.map((sup) => (
-              <TableRow key={sup.id}>
-                <TableCell>
-                  <div className="font-semibold text-content-primary">{sup.name}</div>
-                  <div className="text-[11px] text-content-muted">{sup.address}</div>
-                </TableCell>
-                <TableCell className="font-medium text-content-primary">
-                  {sup.contactPerson}
-                </TableCell>
-                <TableCell className="font-mono text-xs text-content-secondary">
-                  <div>{sup.phone}</div>
-                  <div className="text-brand-ochre">{sup.email}</div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="neutral" size="sm">
-                    {sup.category}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs text-content-muted">
-                  {sup.country}
-                </TableCell>
-                <TableCell align="right" tabular className="font-bold text-content-primary">
-                  ৳ {sup.totalPurchase.toLocaleString()}
-                </TableCell>
-                <TableCell align="center">
-                  <Badge variant="success" size="sm">
-                    Active Partner
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </DataTable>
+        <div className="space-y-4">
+          <DataTable isEmpty={filteredSuppliers.length === 0} emptyMessage="No suppliers found.">
+            <TableHeader>
+              <tr>
+                <TableHeadCell>Supplier / Vendor</TableHeadCell>
+                <TableHeadCell>Contact Person</TableHeadCell>
+                <TableHeadCell>Phone & Email</TableHeadCell>
+                <TableHeadCell>Hardware Category</TableHeadCell>
+                <TableHeadCell>Country / Hub</TableHeadCell>
+                <TableHeadCell align="right">Total Sourcing (৳)</TableHeadCell>
+                <TableHeadCell align="center">Status</TableHeadCell>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {paginatedSuppliers.map((sup) => (
+                <TableRow key={sup.id}>
+                  <TableCell>
+                    <div className="font-semibold text-content-primary">{sup.name}</div>
+                    <div className="text-[11px] text-content-muted">{sup.address}</div>
+                  </TableCell>
+                  <TableCell className="font-medium text-content-primary">
+                    {sup.contactPerson}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-content-secondary">
+                    <div>{sup.phone}</div>
+                    <div className="text-brand-ochre">{sup.email}</div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="neutral" size="sm">
+                      {sup.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-content-muted">
+                    {sup.country}
+                  </TableCell>
+                  <TableCell align="right" tabular className="font-bold text-content-primary">
+                    ৳ {sup.totalPurchase.toLocaleString()}
+                  </TableCell>
+                  <TableCell align="center">
+                    <Badge variant="success" size="sm">
+                      Active Partner
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </DataTable>
+
+          <Pagination
+            currentPage={supPage}
+            totalItems={filteredSuppliers.length}
+            pageSize={supPageSize}
+            onPageChange={setSupPage}
+            onPageSizeChange={setSupPageSize}
+          />
+        </div>
       )}
 
       {/* ============================================================== */}

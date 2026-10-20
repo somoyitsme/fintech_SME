@@ -11,7 +11,10 @@ import {
   Printer,
   Boxes,
   ArrowDownLeft,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Warehouse,
+  Check,
+  Building2
 } from 'lucide-react';
 import { useStore, Product } from '../context/StoreContext';
 import { Button } from '../components/common/Button';
@@ -22,9 +25,10 @@ import { TabGroup, TabItem } from '../components/common/TabGroup';
 import { Modal } from '../components/common/Modal';
 import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
+import { Pagination } from '../components/common/Pagination';
 
 interface ProductsPageProps {
-  initialTab?: 'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties';
+  initialTab?: 'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties' | 'branches';
   onNavigateTab?: (tab: string) => void;
 }
 
@@ -32,8 +36,8 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
   initialTab = 'list',
   onNavigateTab: _onNavigateTab 
 }) => {
-  const { products, addStock, addNewProduct } = useStore();
-  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties'>(initialTab);
+  const { products, addStock, addNewProduct, updateProduct } = useStore();
+  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'prices' | 'labels' | 'variations' | 'import' | 'units' | 'categories' | 'brands' | 'warranties' | 'branches'>(initialTab);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -42,6 +46,26 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedBrand, setSelectedBrand] = useState('All');
+  const [selectedBranch, setSelectedBranch] = useState('All');
+
+  // Pagination for main catalog
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Pagination for price adjuster
+  const [pricePage, setPricePage] = useState(1);
+  const [pricePageSize, setPricePageSize] = useState(10);
+
+  // Batch price & margin adjuster state
+  const [priceEdits, setPriceEdits] = useState<Record<string, { retailPrice: number; costPrice: number }>>({});
+  const [savingPrices, setSavingPrices] = useState(false);
+  const [priceSaveSuccess, setPriceSaveSuccess] = useState(false);
+
+  // Quick price edit modal for individual product
+  const [editPriceProduct, setEditPriceProduct] = useState<Product | null>(null);
+  const [editRetailPrice, setEditRetailPrice] = useState('');
+  const [editCostPrice, setEditCostPrice] = useState('');
+  const [savingSinglePrice, setSavingSinglePrice] = useState(false);
 
   // Modals
   const [stockModalProduct, setStockModalProduct] = useState<Product | null>(null);
@@ -64,13 +88,27 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
 
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category)))];
   const brands = ['All', ...Array.from(new Set(products.map(p => p.brand)))];
+  const branchOptions = [
+    { id: 'All', label: 'All Branches & Vaults' },
+    { id: 'Banani', label: 'Banani Central Vault & Warehouse' },
+    { id: 'Multiplan', label: 'Elephant Road Multiplan Branch' },
+    { id: 'IDB', label: 'BCS Computer City IDB Branch' }
+  ];
+
+  // Reset to page 1 on filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedCategory, selectedBrand, selectedBranch]);
 
   const filteredProducts = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase());
     const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
     const matchBrand = selectedBrand === 'All' || p.brand === selectedBrand;
-    return matchSearch && matchCategory && matchBrand;
+    const matchBranch = selectedBranch === 'All' || p.location.toLowerCase().includes(selectedBranch.toLowerCase());
+    return matchSearch && matchCategory && matchBrand && matchBranch;
   });
+
+  const paginatedProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
 
   const handleStockAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +117,57 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
     const cost = stockAddCost ? parseFloat(stockAddCost) : undefined;
     addStock(stockModalProduct.id, qty, cost);
     setStockModalProduct(null);
+  };
+
+  const handlePriceChange = (prodId: string, field: 'retailPrice' | 'costPrice', val: number) => {
+    setPriceEdits(prev => {
+      const prod = products.find(p => p.id === prodId);
+      const current = prev[prodId] || { retailPrice: prod?.retailPrice || 0, costPrice: prod?.costPrice || 0 };
+      return {
+        ...prev,
+        [prodId]: {
+          ...current,
+          [field]: Math.max(0, val)
+        }
+      };
+    });
+  };
+
+  const handleCommitPrices = async () => {
+    const entries = Object.entries(priceEdits);
+    if (entries.length === 0) return;
+    setSavingPrices(true);
+    try {
+      for (const [id, updates] of entries) {
+        await updateProduct(id, updates);
+      }
+      setPriceEdits({});
+      setPriceSaveSuccess(true);
+      setTimeout(() => setPriceSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Failed to commit price changes:", err);
+    } finally {
+      setSavingPrices(false);
+    }
+  };
+
+  const handleSaveSinglePrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editPriceProduct) return;
+    const retail = parseFloat(editRetailPrice) || editPriceProduct.retailPrice;
+    const cost = parseFloat(editCostPrice) || editPriceProduct.costPrice;
+    setSavingSinglePrice(true);
+    try {
+      await updateProduct(editPriceProduct.id, {
+        retailPrice: retail,
+        costPrice: cost
+      });
+      setEditPriceProduct(null);
+    } catch (err) {
+      console.error("Failed to update product price:", err);
+    } finally {
+      setSavingSinglePrice(false);
+    }
   };
 
   const handleAddProductSubmit = (e: React.FormEvent) => {
@@ -106,7 +195,8 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
   const tabs: TabItem[] = [
     { id: 'list', label: 'Product Catalog', count: products.length, icon: <Package className="w-3.5 h-3.5" /> },
     { id: 'add', label: 'Add Product', icon: <Plus className="w-3.5 h-3.5" /> },
-    { id: 'prices', label: 'Update Prices', icon: <Tag className="w-3.5 h-3.5" /> },
+    { id: 'prices', label: 'Update Prices & Margins', icon: <Tag className="w-3.5 h-3.5" /> },
+    { id: 'branches', label: 'Branch Warehouses', icon: <Warehouse className="w-3.5 h-3.5" /> },
     { id: 'labels', label: 'Print Barcodes', icon: <Barcode className="w-3.5 h-3.5" /> },
     { id: 'variations', label: 'Variations', icon: <SlidersHorizontal className="w-3.5 h-3.5" /> },
     { id: 'import', label: 'Import CSV', icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
@@ -165,7 +255,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
           {/* Filters Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface p-3 sm:p-4 rounded-xl border border-boundary-subtle shadow-xs">
             <div className="flex flex-wrap items-center gap-2.5 flex-1">
-              <div className="relative flex-1 min-w-[220px]">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-content-muted" />
                 <input
                   type="text"
@@ -175,6 +265,14 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
                   className="w-full pl-9 pr-3 py-1.5 bg-surface-secondary border border-boundary-subtle rounded-lg text-xs text-content-primary placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-brand-ochre"
                 />
               </div>
+
+              <select
+                value={selectedBranch}
+                onChange={e => setSelectedBranch(e.target.value)}
+                className="bg-surface-secondary border border-boundary-subtle text-content-secondary text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-ochre cursor-pointer font-medium"
+              >
+                {branchOptions.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+              </select>
 
               <select
                 value={selectedCategory}
@@ -213,7 +311,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
               </tr>
             </TableHeader>
             <TableBody>
-              {filteredProducts.map((p) => {
+              {paginatedProducts.map((p) => {
                 const isLow = p.stockCount <= p.minThreshold;
                 return (
                   <TableRow key={p.id}>
@@ -251,23 +349,46 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
                       ৳ {p.costPrice.toLocaleString()}
                     </TableCell>
                     <TableCell align="center">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setStockModalProduct(p);
-                          setStockAddQty('10');
-                        }}
-                        leftIcon={<ArrowDownLeft className="w-3 h-3 text-status-success" />}
-                      >
-                        Add Stock
-                      </Button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setStockModalProduct(p);
+                            setStockAddQty('10');
+                          }}
+                          leftIcon={<ArrowDownLeft className="w-3 h-3 text-status-success" />}
+                        >
+                          Add Stock
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditPriceProduct(p);
+                            setEditRetailPrice(p.retailPrice.toString());
+                            setEditCostPrice(p.costPrice.toString());
+                          }}
+                          leftIcon={<Tag className="w-3 h-3 text-brand-ochreDeep dark:text-brand-ochre" />}
+                        >
+                          Price
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </DataTable>
+
+          {/* List Pagination */}
+          <Pagination
+            currentPage={page}
+            totalItems={filteredProducts.length}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 
@@ -548,58 +669,215 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
       {/* ============================================================== */}
       {/* TAB 7: UPDATE PRICES */}
       {/* ============================================================== */}
-      {activeTab === 'prices' && (
-        <Card>
-          <CardHeader
-            title="Batch Price Adjuster & Gross Margin Markup"
-            subtitle="Update wholesale selling prices and margin multipliers across product catalog"
-            action={
+      {/* ============================================================== */}
+      {/* TAB 7: UPDATE PRICES & MARGINS */}
+      {/* ============================================================== */}
+      {activeTab === 'prices' && (() => {
+        const paginatedPriceProducts = products.slice((pricePage - 1) * pricePageSize, pricePage * pricePageSize);
+        const pendingCount = Object.keys(priceEdits).length;
+
+        return (
+          <Card className="space-y-4">
+            <CardHeader
+              title="Batch Price Adjuster & Gross Margin Markup"
+              subtitle="Update wholesale selling prices and margin multipliers across product catalog (live margin recalculation)"
+              action={
+                <div className="flex items-center gap-2">
+                  {priceSaveSuccess && (
+                    <span className="text-xs text-status-success font-medium flex items-center gap-1 animate-in fade-in">
+                      <Check className="w-3.5 h-3.5" /> Changes saved to database!
+                    </span>
+                  )}
+                  <Button
+                    variant="brand"
+                    size="sm"
+                    disabled={pendingCount === 0 || savingPrices}
+                    onClick={handleCommitPrices}
+                  >
+                    {savingPrices ? 'Committing...' : `Commit Price Changes ${pendingCount > 0 ? `(${pendingCount})` : ''}`}
+                  </Button>
+                </div>
+              }
+            />
+
+            <DataTable isEmpty={products.length === 0} emptyMessage="No products available to adjust.">
+              <TableHeader>
+                <tr>
+                  <TableHeadCell>Hardware Model & SKU</TableHeadCell>
+                  <TableHeadCell>Brand</TableHeadCell>
+                  <TableHeadCell align="right">Cost Price (৳)</TableHeadCell>
+                  <TableHeadCell align="right">Selling Price (৳)</TableHeadCell>
+                  <TableHeadCell align="right">Margin (%) & Profit</TableHeadCell>
+                  <TableHeadCell align="right">Adjusted Price (৳)</TableHeadCell>
+                </tr>
+              </TableHeader>
+              <TableBody>
+                {paginatedPriceProducts.map((p) => {
+                  const currentEdit = priceEdits[p.id];
+                  const activeRetail = currentEdit !== undefined ? currentEdit.retailPrice : p.retailPrice;
+                  const activeCost = currentEdit !== undefined ? currentEdit.costPrice : p.costPrice;
+                  const marginAmt = activeRetail - activeCost;
+                  const marginPct = activeRetail > 0 ? Math.round((marginAmt / activeRetail) * 100) : 0;
+                  const isDirty = !!currentEdit && (currentEdit.retailPrice !== p.retailPrice || currentEdit.costPrice !== p.costPrice);
+
+                  return (
+                    <TableRow key={p.id} className={isDirty ? 'bg-brand-ochre/5' : undefined}>
+                      <TableCell>
+                        <div className="font-semibold text-content-primary truncate max-w-[240px]">{p.name}</div>
+                        <div className="text-[10px] text-content-muted font-mono">{p.sku} • {p.location}</div>
+                      </TableCell>
+                      <TableCell className="text-content-secondary">{p.brand}</TableCell>
+                      <TableCell align="right">
+                        <input
+                          type="number"
+                          value={activeCost}
+                          onChange={e => handlePriceChange(p.id, 'costPrice', parseFloat(e.target.value) || 0)}
+                          className="w-24 px-2 py-1 text-right bg-surface border border-boundary-strong rounded-lg text-content-secondary font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-ochre font-tabular"
+                        />
+                      </TableCell>
+                      <TableCell align="right" tabular className="font-bold text-content-primary text-xs">
+                        ৳ {p.retailPrice.toLocaleString()}
+                      </TableCell>
+                      <TableCell align="right">
+                        <div className="flex flex-col items-end">
+                          <span className={`font-bold tabular-nums text-xs ${marginPct >= 15 ? 'text-status-success' : marginPct > 0 ? 'text-brand-ochre' : 'text-status-danger'}`}>
+                            +{marginPct}%
+                          </span>
+                          <span className="text-[10px] text-content-muted font-mono font-tabular">
+                            {marginAmt >= 0 ? '+' : ''}৳{marginAmt.toLocaleString()}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell align="right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <input
+                            type="number"
+                            value={activeRetail}
+                            onChange={e => handlePriceChange(p.id, 'retailPrice', parseFloat(e.target.value) || 0)}
+                            className={`w-28 px-2 py-1 text-right bg-surface border rounded-lg font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-ochre font-tabular font-bold ${isDirty ? 'border-brand-ochre text-brand-ochreDeep dark:text-brand-ochre' : 'border-boundary-strong text-content-primary'}`}
+                          />
+                          {isDirty && (
+                            <span className="w-2 h-2 rounded-full bg-brand-ochre animate-pulse" title="Unsaved edit" />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </DataTable>
+
+            <Pagination
+              currentPage={pricePage}
+              totalItems={products.length}
+              pageSize={pricePageSize}
+              onPageChange={setPricePage}
+              onPageSizeChange={setPricePageSize}
+            />
+          </Card>
+        );
+      })()}
+
+      {/* ============================================================== */}
+      {/* TAB: BRANCH WAREHOUSES & LOCATIONS */}
+      {/* ============================================================== */}
+      {activeTab === 'branches' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                id: 'Banani',
+                name: 'Banani Central Vault & Warehouse',
+                role: 'Central Headquarters & Customs Terminal',
+                address: 'Plot 42, Road 11, Block D, Banani, Dhaka-1213',
+                badge: 'Primary Warehouse',
+                badgeVariant: 'brand' as const
+              },
+              {
+                id: 'Multiplan',
+                name: 'Elephant Road Multiplan Branch',
+                role: 'High-Volume Wholesale & Retail Center',
+                address: 'Level 4, Multiplan Center, New Elephant Road, Dhaka',
+                badge: 'Retail Showroom',
+                badgeVariant: 'sand' as const
+              },
+              {
+                id: 'IDB',
+                name: 'BCS Computer City IDB Branch',
+                role: 'Corporate Enterprise & Gaming Pavilion',
+                address: 'Ground Floor, IDB Bhaban, E/8-A Rokeya Sarani, Agargaon',
+                badge: 'Retail Showroom',
+                badgeVariant: 'neutral' as const
+              }
+            ].map(b => {
+              const bProducts = products.filter(p => p.location.toLowerCase().includes(b.id.toLowerCase()));
+              const totalUnits = bProducts.reduce((s, p) => s + p.stockCount, 0);
+              const retailVal = bProducts.reduce((s, p) => s + p.stockCount * p.retailPrice, 0);
+              const costVal = bProducts.reduce((s, p) => s + p.stockCount * p.costPrice, 0);
+              const isSelected = selectedBranch === b.id;
+
+              return (
+                <Card 
+                  key={b.id} 
+                  hoverable 
+                  className={`p-4 cursor-pointer transition border-2 ${isSelected ? 'border-brand-ochre shadow-md ring-1 ring-brand-ochre' : 'border-boundary-subtle'}`}
+                  onClick={() => {
+                    setSelectedBranch(isSelected ? 'All' : b.id);
+                    setActiveTab('list');
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-brand-ochre/15 text-brand-ochreDeep dark:text-brand-ochre">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-content-primary">{b.name}</h4>
+                        <p className="text-[11px] text-content-muted">{b.role}</p>
+                      </div>
+                    </div>
+                    <Badge variant={b.badgeVariant} size="sm">{b.badge}</Badge>
+                  </div>
+
+                  <p className="text-[11px] text-content-muted mb-3 flex items-center gap-1">
+                    <Warehouse className="w-3.5 h-3.5 text-content-muted flex-shrink-0" />
+                    <span className="truncate">{b.address}</span>
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-boundary-subtle text-xs">
+                    <div className="bg-surface-secondary p-2 rounded-lg">
+                      <div className="text-[10px] text-content-muted uppercase font-semibold">SKUs Stored</div>
+                      <div className="text-base font-bold text-content-primary font-tabular mt-0.5">{bProducts.length}</div>
+                    </div>
+                    <div className="bg-surface-secondary p-2 rounded-lg">
+                      <div className="text-[10px] text-content-muted uppercase font-semibold">Total Stock Units</div>
+                      <div className="text-base font-bold text-brand-ochreDeep dark:text-brand-ochre font-tabular mt-0.5">{totalUnits.toLocaleString()}</div>
+                    </div>
+                    <div className="bg-surface-secondary p-2 rounded-lg col-span-2 flex justify-between items-center">
+                      <span className="text-[11px] text-content-muted">Retail Valuation:</span>
+                      <span className="font-bold text-status-success font-tabular">৳ {retailVal.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="p-4 bg-surface-secondary/40 border border-boundary-subtle">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <span className="text-content-secondary">
+                To move inventory between branches, create an Inter-Branch Transfer in the <strong>Stock Transfers</strong> tab.
+              </span>
               <Button
-                variant="brand"
+                variant="outline"
                 size="sm"
-                onClick={() => alert("Batch pricing updates committed successfully across all SKUs!")}
+                onClick={() => setActiveTab('list')}
               >
-                Commit Price Changes
+                View Filtered Catalog
               </Button>
-            }
-          />
-          <DataTable>
-            <TableHeader>
-              <tr>
-                <TableHeadCell>Hardware Model & SKU</TableHeadCell>
-                <TableHeadCell>Brand</TableHeadCell>
-                <TableHeadCell align="right">Cost Price</TableHeadCell>
-                <TableHeadCell align="right">Current Retail</TableHeadCell>
-                <TableHeadCell align="right">Margin (%)</TableHeadCell>
-                <TableHeadCell align="right">New Price (৳)</TableHeadCell>
-              </tr>
-            </TableHeader>
-            <TableBody>
-              {products.slice(0, 10).map((p) => {
-                const marginPct = Math.round(((p.retailPrice - p.costPrice) / p.retailPrice) * 100);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      <div className="font-semibold text-content-primary truncate max-w-[220px]">{p.name}</div>
-                      <div className="text-[10px] text-content-muted font-mono">{p.sku}</div>
-                    </TableCell>
-                    <TableCell className="text-content-secondary">{p.brand}</TableCell>
-                    <TableCell align="right" tabular className="text-content-muted">৳ {p.costPrice.toLocaleString()}</TableCell>
-                    <TableCell align="right" tabular className="font-bold text-content-primary">৳ {p.retailPrice.toLocaleString()}</TableCell>
-                    <TableCell align="right" tabular className="text-status-success font-semibold">+{marginPct}%</TableCell>
-                    <TableCell align="right">
-                      <input
-                        type="number"
-                        defaultValue={p.retailPrice}
-                        className="w-28 px-2 py-1 text-right bg-surface border border-boundary-strong rounded-lg text-content-primary font-mono text-xs focus:outline-none focus:ring-1 focus:ring-brand-ochre font-tabular"
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </DataTable>
-        </Card>
+            </div>
+          </Card>
+        </div>
       )}
 
       {/* ============================================================== */}
@@ -759,6 +1037,79 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({
             </div>
           </form>
         )}
+      </Modal>
+
+      {/* MODAL: EDIT PRODUCT PRICE & MARGIN */}
+      <Modal
+        isOpen={!!editPriceProduct}
+        onClose={() => setEditPriceProduct(null)}
+        title="Adjust Product Price & Margin"
+        subtitle={editPriceProduct ? `${editPriceProduct.name} (${editPriceProduct.sku})` : ''}
+      >
+        {editPriceProduct && (() => {
+          const retail = parseFloat(editRetailPrice) || 0;
+          const cost = parseFloat(editCostPrice) || 0;
+          const marginAmt = retail - cost;
+          const marginPct = retail > 0 ? Math.round((marginAmt / retail) * 100) : 0;
+
+          return (
+            <form onSubmit={handleSaveSinglePrice} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-surface-secondary rounded-xl border border-boundary-subtle">
+                <div>
+                  <span className="text-content-muted text-[11px]">Current Retail:</span>
+                  <p className="font-bold text-sm text-content-primary font-tabular">৳{editPriceProduct.retailPrice.toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-content-muted text-[11px]">Current Cost:</span>
+                  <p className="font-bold text-sm text-content-muted font-tabular">৳{editPriceProduct.costPrice.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="New Selling Price (৳)"
+                  type="number"
+                  required
+                  value={editRetailPrice}
+                  onChange={e => setEditRetailPrice(e.target.value)}
+                  autoFocus
+                />
+                <Input
+                  label="Cost Price (৳)"
+                  type="number"
+                  required
+                  value={editCostPrice}
+                  onChange={e => setEditCostPrice(e.target.value)}
+                />
+              </div>
+
+              {/* Live Margin Calculation Preview */}
+              <div className="p-3 rounded-xl bg-surface border border-boundary-strong space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-content-secondary">Calculated Gross Margin:</span>
+                  <span className={`text-sm font-bold font-tabular ${marginPct >= 15 ? 'text-status-success' : marginPct > 0 ? 'text-brand-ochre' : 'text-status-danger'}`}>
+                    +{marginPct}% ({marginAmt >= 0 ? '+' : ''}৳{marginAmt.toLocaleString()} / unit)
+                  </span>
+                </div>
+                <div className="w-full bg-surface-secondary rounded-full h-2 overflow-hidden border border-boundary-subtle">
+                  <div 
+                    className={`h-full transition-all duration-300 ${marginPct >= 20 ? 'bg-emerald-500' : marginPct >= 10 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                    style={{ width: `${Math.min(100, Math.max(0, marginPct))}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <Button type="button" variant="outline" onClick={() => setEditPriceProduct(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="brand" disabled={savingSinglePrice}>
+                  {savingSinglePrice ? 'Updating...' : 'Save Price & Margin'}
+                </Button>
+              </div>
+            </form>
+          );
+        })()}
       </Modal>
     </div>
   );

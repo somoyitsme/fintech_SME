@@ -9,6 +9,7 @@ import { Input } from '../components/common/Input';
 import { Select } from '../components/common/Select';
 import { DataTable, TableHeader, TableHeadCell, TableBody, TableRow, TableCell } from '../components/common/DataTable';
 import { PageHeader } from '../components/common/PageHeader';
+import { Pagination } from '../components/common/Pagination';
 
 interface PurchasesPageProps {
   initialTab?: 'list' | 'add' | 'returns';
@@ -24,6 +25,12 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ initialTab = 'list
   }, [initialTab]);
 
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   // New PO State
   const [poSupplier, setPoSupplier] = useState(suppliers[0]?.name || 'ASUS Regional Distribution (Singapore)');
@@ -37,6 +44,8 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ initialTab = 'list
     po.supplierName.toLowerCase().includes(search.toLowerCase()) ||
     po.items.toLowerCase().includes(search.toLowerCase())
   );
+
+  const paginatedPOs = filteredPOs.slice((page - 1) * pageSize, page * pageSize);
 
   const handleCreatePOSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +124,8 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ initialTab = 'list
       {/* TAB 1: LIST PURCHASE ORDERS */}
       {/* ============================================================== */}
       {activeTab === 'list' && (
-        <DataTable isEmpty={filteredPOs.length === 0} emptyMessage="No purchase orders match your criteria.">
+        <div className="space-y-4">
+          <DataTable isEmpty={filteredPOs.length === 0} emptyMessage="No purchase orders match your criteria.">
           <TableHeader>
             <tr>
               <TableHeadCell>PO # & Order Date</TableHeadCell>
@@ -128,7 +138,7 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ initialTab = 'list
             </tr>
           </TableHeader>
           <TableBody>
-            {filteredPOs.map((po) => {
+            {paginatedPOs.map((po) => {
               const isReceived = po.status === 'Received';
               const isCustoms = po.status === 'Port Customs';
               const StatusIcon = isReceived ? CheckCircle2 : isCustoms ? Ship : Truck;
@@ -186,7 +196,16 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ initialTab = 'list
             })}
           </TableBody>
         </DataTable>
-      )}
+
+        <Pagination
+          currentPage={page}
+          totalItems={filteredPOs.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
+    )}
 
       {/* ============================================================== */}
       {/* TAB 2: ADD PURCHASE FORM */}
