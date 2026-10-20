@@ -33,20 +33,18 @@ class LLMClient:
         tools: list[dict],
         tool_executor: Callable,
         max_iterations: int = 5,
+        conversation_history: Optional[list[dict]] = None,
     ) -> tuple[str, list[str]]:
-        """Execute tool-use loop with Claude.
-
-        Args:
-            user_query: User's question
-            system_prompt: System instructions + schema context
-            tools: Anthropic tool definitions
-            tool_executor: async fn(tool_name, args) -> dict
-            max_iterations: Safety limit
-
-        Returns:
-            (final_text_response, list_of_tool_names_used)
-        """
-        messages = [{"role": "user", "content": user_query}]
+        """Execute tool-use loop with Claude."""
+        messages: list[dict[str, Any]] = []
+        if conversation_history:
+            for item in conversation_history:
+                r = item.get("role", "user")
+                c = item.get("content", "")
+                if r in ("user", "assistant") and c:
+                    messages.append({"role": r, "content": c})
+        if not messages or messages[-1]["role"] != "user":
+            messages.append({"role": "user", "content": user_query or "Please analyze and advise based on the data."})
         tools_used = []
 
         for iteration in range(max_iterations):
@@ -100,17 +98,18 @@ class LLMClient:
         tools: list[dict],
         tool_executor: Callable,
         status_callback: Optional[Callable[[str], None]] = None,
+        conversation_history: Optional[list[dict]] = None,
     ) -> AsyncIterator[dict]:
-        """Stream response with tool execution and status updates.
-
-        Yields:
-            {"type": "status", "message": "..."}
-            {"type": "tool_start", "name": "..."}
-            {"type": "tool_result", "name": "...", "result": {...}}
-            {"type": "text_delta", "text": "..."}
-            {"type": "complete", "response": "...", "tools_used": [...]}
-        """
-        messages = [{"role": "user", "content": user_query}]
+        """Stream response with tool execution and status updates."""
+        messages: list[dict[str, Any]] = []
+        if conversation_history:
+            for item in conversation_history:
+                r = item.get("role", "user")
+                c = item.get("content", "")
+                if r in ("user", "assistant") and c:
+                    messages.append({"role": r, "content": c})
+        if not messages or messages[-1]["role"] != "user":
+            messages.append({"role": "user", "content": user_query or "Please analyze and advise based on the data."})
         tools_used = []
         accumulated_text = []
 

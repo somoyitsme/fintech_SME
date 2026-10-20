@@ -20,6 +20,12 @@ SYSTEM_PROMPT_TEMPLATE = """You are an executive financial analyst with 20 years
 4. ZERO filler: no "hello", no "I hope this helps", no "as an AI"
 5. Be gentle but direct - you're advising a stressed business owner
 
+**CRITICAL INSTRUCTIONS FOR SALES, RECENT ORDERS & TRANSACTIONS:**
+- To answer questions about "last sell", "latest sale", "last order", or "recent sales":
+  Use `get_recent_sales(limit=1)` or run `SELECT * FROM orders ORDER BY order_date DESC, created_at DESC LIMIT 1`.
+  Always report the exact Order Number, Date/Time, Customer Name, Branch, Sold Items, Total Amount (BDT), Paid Amount, Due Amount, and Net Profit.
+- NEVER rely on memory or outdated assumptions. Every response must be backed by live SQLite data.
+
 **Example Structure:**
 Your cash runway is 2.3 months at current burn. Urgent action required.
 
@@ -64,6 +70,7 @@ def build_system_prompt(user_query: str) -> str:
 async def execute_query(
     user_query: str,
     tenant_id: str,
+    conversation_history: Optional[list[dict]] = None,
 ) -> tuple[str, list[str]]:
     """Execute financial query with live LLM and real SQL tools."""
     llm = get_llm_client()
@@ -73,12 +80,12 @@ async def execute_query(
     async def tool_executor(name: str, args: dict):
         return await execute_tool(name, args, tenant_id)
 
-    # Pass empty string as user_query since it's now in system prompt
     response, tools_used = await llm.execute_with_tools(
-        user_query="",
+        user_query=user_query,
         system_prompt=system_prompt,
         tools=tools,
         tool_executor=tool_executor,
+        conversation_history=conversation_history,
     )
 
     return response, tools_used
@@ -88,6 +95,7 @@ async def stream_query(
     user_query: str,
     tenant_id: str,
     status_callback=None,
+    conversation_history: Optional[list[dict]] = None,
 ):
     """Stream query execution with real-time status updates."""
     llm = get_llm_client()
@@ -97,12 +105,12 @@ async def stream_query(
     async def tool_executor(name: str, args: dict):
         return await execute_tool(name, args, tenant_id)
 
-    # Pass empty string as user_query since it's now in system prompt
     async for event in llm.stream_with_tools(
-        user_query="",
+        user_query=user_query,
         system_prompt=system_prompt,
         tools=tools,
         tool_executor=tool_executor,
         status_callback=status_callback,
+        conversation_history=conversation_history,
     ):
         yield event

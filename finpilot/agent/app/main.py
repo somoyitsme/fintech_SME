@@ -52,14 +52,22 @@ async def startup():
 
 
 # ── Models ──
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000, description="User query")
     tenant_id: str = Field(..., min_length=1, max_length=64)
+    session_id: Optional[str] = Field(None, description="Chat session identifier")
+    history: Optional[list[ChatMessage]] = Field(default=[], description="Prior messages in this session")
 
 
 class ChatResponse(BaseModel):
     response: str
     tools_used: list[str]
+    session_id: Optional[str] = None
 
 
 # ── Auth ──
@@ -98,21 +106,26 @@ async def schema():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest, _: None = Depends(require_api_key)):
     """Synchronous chat with real LLM and database."""
+    history_dicts = [m.dict() for m in (body.history or [])]
     response, tools_used = await execute_query(
         user_query=body.message,
         tenant_id=body.tenant_id,
+        conversation_history=history_dicts,
     )
-    return ChatResponse(response=response, tools_used=tools_used)
+    return ChatResponse(response=response, tools_used=tools_used, session_id=body.session_id)
 
 
 # ── Chat streaming endpoint ──
 @app.post("/chat/stream")
 async def chat_stream(body: ChatRequest, _: None = Depends(require_api_key)):
     """Stream chat with real-time status updates."""
+    history_dicts = [m.dict() for m in (body.history or [])]
+
     async def event_generator() -> AsyncIterator[str]:
         async for event in stream_query(
             user_query=body.message,
             tenant_id=body.tenant_id,
+            conversation_history=history_dicts,
         ):
             import json
             yield f"data: {json.dumps(event, default=str)}\n\n"

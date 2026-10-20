@@ -420,12 +420,129 @@ async def analyze_inventory_valuation(tenant_id: str) -> dict[str, Any]:
     }
 
 
+async def get_recent_sales(
+    tenant_id: str,
+    limit: int = 5,
+    branch: Optional[str] = None,
+) -> dict[str, Any]:
+    """Retrieve the most recent sales orders with full items, customer details, profit, and due amounts."""
+    catalog = get_catalog()
+    orders_table = catalog.get("orders")
+    if not orders_table:
+        return {"error": "No orders table found"}
+
+    where_clauses = []
+    if branch and branch != "All Locations":
+        where_clauses.append(f"branch LIKE '%{branch}%'")
+
+    where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+
+    orders = execute_safe_query(
+        f"""
+        SELECT id, order_number, customer_name, customer_phone, customer_email,
+               total_amount, paid_amount, due_amount, payment_status, payment_method,
+               delivery_type, status, branch, profit, order_date, created_at,
+               courier_provider, consignment_id, tracking_url
+        FROM orders
+        {where_sql}
+        ORDER BY order_date DESC, created_at DESC
+        LIMIT {max(1, min(limit, 50))}
+        """,
+        tenant_id=tenant_id
+    )
+
+    for o in orders:
+        items = execute_safe_query(
+            f"""
+            SELECT product_name, sku, quantity, unit_price, cost_price, total_price, profit
+            FROM order_items
+            WHERE order_id = '{o["id"]}'
+            """,
+            tenant_id=tenant_id
+        )
+        o["items"] = items
+
+    return {
+        "count": len(orders),
+        "orders": orders,
+        "data_source": "Live SQLite orders & order_items tables ordered by order_date DESC"
+    }
+
+
+async def query_database_data(
+    tenant_id: str,
+    sql_query: str,
+    purpose: str = "",
+) -> dict[str, Any]:
+    """Execute a safe, read-only SELECT query against permitted database tables."""
+    try:
+        clean_sql = sql_query.strip()
+        rows = execute_safe_query(clean_sql, tenant_id=tenant_id)
+        # Mask sensitive user fields if present
+        for row in rows:
+            if "password_hash" in row:
+                row["password_hash"] = "[REDACTED]"
+            if "password" in row:
+                row["password"] = "[REDACTED]"
+        return {
+            "query_executed": clean_sql,
+            "row_count": len(rows),
+            "rows": rows[:50],
+            "status": "success",
+            "data_source": "Direct verified SQLite read-only query"
+        }
+    except Exception as e:
+        return {
+            "query_executed": sql_query,
+            "error": str(e),
+            "status": "failed",
+        }
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Tool Definitions for Anthropic
 # ──────────────────────────────────────────────────────────────────────────
 
 def get_all_tools() -> list[ToolDef]:
     return [
+        ToolDef(
+            name="get_recent_sales",
+            description="Retrieve recent sales orders sorted by order_date DESC with full items list, customer phone/email, profit, total amount, paid amount, and due amount. Use this immediately when the user asks about recent sales, last sale, or sales history.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of recent orders to fetch (default 5, max 50)",
+                        "default": 5,
+                    },
+                    "branch": {
+                        "type": "string",
+                        "description": "Optional branch name filter (e.g., 'Banani', 'Multiplan', 'IDB')",
+                    }
+                },
+            },
+            handler=get_recent_sales,
+        ),
+        ToolDef(
+            name="query_database_data",
+            description="Execute a safe read-only SELECT query on business tables (products, customers, orders, order_items, suppliers, supplier_pos, expenses, stock_transfers, stock_adjustments, payment_accounts, staff, users) to answer any question about items, customers, suppliers, staff, transactions, or accounts.",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "sql_query": {
+                        "type": "string",
+                        "description": "Safe SELECT query (e.g., SELECT name, retail_price, stock_count FROM products WHERE stock_count <= min_threshold ORDER BY stock_count ASC LIMIT 10)"
+                    },
+                    "purpose": {
+                        "type": "string",
+                        "description": "Business reason for running this query"
+                    }
+                },
+                "required": ["sql_query"]
+            },
+            handler=query_database_data,
+        ),
         ToolDef(
             name="analyze_cash_flow",
             description="Get cash flow, burn rate, runway from payment_accounts/bank_accounts and expenses tables",
