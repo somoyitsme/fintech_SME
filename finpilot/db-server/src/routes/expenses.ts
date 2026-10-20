@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/client.js';
 import { expenses } from '../db/schema.js';
 import { eq, sql } from 'drizzle-orm';
+import { logActivity } from '../services/auditService.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ const expenseSchema = z.object({
   status: z.enum(['Approved', 'Pending']).default('Pending'),
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const all = await db.select().from(expenses).orderBy(sql`${expenses.date} DESC`);
     res.json(all);
@@ -32,6 +33,17 @@ router.post('/', async (req, res) => {
     const id = uuidv4();
     const now = new Date().toISOString();
     await db.insert(expenses).values({ id, ...data, createdAt: now, updatedAt: now });
+
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'expense',
+      entityId: id,
+      action: 'create',
+      description: `Recorded ${data.category} expense of ৳ ${data.amount.toLocaleString()} paid to "${data.vendor}"`,
+      changes: data,
+      ipAddress: req.ip,
+    });
+
     const [created] = await db.select().from(expenses).where(eq(expenses.id, id)).limit(1);
     res.status(201).json(created);
   } catch (err: any) {
@@ -49,6 +61,16 @@ router.patch('/:id/approve', async (req, res) => {
     await db.update(expenses).set({ status: 'Approved', updatedAt: now }).where(eq(expenses.id, req.params.id));
     const [updated] = await db.select().from(expenses).where(eq(expenses.id, req.params.id)).limit(1);
     if (!updated) return res.status(404).json({ error: 'Expense not found' });
+
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'expense',
+      entityId: req.params.id,
+      action: 'approve',
+      description: `Approved ${updated.category} expense of ৳ ${updated.amount.toLocaleString()}`,
+      ipAddress: req.ip,
+    });
+
     res.json(updated);
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to approve expense' });
@@ -70,7 +92,20 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const [existing] = await db.select().from(expenses).where(eq(expenses.id, req.params.id)).limit(1);
     await db.delete(expenses).where(eq(expenses.id, req.params.id));
+
+    if (existing) {
+      logActivity({
+        userId: (req as any).userId,
+        entityType: 'expense',
+        entityId: req.params.id,
+        action: 'delete',
+        description: `Deleted ${existing.category} expense record of ৳ ${existing.amount.toLocaleString()}`,
+        ipAddress: req.ip,
+      });
+    }
+
     res.status(204).send();
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to delete expense' });

@@ -16,7 +16,7 @@ const accountSchema = z.object({
   balance: z.number().min(0).default(0),
 });
 
-router.get('/payment-accounts', async (req, res) => {
+router.get(['/payment-accounts', '/accounts'], async (req, res) => {
   try {
     const all = await db.select().from(paymentAccounts);
     res.json(all);
@@ -25,7 +25,7 @@ router.get('/payment-accounts', async (req, res) => {
   }
 });
 
-router.post('/payment-accounts', async (req, res) => {
+router.post(['/payment-accounts', '/accounts'], async (req, res) => {
   try {
     const data = accountSchema.parse(req.body);
     const id = uuidv4();

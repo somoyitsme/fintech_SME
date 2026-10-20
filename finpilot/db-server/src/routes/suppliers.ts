@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/client.js';
 import { suppliers } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logActivity } from '../services/auditService.js';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const supplierSchema = z.object({
   totalDue: z.number().min(0).default(0),
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const all = await db.select().from(suppliers);
     res.json(all);
@@ -35,6 +36,17 @@ router.post('/', async (req, res) => {
     const now = new Date().toISOString();
 
     await db.insert(suppliers).values({ id, ...data, createdAt: now, updatedAt: now });
+
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'supplier',
+      entityId: id,
+      action: 'create',
+      description: `Registered new hardware vendor "${data.name}" (${data.country})`,
+      changes: data,
+      ipAddress: req.ip,
+    });
+
     const [created] = await db.select().from(suppliers).where(eq(suppliers.id, id)).limit(1);
     res.status(201).json(created);
   } catch (err: any) {
@@ -53,15 +65,43 @@ router.put('/:id', async (req, res) => {
     await db.update(suppliers).set({ ...data, updatedAt: now }).where(eq(suppliers.id, req.params.id));
     const [updated] = await db.select().from(suppliers).where(eq(suppliers.id, req.params.id)).limit(1);
     if (!updated) return res.status(404).json({ error: 'Supplier not found' });
+
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'supplier',
+      entityId: req.params.id,
+      action: 'update',
+      description: `Updated supplier profile "${updated.name}"`,
+      changes: data,
+      ipAddress: req.ip,
+    });
+
     res.json(updated);
   } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Failed to update supplier' });
+    if (err.name === 'ZodError') {
+      res.status(400).json({ error: 'Validation error', details: err.errors });
+    } else {
+      res.status(500).json({ error: err.message || 'Failed to update supplier' });
+    }
   }
 });
 
 router.delete('/:id', async (req, res) => {
   try {
+    const [existing] = await db.select().from(suppliers).where(eq(suppliers.id, req.params.id)).limit(1);
     await db.delete(suppliers).where(eq(suppliers.id, req.params.id));
+
+    if (existing) {
+      logActivity({
+        userId: (req as any).userId,
+        entityType: 'supplier',
+        entityId: req.params.id,
+        action: 'delete',
+        description: `Removed supplier "${existing.name}"`,
+        ipAddress: req.ip,
+      });
+    }
+
     res.status(204).send();
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to delete supplier' });

@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/client.js';
 import { products } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { logActivity, recordStockMovement } from '../services/auditService.js';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ const productSchema = z.object({
   warranty: z.string().default(''),
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
     const allProducts = await db.select().from(products);
     res.json(allProducts);
@@ -55,6 +56,31 @@ router.post('/', async (req, res) => {
       updatedAt: now,
     });
 
+    if (data.stockCount > 0) {
+      recordStockMovement({
+        productId: id,
+        productName: data.name,
+        referenceType: 'initial_seed',
+        referenceId: 'INITIAL_STOCK',
+        location: data.location,
+        quantityChange: data.stockCount,
+        previousStock: 0,
+        newStock: data.stockCount,
+        unitCost: data.costPrice,
+        notes: `Initial stock for new product SKU: ${data.sku}`,
+      });
+    }
+
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'product',
+      entityId: id,
+      action: 'create',
+      description: `Created new catalog product "${data.name}" (${data.sku}) - Retail: ৳ ${data.retailPrice.toLocaleString()}`,
+      changes: data,
+      ipAddress: req.ip,
+    });
+
     const [created] = await db.select().from(products).where(eq(products.id, id)).limit(1);
     res.status(201).json(created);
   } catch (err: any) {
@@ -73,14 +99,26 @@ router.put('/:id', async (req, res) => {
     const data = productSchema.partial().parse(req.body);
     const now = new Date().toISOString();
 
+    const [existing] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
+    if (!existing) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
     await db.update(products)
       .set({ ...data, updatedAt: now })
       .where(eq(products.id, req.params.id));
 
+    logActivity({
+      userId: (req as any).userId,
+      entityType: 'product',
+      entityId: req.params.id,
+      action: 'update',
+      description: `Updated product "${existing.name}" (${existing.sku})`,
+      changes: data,
+      ipAddress: req.ip,
+    });
+
     const [updated] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
-    if (!updated) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
     res.json(updated);
   } catch (err: any) {
     if (err.name === 'ZodError') {
@@ -93,7 +131,20 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const [existing] = await db.select().from(products).where(eq(products.id, req.params.id)).limit(1);
     await db.delete(products).where(eq(products.id, req.params.id));
+
+    if (existing) {
+      logActivity({
+        userId: (req as any).userId,
+        entityType: 'product',
+        entityId: req.params.id,
+        action: 'delete',
+        description: `Deleted product "${existing.name}" (${existing.sku})`,
+        ipAddress: req.ip,
+      });
+    }
+
     res.status(204).send();
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to delete product' });

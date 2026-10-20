@@ -77,16 +77,134 @@ export function verifyToken(token: string): { userId: string; username: string; 
   }
 }
 
-export async function getUserById(id: string): Promise<User | null> {
-  const [userRecord] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+export async function listAllUsers(): Promise<Array<{
+  id: string;
+  username: string;
+  email: string;
+  fullName: string | null;
+  role: string;
+  status: string;
+  phone: string;
+  branch: string;
+  createdAt: string;
+  updatedAt: string;
+}>> {
+  const records = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      role: users.role,
+      status: users.status,
+      phone: users.phone,
+      branch: users.branch,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    })
+    .from(users);
+  return records;
+}
 
-  if (!userRecord) return null;
+export async function createUserWithRole(data: {
+  username: string;
+  email: string;
+  password: string;
+  fullName?: string;
+  role?: string;
+  phone?: string;
+  branch?: string;
+}) {
+  const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const id = `usr-${uuidv4().slice(0, 8)}`;
+  const now = new Date().toISOString();
+  const cleanUsername = data.username.trim().toLowerCase();
+  const cleanEmail = data.email.trim().toLowerCase();
+  const role = data.role || 'salesman';
+
+  await db.insert(users).values({
+    id,
+    username: cleanUsername,
+    email: cleanEmail,
+    passwordHash,
+    fullName: data.fullName || null,
+    role,
+    status: 'active',
+    phone: data.phone || '',
+    branch: data.branch || 'Banani Central Vault',
+    createdAt: now,
+    updatedAt: now,
+  });
 
   return {
-    id: userRecord.id,
-    username: userRecord.username,
-    email: userRecord.email,
-    fullName: userRecord.fullName,
-    role: userRecord.role,
+    id,
+    username: cleanUsername,
+    email: cleanEmail,
+    fullName: data.fullName || null,
+    role,
+    status: 'active',
+    phone: data.phone || '',
+    branch: data.branch || 'Banani Central Vault',
+    createdAt: now,
+    updatedAt: now,
   };
 }
+
+export async function updateUser(
+  id: string,
+  updates: {
+    fullName?: string;
+    email?: string;
+    role?: string;
+    status?: string;
+    phone?: string;
+    branch?: string;
+  }
+) {
+  const now = new Date().toISOString();
+  await db
+    .update(users)
+    .set({
+      ...updates,
+      updatedAt: now,
+    })
+    .where(eq(users.id, id));
+
+  const [userRecord] = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      fullName: users.fullName,
+      role: users.role,
+      status: users.status,
+      phone: users.phone,
+      branch: users.branch,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    })
+    .from(users)
+    .where(eq(users.id, id));
+
+  if (!userRecord) {
+    throw new Error('User not found');
+  }
+
+  return userRecord;
+}
+
+export async function resetUserPassword(id: string, newPassword: string): Promise<boolean> {
+  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  const now = new Date().toISOString();
+
+  await db
+    .update(users)
+    .set({
+      passwordHash,
+      updatedAt: now,
+    })
+    .where(eq(users.id, id));
+
+  return true;
+}
+

@@ -151,4 +151,69 @@ router.get('/revenue-by-category', async (req, res) => {
   }
 });
 
+router.get('/reports/summary', async (req, res) => {
+  try {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // All orders
+    const allOrders = await db.select().from(orders);
+    const todayOrders = allOrders.filter(o => o.orderDate.startsWith(todayStr) || o.orderDate.includes('Today') || o.orderDate.includes('Just now') || o.createdAt.startsWith(todayStr));
+
+    const totalSales = allOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const dailySales = todayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+    const totalProfit = allOrders.reduce((sum, o) => sum + (o.profit || 0), 0);
+    const dailyProfit = todayOrders.reduce((sum, o) => sum + (o.profit || 0), 0);
+
+    const totalDue = allOrders.reduce((sum, o) => sum + (o.dueAmount || 0), 0);
+    const dailyDue = todayOrders.reduce((sum, o) => sum + (o.dueAmount || 0), 0);
+
+    // Products and stock
+    const allProducts = await db.select().from(products);
+    const totalStockCount = allProducts.reduce((sum, p) => sum + (p.stockCount || 0), 0);
+    const totalStockValue = allProducts.reduce((sum, p) => sum + (p.stockCount * p.costPrice || 0), 0);
+
+    // Branch breakdown
+    const branchNames = [
+      'Banani Central Vault & Warehouse',
+      'Elephant Road Multiplan Branch',
+      'BCS Computer City IDB Branch'
+    ];
+
+    const branchReports = branchNames.map(bName => {
+      const bOrders = allOrders.filter(o => (o.branch || '').toLowerCase().includes(bName.split(' ')[0].toLowerCase()));
+      const bTodayOrders = todayOrders.filter(o => (o.branch || '').toLowerCase().includes(bName.split(' ')[0].toLowerCase()));
+      const bProducts = allProducts.filter(p => (p.location || '').toLowerCase().includes(bName.split(' ')[0].toLowerCase()));
+
+      return {
+        branch: bName,
+        totalSales: bOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+        dailySales: bTodayOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
+        totalProfit: bOrders.reduce((sum, o) => sum + (o.profit || 0), 0),
+        dailyProfit: bTodayOrders.reduce((sum, o) => sum + (o.profit || 0), 0),
+        totalDue: bOrders.reduce((sum, o) => sum + (o.dueAmount || 0), 0),
+        dailyDue: bTodayOrders.reduce((sum, o) => sum + (o.dueAmount || 0), 0),
+        stockCount: bProducts.reduce((sum, p) => sum + (p.stockCount || 0), 0),
+        stockValue: bProducts.reduce((sum, p) => sum + (p.stockCount * p.costPrice || 0), 0),
+        orderCount: bOrders.length,
+      };
+    });
+
+    res.json({
+      totalSales,
+      dailySales,
+      totalProfit,
+      dailyProfit,
+      totalDue,
+      dailyDue,
+      totalStockCount,
+      totalStockValue,
+      branches: branchReports,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch reports summary' });
+  }
+});
+
 export default router;
