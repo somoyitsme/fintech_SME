@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Brand Ochre Gradient -->
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2E0"/>
+      <stop offset="35%" stop-color="#E5BA8A"/>
+      <stop offset="70%" stop-color="#D4A373"/>
+      <stop offset="100%" stop-color="#9C6430"/>
+    </linearGradient>
+
+    <!-- Deep Stone Obsidian Canvas -->
+    <linearGradient id="bgObsidian" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#24211D"/>
+      <stop offset="60%" stop-color="#181614"/>
+      <stop offset="100%" stop-color="#100F0D"/>
+    </linearGradient>
+
+    <!-- Luminous Cream & Sand Facet -->
+    <linearGradient id="facetLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#FEFAE0"/>
+      <stop offset="100%" stop-color="#FAEDCD"/>
+    </linearGradient>
+
+    <!-- Warm Amber Ochre Shaded Facet -->
+    <linearGradient id="facetShade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A373"/>
+      <stop offset="60%" stop-color="#B8834E"/>
+      <stop offset="100%" stop-color="#804E1D"/>
+    </linearGradient>
+
+    <!-- Sage Center Glow -->
+    <radialGradient id="sageGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E9EDC9"/>
+      <stop offset="60%" stop-color="#CCD5AE"/>
+      <stop offset="100%" stop-color="#8F9B6E"/>
+    </radialGradient>
+
+    <!-- CSS Keyframes for browsers supporting CSS in SVG -->
+    <style>
+      @keyframes steerWave {
+        0%, 100% { transform: rotate(0deg); }
+        30% { transform: rotate(8deg); }
+        70% { transform: rotate(-8deg); }
+      }
+      @keyframes radarPulse {
+        0% { r: 6px; opacity: 0.85; stroke-width: 2px; }
+        70% { r: 21px; opacity: 0.25; stroke-width: 1.2px; }
+        100% { r: 24px; opacity: 0; stroke-width: 0.5px; }
+      }
+      @keyframes starBlink {
+        0%, 100% { opacity: 0.85; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.25); }
+      }
+      .anim-helm {
+        transform-origin: 32px 32px;
+        animation: steerWave 6s ease-in-out infinite;
+      }
+      .anim-radar {
+        animation: radarPulse 3s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+      }
+      .anim-star {
+        transform-origin: 32px 32px;
+        animation: starBlink 2.5s ease-in-out infinite;
+      }
+    </style>
+  </defs>
+
+  <!-- Squircle Base Frame (Visible & crisp on both light and dark browser tab bars) -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#bgObsidian)" stroke="url(#goldRim)" stroke-width="2.5"/>
+
+  <!-- Static Outer Dotted Meridian -->
+  <circle cx="32" cy="32" r="22" stroke="#D4A373" stroke-width="1.2" stroke-dasharray="2 3" opacity="0.4"/>
+
+  <!-- Animated Radar Pulse Ring (SMIL + CSS fallback) -->
+  <circle class="anim-radar" cx="32" cy="32" r="6" fill="none" stroke="#CCD5AE" stroke-width="1.8" opacity="0.8">
+    <animate attributeName="r" values="6; 21; 24" dur="3s" repeatCount="indefinite" keyTimes="0; 0.7; 1" />
+    <animate attributeName="opacity" values="0.85; 0.25; 0" dur="3s" repeatCount="indefinite" keyTimes="0; 0.7; 1" />
+    <animate attributeName="stroke-width" values="2; 1.2; 0.5" dur="3s" repeatCount="indefinite" keyTimes="0; 0.7; 1" />
+  </circle>
+
+  <!-- Animated Rotating & Steering Nautical Helm + Pilot Needle Group -->
+  <g class="anim-helm">
+    <animateTransform 
+      attributeName="transform" 
+      type="rotate" 
+      values="0 32 32; 8 32 32; -8 32 32; 0 32 32" 
+      keyTimes="0; 0.35; 0.75; 1"
+      dur="6s" 
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"
+    />
+
+    <!-- Nautical Rudder Outer Ring -->
+    <circle cx="32" cy="32" r="16.5" stroke="url(#goldRim)" stroke-width="2.5" fill="none"/>
+
+    <!-- Rudder Cardinal Handles (0°, 90°, 180°, 270°) -->
+    <line x1="32" y1="8.5" x2="32" y2="15.5" stroke="url(#goldRim)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="32" y1="48.5" x2="32" y2="55.5" stroke="url(#goldRim)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="8.5" y1="32" x2="15.5" y2="32" stroke="url(#goldRim)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="48.5" y1="32" x2="55.5" y2="32" stroke="url(#goldRim)" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Rudder Ordinal Handle Accents -->
+    <line x1="16" y1="16" x2="20.5" y2="20.5" stroke="#FAEDCD" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <line x1="48" y1="48" x2="43.5" y2="43.5" stroke="#FAEDCD" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <line x1="48" y1="16" x2="43.5" y2="20.5" stroke="#FAEDCD" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <line x1="16" y1="48" x2="20.5" y2="43.5" stroke="#FAEDCD" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Faceted FinPilot Needle (Pointing NE at 45° to signify financial growth) -->
+    <!-- Light-catching Facets (Cream / Sand) -->
+    <path d="M32 32 L47 17 L31 23 Z" fill="url(#facetLight)"/>
+    <path d="M32 32 L17 47 L23 31 Z" fill="url(#facetLight)"/>
+
+    <!-- Shaded Facets (Brand Ochre / Bronze) -->
+    <path d="M32 32 L47 17 L41 33 Z" fill="url(#facetShade)"/>
+    <path d="M32 32 L17 47 L33 41 Z" fill="url(#facetShade)"/>
+
+    <!-- Center Navigational Pivot (Brand Sage & Cream Core) -->
+    <circle cx="32" cy="32" r="4.8" fill="url(#sageGlow)" stroke="#181614" stroke-width="1.6"/>
+    <circle class="anim-star" cx="32" cy="32" r="1.8" fill="#FEFAE0">
+      <animate attributeName="r" values="1.6; 2.2; 1.6" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8; 1; 0.8" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

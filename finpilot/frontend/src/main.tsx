@@ -4,6 +4,9 @@ import App from './App.tsx'
 import './index.css'
 import { StoreProvider } from './context/StoreContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { initAnimatedFavicon } from './utils/animatedFavicon'
+
+initAnimatedFavicon()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
