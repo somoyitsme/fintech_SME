@@ -1,0 +1,39 @@
+# Logs & Process IDs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pids
+
+# Runtime data & SQLite databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Dependencies & Environments
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Build artifacts
+dist/
+build/
+.cache/
+
+# Presentation builds
+*.pptx
+build_finpilot_deck.py
+
+# Editor & OS artifacts
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
